@@ -1,6 +1,6 @@
 name: Release
 
-# Si rilascia pushando un tag: `npm version patch && git push --follow-tags`
+# Si rilascia pushando un tag: `pnpm version patch && git push --follow-tags`
 on:
   push:
     tags: ["v*"]
@@ -22,10 +22,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
+          cache: pnpm
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -35,7 +39,7 @@ jobs:
         with:
           workspaces: "./src-tauri -> target"
 
-      - run: npm ci
+      - run: pnpm install --frozen-lockfile
 
       - uses: tauri-apps/tauri-action@v0
         env:
