@@ -15,6 +15,7 @@ import {
   requestPermission,
   sendNotification,
 } from "@tauri-apps/plugin-notification";
+import { useI18n } from "@/i18n/i18n-provider";
 
 export type UpdaterStatus =
   | "idle"
@@ -40,6 +41,9 @@ interface UpdaterContextValue {
   checkNow: (manual?: boolean) => Promise<void>;
   install: () => Promise<void>;
   dismiss: () => void;
+  /** Preferenza locale: nasconde banner e notifica di sistema (il controllo manuale resta disponibile). */
+  hideNotices: boolean;
+  setHideNotices: (hide: boolean) => void;
 }
 
 const UpdaterContext = createContext<UpdaterContextValue | null>(null);
@@ -48,19 +52,35 @@ const CHECK_INTERVAL_MS = 30 * 60 * 1000; // ogni 30 minuti
 const FOCUS_THROTTLE_MS = 10 * 60 * 1000; // al focus, se l'ultimo check è > 10 min fa
 const FIRST_CHECK_DELAY_MS = 3000;
 const NOTIFIED_KEY = "updater:lastNotifiedVersion";
+const DISMISSED_KEY = "updater:dismissedVersion";
+const HIDE_NOTICES_KEY = "updater:hideNotices";
+
+function readStorage(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeStorage(key: string, value: string | null) {
+  try {
+    if (value === null) localStorage.removeItem(key);
+    else localStorage.setItem(key, value);
+  } catch {
+    // Preferenza solo per questa sessione.
+  }
+}
 
 const isTauri = () => typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
-async function notifyUpdateAvailable(version: string) {
+async function notifyUpdateAvailable(version: string, title: string, body: string) {
   try {
     if (localStorage.getItem(NOTIFIED_KEY) === version) return; // una sola volta per versione
     let granted = await isPermissionGranted();
     if (!granted) granted = (await requestPermission()) === "granted";
     if (!granted) return;
-    sendNotification({
-      title: "Aggiornamento disponibile",
-      body: `La versione ${version} è pronta. Apri Impostazioni › Aggiornamenti per installarla.`,
-    });
+    sendNotification({ title, body });
     localStorage.setItem(NOTIFIED_KEY, version);
   } catch {
     // Le notifiche sono un di più: non devono mai rompere l'updater.
@@ -74,7 +94,17 @@ export function UpdaterProvider({ children }: { children: ReactNode }) {
   const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
-  const [dismissedVersion, setDismissedVersion] = useState<string | null>(null);
+  // "Più tardi" e "nascondi avvisi" sopravvivono al riavvio dell'app.
+  const [dismissedVersion, setDismissedVersion] = useState<string | null>(() => readStorage(DISMISSED_KEY));
+  const [hideNotices, setHideNoticesState] = useState<boolean>(() => readStorage(HIDE_NOTICES_KEY) === "1");
+
+  const { t } = useI18n();
+  const tRef = useRef(t);
+  const hideNoticesRef = useRef(hideNotices);
+  useEffect(() => {
+    tRef.current = t;
+    hideNoticesRef.current = hideNotices;
+  }, [t, hideNotices]);
 
   const updateRef = useRef<Update | null>(null);
   const busyRef = useRef(false); // evita check/download sovrapposti
@@ -94,7 +124,14 @@ export function UpdaterProvider({ children }: { children: ReactNode }) {
         setVersion(update.version);
         setNotes(update.body ?? null);
         setStatus("available");
-        void notifyUpdateAvailable(update.version);
+        if (!hideNoticesRef.current) {
+          const tr = tRef.current;
+          void notifyUpdateAvailable(
+            update.version,
+            tr("update.notifyTitle"),
+            tr("update.notifyBody", { version: update.version }),
+          );
+        }
       } else {
         updateRef.current = null;
         setStatus("up-to-date");
@@ -142,7 +179,15 @@ export function UpdaterProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const dismiss = useCallback(() => setDismissedVersion(version), [version]);
+  const dismiss = useCallback(() => {
+    setDismissedVersion(version);
+    writeStorage(DISMISSED_KEY, version);
+  }, [version]);
+
+  const setHideNotices = useCallback((hide: boolean) => {
+    setHideNoticesState(hide);
+    writeStorage(HIDE_NOTICES_KEY, hide ? "1" : null);
+  }, []);
 
   // Check all'avvio, periodico e quando la finestra torna in primo piano.
   useEffect(() => {
@@ -172,8 +217,23 @@ export function UpdaterProvider({ children }: { children: ReactNode }) {
       checkNow,
       install,
       dismiss,
+      hideNotices,
+      setHideNotices,
     }),
-    [status, version, notes, progress, error, lastChecked, dismissedVersion, checkNow, install, dismiss],
+    [
+      status,
+      version,
+      notes,
+      progress,
+      error,
+      lastChecked,
+      dismissedVersion,
+      hideNotices,
+      checkNow,
+      install,
+      dismiss,
+      setHideNotices,
+    ],
   );
 
   return <UpdaterContext.Provider value={value}>{children}</UpdaterContext.Provider>;

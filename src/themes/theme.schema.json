@@ -1,0 +1,141 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/NoahGiesel/tauri-convex-chat-app/theme.schema.json",
+  "title": "Chat theme",
+  "type": "object",
+  "required": [
+    "version",
+    "id",
+    "name",
+    "mode",
+    "colors"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,39}$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "mode": {
+      "enum": [
+        "dark",
+        "light"
+      ]
+    },
+    "colors": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bg",
+        "sidebar",
+        "panel",
+        "field",
+        "raised",
+        "border",
+        "borderStrong",
+        "text",
+        "textStrong",
+        "textSoft",
+        "textMuted",
+        "textDim",
+        "accent",
+        "accentFg",
+        "online",
+        "offline",
+        "ai",
+        "upload",
+        "avatars",
+        "art"
+      ],
+      "properties": {
+        "bg": {
+          "$ref": "#/definitions/hex"
+        },
+        "sidebar": {
+          "$ref": "#/definitions/hex"
+        },
+        "panel": {
+          "$ref": "#/definitions/hex"
+        },
+        "field": {
+          "$ref": "#/definitions/hex"
+        },
+        "raised": {
+          "$ref": "#/definitions/hex"
+        },
+        "border": {
+          "$ref": "#/definitions/hex"
+        },
+        "borderStrong": {
+          "$ref": "#/definitions/hex"
+        },
+        "text": {
+          "$ref": "#/definitions/hex"
+        },
+        "textStrong": {
+          "$ref": "#/definitions/hex"
+        },
+        "textSoft": {
+          "$ref": "#/definitions/hex"
+        },
+        "textMuted": {
+          "$ref": "#/definitions/hex"
+        },
+        "textDim": {
+          "$ref": "#/definitions/hex"
+        },
+        "accent": {
+          "$ref": "#/definitions/hex"
+        },
+        "accentFg": {
+          "$ref": "#/definitions/hex"
+        },
+        "online": {
+          "$ref": "#/definitions/hex"
+        },
+        "offline": {
+          "$ref": "#/definitions/hex"
+        },
+        "ai": {
+          "$ref": "#/definitions/hex"
+        },
+        "upload": {
+          "$ref": "#/definitions/hex"
+        },
+        "avatars": {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "$ref": "#/definitions/hex"
+          }
+        },
+        "art": {
+          "type": "array",
+          "minItems": 6,
+          "maxItems": 6,
+          "items": {
+            "$ref": "#/definitions/hex"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "hex": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$"
+    }
+  }
+}

@@ -1,0 +1,202 @@
+[
+  {
+    "version": 1,
+    "id": "graphite",
+    "name": "Graphite",
+    "description": "Grigio neutro con accento blu: sobrio e professionale.",
+    "mode": "dark",
+    "colors": {
+      "bg": "#121316",
+      "sidebar": "#17181c",
+      "panel": "#1c1e23",
+      "field": "#23252b",
+      "raised": "#2a2d34",
+      "border": "#2b2e35",
+      "borderStrong": "#3b3f4a",
+      "text": "#e8eaee",
+      "textStrong": "#ffffff",
+      "textSoft": "#c4c8d0",
+      "textMuted": "#9ba1ad",
+      "textDim": "#8a909c",
+      "accent": "#2f6fe4",
+      "accentFg": "#ffffff",
+      "online": "#3fbf8a",
+      "offline": "#5d6370",
+      "ai": "#5cc0e0",
+      "upload": "#e0a93e",
+      "avatars": [
+        "#4a6a96",
+        "#9a603a",
+        "#4a7a66"
+      ],
+      "art": [
+        "#1b2c4b",
+        "#2a4a86",
+        "#4a78c9",
+        "#233a66",
+        "#16264a",
+        "#0e1930"
+      ]
+    }
+  },
+  {
+    "version": 1,
+    "id": "midnight",
+    "name": "Midnight",
+    "description": "Blu notte con accento turchese.",
+    "mode": "dark",
+    "colors": {
+      "bg": "#0b1118",
+      "sidebar": "#0f1721",
+      "panel": "#131d29",
+      "field": "#1a2634",
+      "raised": "#223042",
+      "border": "#1f2c3b",
+      "borderStrong": "#32445a",
+      "text": "#e6edf5",
+      "textStrong": "#ffffff",
+      "textSoft": "#bccad9",
+      "textMuted": "#93a4b8",
+      "textDim": "#8396ab",
+      "accent": "#2dc4b6",
+      "accentFg": "#04211e",
+      "online": "#45d08f",
+      "offline": "#566579",
+      "ai": "#6cb8f2",
+      "upload": "#e6b04a",
+      "avatars": [
+        "#44709e",
+        "#98633c",
+        "#4a7f73"
+      ],
+      "art": [
+        "#0e2a33",
+        "#14524f",
+        "#2aa79d",
+        "#0f3a40",
+        "#0a2630",
+        "#061a22"
+      ]
+    }
+  },
+  {
+    "version": 1,
+    "id": "warm-charcoal",
+    "name": "Warm Charcoal",
+    "description": "Antracite caldo con accento oro, ispirato alla reference.",
+    "mode": "dark",
+    "colors": {
+      "bg": "#141210",
+      "sidebar": "#1a1815",
+      "panel": "#201d19",
+      "field": "#292520",
+      "raised": "#322e27",
+      "border": "#302b25",
+      "borderStrong": "#463f35",
+      "text": "#ece7de",
+      "textStrong": "#fffaf0",
+      "textSoft": "#cbc4b6",
+      "textMuted": "#a39b8b",
+      "textDim": "#928a7a",
+      "accent": "#d4a23a",
+      "accentFg": "#1c1404",
+      "online": "#58c48f",
+      "offline": "#6c6558",
+      "ai": "#6dbbd8",
+      "upload": "#e8b04c",
+      "avatars": [
+        "#5b6f8a",
+        "#9a5f3f",
+        "#5a7d65"
+      ],
+      "art": [
+        "#2a2114",
+        "#5a4316",
+        "#b8892e",
+        "#3d2e12",
+        "#2a200e",
+        "#1a140a"
+      ]
+    }
+  },
+  {
+    "version": 1,
+    "id": "forest",
+    "name": "Forest",
+    "description": "Verde bosco, discreto e rilassante.",
+    "mode": "dark",
+    "colors": {
+      "bg": "#0f1411",
+      "sidebar": "#141b17",
+      "panel": "#19221d",
+      "field": "#202b25",
+      "raised": "#29362e",
+      "border": "#222e27",
+      "borderStrong": "#364639",
+      "text": "#e5ede8",
+      "textStrong": "#ffffff",
+      "textSoft": "#bdcbc3",
+      "textMuted": "#96a79d",
+      "textDim": "#869a8f",
+      "accent": "#3fa273",
+      "accentFg": "#04180e",
+      "online": "#5bd49a",
+      "offline": "#586a60",
+      "ai": "#68bfe0",
+      "upload": "#e0ae48",
+      "avatars": [
+        "#4b7396",
+        "#9a643f",
+        "#52737f"
+      ],
+      "art": [
+        "#12281c",
+        "#1f5a3b",
+        "#3fa273",
+        "#18402b",
+        "#0f2a1c",
+        "#08170f"
+      ]
+    }
+  },
+  {
+    "version": 1,
+    "id": "amethyst",
+    "name": "Amethyst",
+    "description": "Viola attenuato, vicino alla prima proposta.",
+    "mode": "dark",
+    "colors": {
+      "bg": "#131118",
+      "sidebar": "#18161f",
+      "panel": "#1d1b25",
+      "field": "#25232f",
+      "raised": "#2d2b39",
+      "border": "#2b2938",
+      "borderStrong": "#3d3a4f",
+      "text": "#ebe9f2",
+      "textStrong": "#ffffff",
+      "textSoft": "#c6c3d4",
+      "textMuted": "#9f9bb3",
+      "textDim": "#8e8aa3",
+      "accent": "#6c5ce7",
+      "accentFg": "#ffffff",
+      "online": "#45cf94",
+      "offline": "#5f5b73",
+      "ai": "#62c4e6",
+      "upload": "#e4ae48",
+      "avatars": [
+        "#4d6c98",
+        "#9b633d",
+        "#4e7c6c"
+      ],
+      "art": [
+        "#221b5c",
+        "#3d2fa3",
+        "#7b62e6",
+        "#2f2680",
+        "#1b1650",
+        "#100d33"
+      ]
+    }
+  }
+]
