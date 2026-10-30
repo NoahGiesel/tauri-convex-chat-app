@@ -1,0 +1,10 @@
+node_modules
+dist
+.env
+.env.local
+*.key
+*.log
+.DS_Store
+src-tauri/target
+src-tauri/gen
+.convex
