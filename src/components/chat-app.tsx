@@ -12,7 +12,7 @@ import { GroupModal } from "@/components/group-modal";
 import { InviteModal } from "@/components/invite-modal";
 import { useI18n } from "@/i18n/i18n-provider";
 import { openChatWindow } from "@/lib/popout";
-import { usePresenceHeartbeat } from "@/lib/presence";
+import { usePresence, usePresenceHeartbeat } from "@/lib/presence";
 import { cn } from "@/lib/utils";
 
 export type ConversationItem = NonNullable<FunctionReturnType<typeof api.conversations.list>>[number];
@@ -32,6 +32,7 @@ const MIN_PANE_PX = 280;
 export function ChatApp({ onOpenSettings }: { onOpenSettings: () => void }) {
   const { t } = useI18n();
   usePresenceHeartbeat();
+  const presence = usePresence();
   const me = useQuery(api.users.me);
   const conversations = useQuery(api.conversations.list);
   useMessageNotifications(conversations);
@@ -188,13 +189,14 @@ export function ChatApp({ onOpenSettings }: { onOpenSettings: () => void }) {
       />
 
       <section className="flex min-w-0 flex-1 flex-col bg-app-panel">
-        {/* Schede delle chat aperte: trascinale su un pannello per dividere la vista */}
-        <div className="flex h-[52px] shrink-0 items-end gap-1 overflow-x-auto bg-app-bg px-3 pt-2">
+        {/* Schede delle chat aperte, con lo stato di chi c'è dentro: trascinale su un pannello per dividere la vista */}
+        <div className="flex h-[58px] shrink-0 items-end gap-1 overflow-x-auto bg-app-bg px-2.5 pt-2.5">
           {tabs.map((id) => {
             const c = byId.get(id);
             if (!c) return null;
             const focused = id === panes[activeIndex];
             const shown = panes.includes(id);
+            const status = c.kind === "group" ? presence.group(c.memberCount, c.othersLastSeenAt) : presence.person(c.peerLastSeenAt);
             return (
               <div
                 key={id}
@@ -206,24 +208,35 @@ export function ChatApp({ onOpenSettings }: { onOpenSettings: () => void }) {
                 }}
                 onDragEnd={(e) => onTabDragEnd(e, id)}
                 className={cn(
-                  "flex shrink-0 cursor-grab items-center gap-2.5 rounded-t-xl pr-2 pl-3 text-sm active:cursor-grabbing",
-                  focused
-                    ? "h-11 bg-app-panel font-bold text-app-text-strong"
-                    : shown
-                      ? "h-10 bg-app-panel/50 font-semibold text-app-text"
-                      : "h-10 font-semibold text-app-text-muted",
+                  "group/tab flex h-12 max-w-[250px] min-w-[150px] shrink-0 cursor-grab items-center rounded-t-xl pr-1 pl-1 active:cursor-grabbing",
+                  focused ? "bg-app-panel" : shown ? "bg-app-panel/50 hover:bg-app-panel/70" : "hover:bg-app-panel/30",
                   dragId === id && "opacity-40",
                 )}
               >
-                <button type="button" onClick={() => openChat(id)} className="flex items-center gap-2.5">
-                  {c.kind === "group" ? <GroupAvatar size={26} /> : <Avatar name={c.title} index={c.avatarIndex} src={c.peerAvatarUrl} size={26} />}
-                  <span className="max-w-40 truncate">{c.title}</span>
+                <button type="button" onClick={() => openChat(id)} className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg py-1 pr-1 pl-2 text-left">
+                  <span className="relative shrink-0">
+                    {c.kind === "group" ? <GroupAvatar size={30} /> : <Avatar name={c.title} index={c.avatarIndex} src={c.peerAvatarUrl} size={30} />}
+                    {status.online && c.kind === "direct" && (
+                      <span className="absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full border-2 border-app-panel bg-app-online" />
+                    )}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className={cn("block truncate text-[13.5px] leading-tight", focused ? "font-bold text-app-text-strong" : "font-semibold text-app-text")}>
+                      {c.title}
+                    </span>
+                    <span className={cn("block truncate text-[11.5px] leading-tight", status.online ? "font-semibold text-app-online" : "text-app-text-dim")}>
+                      {status.text}
+                    </span>
+                  </span>
                 </button>
                 <button
                   type="button"
                   aria-label={t("tabs.close", { name: c.title })}
                   onClick={() => closeTab(id)}
-                  className="flex size-[26px] items-center justify-center rounded-md text-app-text-dim hover:bg-app-field"
+                  className={cn(
+                    "flex size-6 shrink-0 items-center justify-center rounded-md text-app-text-dim hover:bg-app-field hover:text-app-text",
+                    !focused && "opacity-0 group-hover/tab:opacity-100 focus-visible:opacity-100",
+                  )}
                 >
                   <X className="size-3.5" strokeWidth={2.4} />
                 </button>

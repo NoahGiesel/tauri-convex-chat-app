@@ -47,7 +47,11 @@ interface PendingFile {
 }
 const TEXT_STYLES: readonly string[] = ["me", "code", "pre", "spoiler", "quote"];
 
-export function ConversationView({ conversationId }: { conversationId: Id<"conversations"> }) {
+/**
+ * `showHeader`: barra con nome e stato in cima (serve nelle finestre staccate, che non hanno le schede);
+ * nella finestra principale nome e stato stanno già nella scheda, e il pulsante Media è sovrapposto alla lista.
+ */
+export function ConversationView({ conversationId, showHeader = false }: { conversationId: Id<"conversations">; showHeader?: boolean }) {
   const { t, locale, language } = useI18n();
   const presence = usePresence();
   const info = useQuery(api.conversations.get, { conversationId });
@@ -541,6 +545,7 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
 
   return (
     <>
+      {showHeader && (
       <header className="flex h-12 shrink-0 items-center gap-3 border-b border-app-border px-5">
         <div className="flex min-w-0 flex-1 items-center gap-2.5">
           <h2 className="max-w-[50%] shrink-0 truncate text-[15px] font-extrabold text-app-text-strong">{info?.title ?? "…"}</h2>
@@ -572,12 +577,26 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
           <Images className="size-[18px]" strokeWidth={1.9} />
         </button>
       </header>
+      )}
 
-      {libraryOpen && <MediaLibrary conversationId={conversationId} onOpenMedia={setLightbox} />}
+      {libraryOpen && <MediaLibrary conversationId={conversationId} onOpenMedia={setLightbox} onClose={() => setLibraryOpen(false)} />}
 
       {/* Messaggi e campo di scrittura restano montati (così non si perde la posizione) ma nascosti mentre si guarda l'elenco. */}
       <div className={cn("flex min-h-0 flex-1 flex-col", libraryOpen && "hidden")}>
       <div ref={scrollRef} onScroll={onScroll} className={cn("min-h-0 flex-1 overflow-y-auto px-6 py-5", !revealed && "opacity-0")}>
+        {!showHeader && (
+          <div className="pointer-events-none sticky top-0 z-10 h-0">
+            <button
+              type="button"
+              aria-label={t("library.open")}
+              title={t("library.open")}
+              onClick={() => setLibraryOpen(true)}
+              className="pointer-events-auto absolute top-0 right-0 flex size-9 items-center justify-center rounded-full border border-app-border bg-app-panel/90 text-app-text-muted shadow-md backdrop-blur hover:bg-app-field hover:text-app-text"
+            >
+              <Images className="size-[18px]" strokeWidth={1.9} />
+            </button>
+          </div>
+        )}
         <div ref={contentRef}>
         {status === "CanLoadMore" && (
           <div className="flex justify-center pb-3">

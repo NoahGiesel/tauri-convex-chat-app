@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { usePaginatedQuery } from "convex/react";
-import { Link2, Play } from "lucide-react";
+import { Link2, Play, X } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import type { LightboxItem } from "@/components/media-lightbox";
@@ -15,9 +15,11 @@ const PAGE = 30;
 export function MediaLibrary({
   conversationId,
   onOpenMedia,
+  onClose,
 }: {
   conversationId: Id<"conversations">;
   onOpenMedia: (item: LightboxItem) => void;
+  onClose: () => void;
 }) {
   const { t } = useI18n();
   const [tab, setTab] = useState<Tab>("media");
@@ -40,6 +42,15 @@ export function MediaLibrary({
             {t(id === "media" ? "library.media" : "library.links")}
           </button>
         ))}
+        <button
+          type="button"
+          aria-label={t("common.close")}
+          title={t("common.close")}
+          onClick={onClose}
+          className="mb-1 ml-auto flex size-8 items-center justify-center rounded-lg text-app-text-muted hover:bg-app-field hover:text-app-text"
+        >
+          <X className="size-4" strokeWidth={2.2} />
+        </button>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
         {tab === "media" ? <MediaTab conversationId={conversationId} onOpenMedia={onOpenMedia} /> : <LinksTab conversationId={conversationId} />}

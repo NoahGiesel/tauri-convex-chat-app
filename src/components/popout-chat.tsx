@@ -7,7 +7,7 @@ export function PopoutChat({ conversationId }: { conversationId: string }) {
   usePresenceHeartbeat();
   return (
     <div className="flex h-screen flex-col bg-app-panel text-app-text">
-      <ConversationView conversationId={conversationId as Id<"conversations">} />
+      <ConversationView conversationId={conversationId as Id<"conversations">} showHeader />
     </div>
   );
 }
