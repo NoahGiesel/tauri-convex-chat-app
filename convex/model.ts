@@ -22,6 +22,13 @@ export type ErrorCode =
   | "group_size"
   | "group_not_friends"
   | "message_empty"
+  | "invalid_gif"
+  | "cannot_edit"
+  | "cannot_delete"
+  | "invalid_layout"
+  | "message_not_found"
+  | "invalid_emoji"
+  | "too_many_reactions"
   | "message_too_long";
 
 export const fail = (code: ErrorCode) => new ConvexError({ code });

@@ -3,11 +3,18 @@ import { useMutation, useQuery } from "convex/react";
 import { Camera, Trash2 } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import { Avatar } from "@/components/avatar";
+import type { MessageKey } from "@/i18n/en";
 import { useI18n } from "@/i18n/i18n-provider";
-import { squareThumbnail } from "@/lib/avatar-image";
+import { IMAGE_ACCEPT, squareThumbnail } from "@/lib/avatar-image";
 import { errorKey } from "@/lib/errors";
 import { cn } from "@/lib/utils";
 import { fieldClass, outlineButtonClass, primaryButtonClass, sectionLabelClass } from "@/lib/ui-classes";
+
+const IMAGE_ERRORS: Record<string, MessageKey> = {
+  image_type: "error.image_type",
+  image_too_large: "error.image_too_large",
+  invalid_image: "error.invalid_image",
+};
 
 const MAX_NAME = 40;
 const MAX_BIO = 200;
@@ -47,7 +54,8 @@ export function ProfileEditor() {
       await action();
       setNotice({ kind: "ok", text: okText });
     } catch (e) {
-      setNotice({ kind: "error", text: e instanceof Error && e.message === "invalid_image" ? t("error.invalid_image") : t(errorKey(e)) });
+      const local = e instanceof Error ? IMAGE_ERRORS[e.message] : undefined;
+      setNotice({ kind: "error", text: t(local ?? errorKey(e)) });
     } finally {
       setBusy(null);
     }
@@ -105,7 +113,7 @@ export function ProfileEditor() {
         <input
           ref={fileInput}
           type="file"
-          accept="image/*"
+          accept={IMAGE_ACCEPT}
           hidden
           onChange={(e) => {
             const file = e.target.files?.[0];

@@ -1,11 +1,47 @@
 import { v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
-import type { Id } from "./_generated/dataModel";
-import { mutation, query } from "./_generated/server";
+import type { Doc, Id } from "./_generated/dataModel";
+import { mutation, query, type MutationCtx } from "./_generated/server";
 import { avatarUrl, fail, getProfile, requireMember, requireProfile } from "./model";
+import { MAX_REACTIONS_PER_MESSAGE } from "./reactions";
 
 const MAX_BODY = 4000;
 const MAX_MEMBERS = 50;
+const MAX_GIF_URL = 500;
+
+/** Salva il messaggio e aggiorna ordinamento e non letti di ogni membro. */
+async function postMessage(
+  ctx: MutationCtx,
+  me: Doc<"profiles">,
+  conversationId: Id<"conversations">,
+  kind: "text" | "gif",
+  body: string,
+) {
+  const now = Date.now();
+  const messageId = await ctx.db.insert("messages", { conversationId, authorId: me._id, kind, body });
+  await ctx.db.patch("conversations", conversationId, { lastMessageAt: now });
+
+  // Aggiorna l'ordinamento della lista chat di ogni membro; per chi scrive il messaggio è già letto.
+  const members = await ctx.db
+    .query("members")
+    .withIndex("by_conversation", (q) => q.eq("conversationId", conversationId))
+    .take(MAX_MEMBERS);
+  for (const m of members) {
+    await ctx.db.patch("members", m._id, m.profileId === me._id ? { lastMessageAt: now, lastReadAt: now } : { lastMessageAt: now });
+  }
+  return messageId;
+}
+
+/** Solo indirizzi https su un sottodominio di giphy.com: nessun altro sito può farsi caricare dai client degli amici. */
+function isGiphyUrl(raw: string): boolean {
+  if (raw.length > MAX_GIF_URL) return false;
+  try {
+    const url = new URL(raw);
+    return url.protocol === "https:" && url.hostname.endsWith(".giphy.com");
+  } catch {
+    return false;
+  }
+}
 
 /** Messaggi di una conversazione, dal più recente, paginati (infinite scroll verso l'alto). */
 export const list = query({
@@ -28,6 +64,11 @@ export const list = query({
       .paginate(args.paginationOpts);
 
     const authors = new Map<Id<"profiles">, { name: string; avatarIndex: number; avatarUrl: string | null } | null>();
+    const names = new Map<Id<"profiles">, string>();
+    const nameOf = async (id: Id<"profiles">) => {
+      if (!names.has(id)) names.set(id, (await ctx.db.get("profiles", id))?.name ?? "?");
+      return names.get(id)!;
+    };
     const page = [];
     for (const message of result.page) {
       let author = null;
@@ -38,6 +79,20 @@ export const list = query({
         }
         author = authors.get(message.authorId) ?? null;
       }
+      // Reazioni raggruppate per emoji, nell'ordine in cui sono comparse.
+      const grouped = new Map<string, { emoji: string; count: number; mine: boolean; names: string[] }>();
+      const reactionRows = await ctx.db
+        .query("reactions")
+        .withIndex("by_message", (q) => q.eq("messageId", message._id))
+        .take(MAX_REACTIONS_PER_MESSAGE);
+      for (const r of reactionRows) {
+        const g = grouped.get(r.emoji) ?? { emoji: r.emoji, count: 0, mine: false, names: [] };
+        g.count += 1;
+        g.mine ||= r.profileId === me._id;
+        if (g.names.length < 10) g.names.push(await nameOf(r.profileId));
+        grouped.set(r.emoji, g);
+      }
+
       page.push({
         _id: message._id,
         _creationTime: message._creationTime,
@@ -48,6 +103,8 @@ export const list = query({
         authorAvatarIndex: author?.avatarIndex ?? 0,
         authorAvatarUrl: author?.avatarUrl ?? null,
         mine: message.authorId === me._id,
+        reactions: [...grouped.values()],
+        editedAt: message.editedAt ?? null,
       });
     }
     return { ...result, page };
@@ -65,24 +122,58 @@ export const send = mutation({
     if (body.length === 0) throw fail("message_empty");
     if (body.length > MAX_BODY) throw fail("message_too_long");
 
-    const now = Date.now();
-    const messageId = await ctx.db.insert("messages", {
-      conversationId: args.conversationId,
-      authorId: me._id,
-      kind: "text",
-      body,
-    });
+    return await postMessage(ctx, me, args.conversationId, "text", body);
+  },
+});
 
-    await ctx.db.patch("conversations", args.conversationId, { lastMessageAt: now });
+/** Invia una GIF scelta da GIPHY. */
+export const sendGif = mutation({
+  args: { conversationId: v.id("conversations"), url: v.string() },
+  handler: async (ctx, args) => {
+    const me = await requireProfile(ctx);
+    await requireMember(ctx, args.conversationId, me._id);
+    if (!isGiphyUrl(args.url)) throw fail("invalid_gif");
+    return await postMessage(ctx, me, args.conversationId, "gif", args.url);
+  },
+});
 
-    // Aggiorna l'ordinamento della lista chat di ogni membro; per chi scrive il messaggio è già letto.
-    const members = await ctx.db
-      .query("members")
-      .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
-      .take(MAX_MEMBERS);
-    for (const m of members) {
-      await ctx.db.patch("members", m._id, m.profileId === me._id ? { lastMessageAt: now, lastReadAt: now } : { lastMessageAt: now });
+/** L'autore modifica il testo di un proprio messaggio; resta il segno "(modificato)". */
+export const edit = mutation({
+  args: { messageId: v.id("messages"), body: v.string() },
+  handler: async (ctx, args) => {
+    const me = await requireProfile(ctx);
+    const message = await ctx.db.get("messages", args.messageId);
+    if (!message) throw fail("message_not_found");
+    await requireMember(ctx, message.conversationId, me._id);
+    if (message.kind !== "text" || message.authorId !== me._id) throw fail("cannot_edit");
+
+    const body = args.body.trim();
+    if (body.length === 0) throw fail("message_empty");
+    if (body.length > MAX_BODY) throw fail("message_too_long");
+    if (body === message.body) return;
+
+    await ctx.db.patch("messages", message._id, { body, editedAt: Date.now() });
+  },
+});
+
+/** L'autore elimina del tutto un proprio messaggio (testo o GIF), reazioni comprese. */
+export const remove = mutation({
+  args: { messageId: v.id("messages") },
+  handler: async (ctx, args) => {
+    const me = await requireProfile(ctx);
+    const message = await ctx.db.get("messages", args.messageId);
+    if (!message) return; // già eliminato (anche da un altro dispositivo)
+    await requireMember(ctx, message.conversationId, me._id);
+    if (message.kind === "ai" || message.authorId !== me._id) throw fail("cannot_delete");
+
+    for (;;) {
+      const batch = await ctx.db
+        .query("reactions")
+        .withIndex("by_message", (q) => q.eq("messageId", message._id))
+        .take(256);
+      if (batch.length === 0) break;
+      for (const r of batch) await ctx.db.delete("reactions", r._id);
     }
-    return messageId;
+    await ctx.db.delete("messages", message._id);
   },
 });

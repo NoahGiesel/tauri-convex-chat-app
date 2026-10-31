@@ -15,6 +15,8 @@ import type * as http from "../http.js";
 import type * as invites from "../invites.js";
 import type * as messages from "../messages.js";
 import type * as model from "../model.js";
+import type * as reactions from "../reactions.js";
+import type * as sidebar from "../sidebar.js";
 import type * as users from "../users.js";
 
 import type {
@@ -31,6 +33,8 @@ declare const fullApi: ApiFromModules<{
   invites: typeof invites;
   messages: typeof messages;
   model: typeof model;
+  reactions: typeof reactions;
+  sidebar: typeof sidebar;
   users: typeof users;
 }>;
 

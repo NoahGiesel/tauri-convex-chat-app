@@ -1,12 +1,17 @@
-/** Foto più grandi di così vengono rifiutate prima ancora di leggerle. */
-export const MAX_SOURCE_BYTES = 15 * 1024 * 1024;
+/** Foto più grandi di così (5 MB) vengono rifiutate prima ancora di leggerle. */
+export const MAX_SOURCE_BYTES = 5 * 1024 * 1024;
+
+/** Formati ammessi, anche per il selettore file del sistema. */
+export const ALLOWED_IMAGE_TYPES = ["image/webp", "image/png", "image/jpeg", "image/gif"];
+export const IMAGE_ACCEPT = ".webp,.png,.jpg,.jpeg,.gif," + ALLOWED_IMAGE_TYPES.join(",");
 
 /**
  * Ritaglia l'immagine al centro in un quadrato e la riduce (default 256 px), così il file caricato
- * pesa pochi KB. Lancia un errore se il file non è un'immagine leggibile.
+ * pesa pochi KB (di una GIF resta il primo fotogramma). Lancia `image_type`, `image_too_large` o `invalid_image`.
  */
 export async function squareThumbnail(file: File, size = 256): Promise<Blob> {
-  if (!file.type.startsWith("image/") || file.size > MAX_SOURCE_BYTES) throw new Error("invalid_image");
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) throw new Error("image_type");
+  if (file.size > MAX_SOURCE_BYTES) throw new Error("image_too_large");
 
   const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
   try {

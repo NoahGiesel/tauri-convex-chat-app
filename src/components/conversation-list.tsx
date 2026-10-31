@@ -1,12 +1,10 @@
 import { useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import {
-  ChevronDown,
   Hash,
   PanelLeftClose,
   PanelLeftOpen,
   PanelRightClose,
   PanelRightOpen,
-  Plus,
   Search,
   Settings,
   UserPlus,
@@ -14,10 +12,10 @@ import {
 } from "lucide-react";
 import type { Id } from "../../convex/_generated/dataModel";
 import { Avatar } from "@/components/avatar";
+import { ChatSections, UnreadBadge } from "@/components/chat-sections";
 import type { ConversationItem } from "@/components/chat-app";
 import { SIDEBAR_MAX, SIDEBAR_MIN, SIDEBAR_RAIL, useSidebar } from "@/hooks/use-sidebar";
 import { useI18n } from "@/i18n/i18n-provider";
-import { usePresence, type PresenceStatus } from "@/lib/presence";
 import { cn } from "@/lib/utils";
 
 /**
@@ -44,7 +42,6 @@ export function ConversationList({
   onOpenSettings: () => void;
 }) {
   const { t } = useI18n();
-  const presence = usePresence();
   const { width, collapsed, side, setWidth, resetWidth, setCollapsed } = useSidebar();
   const [query, setQuery] = useState("");
   const [dragging, setDragging] = useState(false);
@@ -56,21 +53,6 @@ export function ConversationList({
     return q ? conversations.filter((c) => c.title.toLocaleLowerCase().includes(q)) : conversations;
   }, [conversations, query]);
 
-  const [closed, setClosed] = useState<Record<SectionId, boolean>>(readClosedSections);
-  const toggleSection = (id: SectionId) =>
-    setClosed((prev) => {
-      const next = { ...prev, [id]: !prev[id] };
-      try {
-        localStorage.setItem(SECTIONS_KEY, JSON.stringify(next));
-      } catch {
-        // storage non disponibile
-      }
-      return next;
-    });
-
-  const groups = visible.filter((c) => c.kind === "group");
-  const directs = visible.filter((c) => c.kind === "direct");
-  const searching = query.trim() !== "";
 
   const onRight = side === "right";
   const CollapseIcon = onRight ? PanelRightClose : PanelLeftClose;
@@ -251,19 +233,19 @@ export function ConversationList({
         </button>
       </div>
 
-      <div className="px-4 pb-3">
+      <div className="px-4 pb-2">
         <label htmlFor="search" className="sr-only">
           {t("side.search")}
         </label>
         <div className="relative">
-          <Search className="absolute top-3 left-3 size-4 text-app-text-dim" strokeWidth={2} />
+          <Search className="absolute top-[9px] left-2.5 size-3.5 text-app-text-dim" strokeWidth={2} />
           <input
             id="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t("side.search")}
             autoComplete="off"
-            className="h-10 w-full rounded-[10px] border border-app-border bg-app-bg pr-3 pl-9 text-sm text-app-text outline-none placeholder:text-app-text-dim focus:border-app-accent-bright"
+            className="h-8 w-full rounded-lg border border-app-border bg-app-bg pr-3 pl-8 text-sm text-app-text outline-none placeholder:text-app-text-dim focus:border-app-accent-bright"
           />
         </div>
       </div>
@@ -272,180 +254,18 @@ export function ConversationList({
         {conversations && conversations.length > 0 && visible.length === 0 && (
           <p className="px-2 py-3 text-sm text-app-text-muted">{t("side.noResults")}</p>
         )}
-
         {conversations && (
-          <>
-            {(groups.length > 0 || !searching) && (
-              <Section
-                label={t("side.groups")}
-                addLabel={t("side.createGroup")}
-                onAdd={onOpenGroup}
-                items={groups}
-                emptyText={t("side.noGroups")}
-                closed={closed.groups && !searching}
-                onToggle={() => toggleSection("groups")}
-                selectedIds={selectedIds}
-                onSelect={onSelect}
-                status={(c) => presence.group(c.memberCount, c.othersLastSeenAt)}
-                unreadLabel={(count) => t("side.unread", { count })}
-              />
-            )}
-            {(directs.length > 0 || !searching) && (
-              <Section
-                label={t("side.direct")}
-                addLabel={t("side.addFriend")}
-                onAdd={onOpenInvite}
-                addDot={pendingRequests > 0}
-                items={directs}
-                emptyText={t("side.noDirect")}
-                closed={closed.direct && !searching}
-                onToggle={() => toggleSection("direct")}
-                selectedIds={selectedIds}
-                onSelect={onSelect}
-                status={(c) => presence.person(c.peerLastSeenAt)}
-                unreadLabel={(count) => t("side.unread", { count })}
-              />
-            )}
-          </>
+          <ChatSections
+            conversations={conversations}
+            query={query}
+            selectedIds={selectedIds}
+            pendingRequests={pendingRequests}
+            onSelect={onSelect}
+            onOpenGroup={onOpenGroup}
+            onOpenInvite={onOpenInvite}
+          />
         )}
       </div>
     </aside>
-  );
-}
-
-type SectionId = "groups" | "direct";
-const SECTIONS_KEY = "chat:sections";
-
-function readClosedSections(): Record<SectionId, boolean> {
-  try {
-    const raw = JSON.parse(localStorage.getItem(SECTIONS_KEY) ?? "{}") as Partial<Record<SectionId, boolean>>;
-    return { groups: raw.groups === true, direct: raw.direct === true };
-  } catch {
-    return { groups: false, direct: false };
-  }
-}
-
-/** Pillola col numero di messaggi non letti. */
-function UnreadBadge({ count, className }: { count: number; className?: string }) {
-  return (
-    <span
-      className={cn(
-        "inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-app-accent px-1.5 text-xs leading-none font-extrabold text-app-accent-fg",
-        className,
-      )}
-    >
-      {count > 99 ? "99+" : count}
-    </span>
-  );
-}
-
-/** Sezione richiudibile della lista (Gruppi / Messaggi diretti). Da chiusa mostra solo le chat con novità. */
-function Section({
-  label,
-  addLabel,
-  onAdd,
-  addDot,
-  items,
-  emptyText,
-  closed,
-  onToggle,
-  selectedIds,
-  onSelect,
-  status,
-  unreadLabel,
-}: {
-  label: string;
-  addLabel: string;
-  onAdd: () => void;
-  addDot?: boolean;
-  items: ConversationItem[];
-  /** Mostrato quando la sezione è vuota (ad esempio per chi è appena arrivato). */
-  emptyText: string;
-  closed: boolean;
-  onToggle: () => void;
-  selectedIds: Set<Id<"conversations">>;
-  onSelect: (id: Id<"conversations">) => void;
-  status: (c: ConversationItem) => PresenceStatus;
-  unreadLabel: (count: number) => string;
-}) {
-  const unreadTotal = items.reduce((sum, c) => sum + c.unreadCount, 0);
-  const shown = closed ? items.filter((c) => c.unreadCount > 0 || selectedIds.has(c._id)) : items;
-
-  return (
-    <section className="pt-3">
-      <div className="group flex items-center gap-1 px-1">
-        <button
-          type="button"
-          aria-expanded={!closed}
-          onClick={onToggle}
-          className="flex h-7 min-w-0 flex-1 items-center gap-1.5 rounded-md px-1.5 text-[15px] font-semibold text-app-text-muted hover:bg-app-field/60 hover:text-app-text"
-        >
-          <ChevronDown className={cn("size-4 shrink-0 transition-transform", closed && "-rotate-90")} strokeWidth={2.4} />
-          <span className="truncate">{label}</span>
-          {closed && unreadTotal > 0 && <UnreadBadge count={unreadTotal} className="ml-auto" />}
-        </button>
-        <button
-          type="button"
-          aria-label={addLabel}
-          title={addLabel}
-          onClick={onAdd}
-          className="relative flex size-7 shrink-0 items-center justify-center rounded-md text-app-text-muted hover:bg-app-field hover:text-app-text"
-        >
-          <Plus className="size-4" strokeWidth={2.4} />
-          {addDot && <span className="absolute top-0.5 right-0.5 size-2.5 rounded-full border-2 border-app-sidebar bg-app-accent" />}
-        </button>
-      </div>
-
-      <div className="mt-0.5 flex flex-col gap-px">
-        {items.length === 0 && !closed && <p className="px-3.5 py-1.5 text-sm text-app-text-dim">{emptyText}</p>}
-        {shown.map((c) => {
-          const selected = selectedIds.has(c._id);
-          const s = status(c);
-          const unread = c.unreadCount > 0;
-          return (
-            <button
-              key={c._id}
-              type="button"
-              title={`${c.title} · ${s.text}`}
-              onClick={() => onSelect(c._id)}
-              className={cn(
-                "flex h-[34px] w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-[15px] transition-colors",
-                selected
-                  ? "bg-app-accent font-semibold text-app-accent-fg"
-                  : unread
-                    ? "font-extrabold text-app-text-strong hover:bg-app-field/70"
-                    : "text-app-text-soft hover:bg-app-field/70",
-              )}
-            >
-              <span className="relative flex size-6 shrink-0 items-center justify-center">
-                {c.kind === "group" ? (
-                  <Hash className="size-[18px] opacity-80" strokeWidth={2.2} />
-                ) : (
-                  <>
-                    <Avatar name={c.title} index={c.avatarIndex} src={c.peerAvatarUrl} size={24} />
-                    <span
-                      className={cn(
-                        "absolute -right-[3px] -bottom-[3px] size-3 rounded-full border-2",
-                        selected ? "border-app-accent" : "border-app-sidebar",
-                        s.online ? "bg-app-online" : "bg-app-offline",
-                      )}
-                    />
-                  </>
-                )}
-              </span>
-              <span className="min-w-0 flex-1 truncate">{c.title}</span>
-              {unread && (
-                <span title={unreadLabel(c.unreadCount)} className="flex">
-                  <UnreadBadge
-                    count={c.unreadCount}
-                    className={selected ? "bg-app-accent-fg text-app-accent" : undefined}
-                  />
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-    </section>
   );
 }

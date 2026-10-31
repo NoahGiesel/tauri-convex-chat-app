@@ -13,6 +13,14 @@ export default defineSchema({
     lastSeenAt: v.optional(v.number()),
     /** Breve descrizione scritta dall'utente. */
     bio: v.optional(v.string()),
+    /** Cartelle personali della barra laterale, con le chat che contengono (nell'ordine scelto). */
+    sidebarFolders: v.optional(
+      v.array(v.object({ id: v.string(), name: v.string(), chatIds: v.array(v.id("conversations")) })),
+    ),
+    /** Ordine scelto a mano per le chat fuori dalle cartelle (le chat non elencate restano in cima, per attività). */
+    sidebarChatOrder: v.optional(v.array(v.id("conversations"))),
+    /** Ordine delle sezioni: "groups", "direct" e gli id delle cartelle. */
+    sidebarOrder: v.optional(v.array(v.string())),
     /** Foto profilo caricata (file nello storage di Convex). Senza foto si usa l'iniziale colorata. */
     avatarStorageId: v.optional(v.id("_storage")),
   }).index("by_tokenIdentifier", ["tokenIdentifier"]),
@@ -60,11 +68,23 @@ export default defineSchema({
     .index("by_conversation", ["conversationId"])
     .index("by_conversation_and_profile", ["conversationId", "profileId"]),
 
+  /** Reazioni con emoji ai messaggi: una riga per persona ed emoji. */
+  reactions: defineTable({
+    messageId: v.id("messages"),
+    profileId: v.id("profiles"),
+    emoji: v.string(),
+  })
+    .index("by_message", ["messageId"])
+    .index("by_message_and_profile_and_emoji", ["messageId", "profileId", "emoji"]),
+
   messages: defineTable({
     conversationId: v.id("conversations"),
     /** Assente per le risposte dell'AI locale. */
     authorId: v.optional(v.id("profiles")),
-    kind: v.union(v.literal("text"), v.literal("ai")),
+    /** Quando l'autore ha modificato il testo; assente se il messaggio è originale. */
+    editedAt: v.optional(v.number()),
+    kind: v.union(v.literal("text"), v.literal("ai"), v.literal("gif")),
+    /** Testo del messaggio; per `kind: "gif"` è l'indirizzo della GIF (solo GIPHY). */
     body: v.string(),
     /** Per `kind: "ai"`: chi ha lanciato `/ask`. */
     requestedBy: v.optional(v.id("profiles")),

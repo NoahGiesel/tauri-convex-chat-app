@@ -478,5 +478,45 @@
         "#100501"
       ]
     }
+  },
+  {
+    "version": 1,
+    "id": "atelier",
+    "name": "Atelier",
+    "description": "Crema, nero, blu e oro: ispirato a una stampa astratta.",
+    "mode": "light",
+    "colors": {
+      "bg": "#eeeae0",
+      "sidebar": "#f6f3ec",
+      "panel": "#fcfaf5",
+      "field": "#ebe6da",
+      "raised": "#e2dccd",
+      "border": "#ddd6c5",
+      "borderStrong": "#c8bfa9",
+      "text": "#26262a",
+      "textStrong": "#111113",
+      "textSoft": "#46464c",
+      "textMuted": "#62606a",
+      "textDim": "#6c6a70",
+      "accent": "#4b58b0",
+      "accentFg": "#ffffff",
+      "online": "#2f7d4f",
+      "offline": "#a8a291",
+      "ai": "#1f6f8f",
+      "upload": "#a8650a",
+      "avatars": [
+        "#4b58b0",
+        "#8f6f26",
+        "#33333a"
+      ],
+      "art": [
+        "#24242a",
+        "#4b58b0",
+        "#c5a45a",
+        "#33333a",
+        "#1b1b20",
+        "#0f0f12"
+      ]
+    }
   }
 ]

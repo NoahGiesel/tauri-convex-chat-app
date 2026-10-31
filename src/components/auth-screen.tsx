@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
-import { Eye, EyeOff, MessageSquare } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
+import authArt from "@/assets/auth-art.webp";
 import { LanguageSelect } from "@/components/language-select";
 import { useI18n } from "@/i18n/i18n-provider";
 import { authClient } from "@/lib/auth-client";
@@ -39,29 +40,8 @@ export function AuthScreen() {
 
   return (
     <div className="flex h-full min-h-screen flex-wrap gap-4 overflow-y-auto bg-app-bg p-4 text-app-text">
-      <div
-        className="relative min-h-[480px] flex-[1_1_380px] overflow-hidden rounded-[22px]"
-        style={{ background: "linear-gradient(165deg, var(--app-art-0) 0%, var(--app-art-1) 48%, var(--app-art-2) 100%)" }}
-      >
-        <svg aria-hidden viewBox="0 0 400 600" preserveAspectRatio="none" className="absolute bottom-0 left-0 h-[78%] w-full">
-          <path d="M0 330 C70 300 130 210 215 150 C300 195 340 300 400 340 L400 600 L0 600 Z" fill="var(--app-art-3)" opacity="0.55" />
-          <path d="M0 420 C90 400 150 310 250 270 C320 330 360 400 400 430 L400 600 L0 600 Z" fill="var(--app-art-4)" opacity="0.8" />
-          <path d="M0 520 C100 500 190 470 270 480 C330 490 370 520 400 530 L400 600 L0 600 Z" fill="var(--app-art-5)" />
-        </svg>
-        <div className="absolute top-[26px] left-7 flex items-center gap-2.5 text-white">
-          <MessageSquare className="size-7" strokeWidth={2} />
-          <span className="text-2xl font-extrabold tracking-tight">chat</span>
-        </div>
-        <div className="absolute right-8 bottom-16 left-8 text-[clamp(26px,3vw,34px)] leading-[1.15] font-bold tracking-tight text-white">
-          {t("auth.taglineLine1")}
-          <br />
-          {t("auth.taglineLine2")}
-        </div>
-        <div aria-hidden className="absolute right-0 bottom-[30px] left-0 flex justify-center gap-2">
-          <div className="h-1 w-10 rounded-sm bg-white/35" />
-          <div className="h-1 w-10 rounded-sm bg-white/35" />
-          <div className="h-1 w-10 rounded-sm bg-app-accent-fg" />
-        </div>
+      <div className="relative min-h-[480px] flex-[1_1_380px] overflow-hidden rounded-[22px] bg-[#e9e4d8]">
+        <img src={authArt} alt="" draggable={false} className="absolute inset-0 size-full object-cover select-none" />
       </div>
 
       <div className="relative flex flex-[1.3_1_440px] flex-col justify-center px-[clamp(16px,6vw,72px)] py-8">
