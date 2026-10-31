@@ -318,5 +318,165 @@
         "#07190f"
       ]
     }
+  },
+  {
+    "version": 1,
+    "id": "obsidian",
+    "name": "Obsidian",
+    "description": "Quasi nero con grigi neutri e accento blu elettrico.",
+    "mode": "dark",
+    "colors": {
+      "bg": "#08090a",
+      "sidebar": "#0d0e10",
+      "panel": "#121316",
+      "field": "#191b1f",
+      "raised": "#212328",
+      "border": "#1f2126",
+      "borderStrong": "#32353d",
+      "text": "#e6e8ec",
+      "textStrong": "#ffffff",
+      "textSoft": "#bfc4cc",
+      "textMuted": "#959ba7",
+      "textDim": "#868c98",
+      "accent": "#3b7bff",
+      "accentFg": "#ffffff",
+      "online": "#3fbf8a",
+      "offline": "#575c68",
+      "ai": "#5cc0e0",
+      "upload": "#e0a93e",
+      "avatars": [
+        "#4a6a96",
+        "#9a603a",
+        "#4a7a66"
+      ],
+      "art": [
+        "#101a30",
+        "#1d3a78",
+        "#3a68c4",
+        "#172a52",
+        "#0d1830",
+        "#070d1a"
+      ]
+    }
+  },
+  {
+    "version": 1,
+    "id": "oled",
+    "name": "OLED Black",
+    "description": "Nero puro #000: massimo contrasto e risparmio sugli schermi OLED. Accento verde.",
+    "mode": "dark",
+    "colors": {
+      "bg": "#000000",
+      "sidebar": "#050505",
+      "panel": "#0b0b0b",
+      "field": "#141414",
+      "raised": "#1c1c1c",
+      "border": "#1a1a1a",
+      "borderStrong": "#2e2e2e",
+      "text": "#e8e8e8",
+      "textStrong": "#ffffff",
+      "textSoft": "#bdbdbd",
+      "textMuted": "#949494",
+      "textDim": "#868686",
+      "accent": "#2fa86a",
+      "accentFg": "#ffffff",
+      "online": "#3fd08f",
+      "offline": "#555555",
+      "ai": "#5cc0e0",
+      "upload": "#e0a93e",
+      "avatars": [
+        "#4a6a96",
+        "#9a603a",
+        "#4a7a66"
+      ],
+      "art": [
+        "#0a2418",
+        "#16603c",
+        "#2fa86a",
+        "#0f3d27",
+        "#071a11",
+        "#030c08"
+      ]
+    }
+  },
+  {
+    "version": 1,
+    "id": "void",
+    "name": "Void",
+    "description": "Nero profondo con sfumature viola e accento magenta.",
+    "mode": "dark",
+    "colors": {
+      "bg": "#050407",
+      "sidebar": "#0a080d",
+      "panel": "#100d14",
+      "field": "#17131d",
+      "raised": "#1f1a27",
+      "border": "#1d1824",
+      "borderStrong": "#322a3d",
+      "text": "#ebe8f0",
+      "textStrong": "#ffffff",
+      "textSoft": "#c6c0d0",
+      "textMuted": "#9d95ab",
+      "textDim": "#8d849c",
+      "accent": "#c24ee0",
+      "accentFg": "#ffffff",
+      "online": "#3fbf8a",
+      "offline": "#5b5468",
+      "ai": "#5cc0e0",
+      "upload": "#e0a93e",
+      "avatars": [
+        "#6a5a96",
+        "#9a4a6a",
+        "#4a7a8a"
+      ],
+      "art": [
+        "#2a0d38",
+        "#6a2a86",
+        "#b04ad0",
+        "#45175a",
+        "#1d0a28",
+        "#0d0514"
+      ]
+    }
+  },
+  {
+    "version": 1,
+    "id": "ember",
+    "name": "Ember",
+    "description": "Nero carbone con accento arancio brace.",
+    "mode": "dark",
+    "colors": {
+      "bg": "#070605",
+      "sidebar": "#0c0a09",
+      "panel": "#12100e",
+      "field": "#1a1714",
+      "raised": "#231f1b",
+      "border": "#211d19",
+      "borderStrong": "#363029",
+      "text": "#ece8e2",
+      "textStrong": "#ffffff",
+      "textSoft": "#c8c1b8",
+      "textMuted": "#9f978c",
+      "textDim": "#8f877b",
+      "accent": "#e8631f",
+      "accentFg": "#ffffff",
+      "online": "#3fbf8a",
+      "offline": "#5e574d",
+      "ai": "#5cc0e0",
+      "upload": "#e0a93e",
+      "avatars": [
+        "#5b6f8a",
+        "#9a5f3f",
+        "#5a7d65"
+      ],
+      "art": [
+        "#3a1706",
+        "#8a3a10",
+        "#e8631f",
+        "#5a2509",
+        "#240e03",
+        "#100501"
+      ]
+    }
   }
 ]

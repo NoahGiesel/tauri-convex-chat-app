@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
 import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
-import { fail, getProfile, requireMember, requireProfile } from "./model";
+import { avatarUrl, fail, getProfile, requireMember, requireProfile } from "./model";
 
 const MAX_BODY = 4000;
 const MAX_MEMBERS = 50;
@@ -27,14 +27,14 @@ export const list = query({
       .order("desc")
       .paginate(args.paginationOpts);
 
-    const authors = new Map<Id<"profiles">, { name: string; avatarIndex: number } | null>();
+    const authors = new Map<Id<"profiles">, { name: string; avatarIndex: number; avatarUrl: string | null } | null>();
     const page = [];
     for (const message of result.page) {
       let author = null;
       if (message.authorId) {
         if (!authors.has(message.authorId)) {
           const p = await ctx.db.get("profiles", message.authorId);
-          authors.set(message.authorId, p ? { name: p.name, avatarIndex: p.avatarIndex } : null);
+          authors.set(message.authorId, p ? { name: p.name, avatarIndex: p.avatarIndex, avatarUrl: await avatarUrl(ctx, p) } : null);
         }
         author = authors.get(message.authorId) ?? null;
       }
@@ -46,6 +46,7 @@ export const list = query({
         authorId: message.authorId ?? null,
         authorName: author?.name ?? (message.kind === "ai" ? "AI" : "Utente rimosso"),
         authorAvatarIndex: author?.avatarIndex ?? 0,
+        authorAvatarUrl: author?.avatarUrl ?? null,
         mine: message.authorId === me._id,
       });
     }

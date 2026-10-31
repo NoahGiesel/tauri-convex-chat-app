@@ -5,8 +5,10 @@ import { AuthScreen } from "@/components/auth-screen";
 import { ChatApp } from "@/components/chat-app";
 import { SettingsPage, type SettingsSection } from "@/components/settings-page";
 import { UpdateBanner } from "@/components/update-banner";
+import { PopoutChat } from "@/components/popout-chat";
 import { SidebarProvider } from "@/hooks/use-sidebar";
 import { useI18n } from "@/i18n/i18n-provider";
+import { popoutChatId } from "@/lib/popout";
 
 function Splash({ children }: { children: string }) {
   return (
@@ -27,6 +29,10 @@ function Session() {
   }, [me, ensureProfile]);
 
   if (!me) return <Splash>{t("common.loadingProfile")}</Splash>;
+
+  // Finestra staccata: mostra solo la chat richiesta.
+  const popoutId = popoutChatId();
+  if (popoutId) return <PopoutChat conversationId={popoutId} />;
 
   return (
     <SidebarProvider>

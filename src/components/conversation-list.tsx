@@ -1,20 +1,23 @@
 import { useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import {
+  ChevronDown,
+  Hash,
   PanelLeftClose,
   PanelLeftOpen,
   PanelRightClose,
   PanelRightOpen,
+  Plus,
   Search,
   Settings,
   UserPlus,
   UsersRound,
 } from "lucide-react";
 import type { Id } from "../../convex/_generated/dataModel";
-import { Avatar, GroupAvatar } from "@/components/avatar";
+import { Avatar } from "@/components/avatar";
 import type { ConversationItem } from "@/components/chat-app";
 import { SIDEBAR_MAX, SIDEBAR_MIN, SIDEBAR_RAIL, useSidebar } from "@/hooks/use-sidebar";
 import { useI18n } from "@/i18n/i18n-provider";
-import { usePresence } from "@/lib/presence";
+import { usePresence, type PresenceStatus } from "@/lib/presence";
 import { cn } from "@/lib/utils";
 
 /**
@@ -31,7 +34,7 @@ export function ConversationList({
   onOpenGroup,
   onOpenSettings,
 }: {
-  me: { name: string; avatarIndex: number } | null | undefined;
+  me: { name: string; avatarIndex: number; avatarUrl: string | null } | null | undefined;
   conversations: ConversationItem[] | null | undefined;
   selectedIds: Set<Id<"conversations">>;
   pendingRequests: number;
@@ -52,6 +55,22 @@ export function ConversationList({
     if (!conversations) return [];
     return q ? conversations.filter((c) => c.title.toLocaleLowerCase().includes(q)) : conversations;
   }, [conversations, query]);
+
+  const [closed, setClosed] = useState<Record<SectionId, boolean>>(readClosedSections);
+  const toggleSection = (id: SectionId) =>
+    setClosed((prev) => {
+      const next = { ...prev, [id]: !prev[id] };
+      try {
+        localStorage.setItem(SECTIONS_KEY, JSON.stringify(next));
+      } catch {
+        // storage non disponibile
+      }
+      return next;
+    });
+
+  const groups = visible.filter((c) => c.kind === "group");
+  const directs = visible.filter((c) => c.kind === "direct");
+  const searching = query.trim() !== "";
 
   const onRight = side === "right";
   const CollapseIcon = onRight ? PanelRightClose : PanelLeftClose;
@@ -134,7 +153,7 @@ export function ConversationList({
         </button>
 
         <div className="relative size-11">
-          <Avatar name={me?.name ?? ""} index={0} size={44} accent />
+          <Avatar name={me?.name ?? ""} index={0} src={me?.avatarUrl} size={44} accent />
           <span className="absolute -right-[3px] -bottom-[3px] size-3.5 rounded-full border-[3px] border-app-sidebar bg-app-online" />
         </div>
         <div className="h-px w-8 bg-app-border" />
@@ -151,10 +170,14 @@ export function ConversationList({
                 onClick={() => onSelect(c._id)}
                 className={cn("relative shrink-0 rounded-[14px] p-0.5", selected ? "ring-2 ring-app-accent" : "hover:bg-app-field")}
               >
-                {c.kind === "group" ? <GroupAvatar size={40} /> : <Avatar name={c.title} index={c.avatarIndex} size={40} />}
-                {c.unread && (
-                  <span className="absolute -top-0.5 -right-0.5 size-3 rounded-full border-2 border-app-sidebar bg-app-accent" />
+                {c.kind === "group" ? (
+                  <span className="flex size-10 items-center justify-center rounded-xl bg-app-raised text-app-text-soft">
+                    <Hash className="size-5" strokeWidth={2.2} />
+                  </span>
+                ) : (
+                  <Avatar name={c.title} index={c.avatarIndex} src={c.peerAvatarUrl} size={40} />
                 )}
+                {c.unreadCount > 0 && <UnreadBadge count={c.unreadCount} className="absolute -top-1 -right-1 border-2 border-app-sidebar" />}
               </button>
             );
           })}
@@ -201,7 +224,7 @@ export function ConversationList({
 
       <div className="flex items-center gap-2 p-4">
         <div className="relative size-[46px] shrink-0">
-          <Avatar name={me?.name ?? ""} index={0} size={46} accent />
+          <Avatar name={me?.name ?? ""} index={0} src={me?.avatarUrl} size={46} accent />
           <span className="absolute -right-[3px] -bottom-[3px] size-3.5 rounded-full border-[3px] border-app-sidebar bg-app-online" />
         </div>
         <div className="mr-1 ml-1 min-w-0 flex-1">
@@ -246,73 +269,183 @@ export function ConversationList({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
-        <div className="flex items-center gap-0.5 px-2 pt-2 pb-1.5 text-xs font-extrabold tracking-[0.08em] text-app-text-dim">
-          <span className="flex-1 uppercase">{t("chat.title")}</span>
-          <button
-            type="button"
-            aria-label={t("side.addFriend")}
-            onClick={onOpenInvite}
-            className="relative flex size-8 items-center justify-center rounded-lg text-app-accent-text hover:bg-app-field"
-          >
-            <UserPlus className="size-[18px]" strokeWidth={2} />
-            {pendingRequests > 0 && (
-              <span className="absolute top-0.5 right-0.5 size-2.5 rounded-full border-2 border-app-sidebar bg-app-accent" />
-            )}
-          </button>
-          <button
-            type="button"
-            aria-label={t("side.createGroup")}
-            onClick={onOpenGroup}
-            className="flex size-8 items-center justify-center rounded-lg text-app-accent-text hover:bg-app-field"
-          >
-            <UsersRound className="size-[18px]" strokeWidth={2} />
-          </button>
-        </div>
-
-        {conversations && conversations.length === 0 && (
-          <p className="px-2 py-3 text-sm text-app-text-muted">{t("chat.empty")}</p>
-        )}
         {conversations && conversations.length > 0 && visible.length === 0 && (
           <p className="px-2 py-3 text-sm text-app-text-muted">{t("side.noResults")}</p>
         )}
 
-        {visible.map((c) => {
+        {conversations && (
+          <>
+            {(groups.length > 0 || !searching) && (
+              <Section
+                label={t("side.groups")}
+                addLabel={t("side.createGroup")}
+                onAdd={onOpenGroup}
+                items={groups}
+                emptyText={t("side.noGroups")}
+                closed={closed.groups && !searching}
+                onToggle={() => toggleSection("groups")}
+                selectedIds={selectedIds}
+                onSelect={onSelect}
+                status={(c) => presence.group(c.memberCount, c.othersLastSeenAt)}
+                unreadLabel={(count) => t("side.unread", { count })}
+              />
+            )}
+            {(directs.length > 0 || !searching) && (
+              <Section
+                label={t("side.direct")}
+                addLabel={t("side.addFriend")}
+                onAdd={onOpenInvite}
+                addDot={pendingRequests > 0}
+                items={directs}
+                emptyText={t("side.noDirect")}
+                closed={closed.direct && !searching}
+                onToggle={() => toggleSection("direct")}
+                selectedIds={selectedIds}
+                onSelect={onSelect}
+                status={(c) => presence.person(c.peerLastSeenAt)}
+                unreadLabel={(count) => t("side.unread", { count })}
+              />
+            )}
+          </>
+        )}
+      </div>
+    </aside>
+  );
+}
+
+type SectionId = "groups" | "direct";
+const SECTIONS_KEY = "chat:sections";
+
+function readClosedSections(): Record<SectionId, boolean> {
+  try {
+    const raw = JSON.parse(localStorage.getItem(SECTIONS_KEY) ?? "{}") as Partial<Record<SectionId, boolean>>;
+    return { groups: raw.groups === true, direct: raw.direct === true };
+  } catch {
+    return { groups: false, direct: false };
+  }
+}
+
+/** Pillola col numero di messaggi non letti. */
+function UnreadBadge({ count, className }: { count: number; className?: string }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-app-accent px-1.5 text-xs leading-none font-extrabold text-app-accent-fg",
+        className,
+      )}
+    >
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
+
+/** Sezione richiudibile della lista (Gruppi / Messaggi diretti). Da chiusa mostra solo le chat con novità. */
+function Section({
+  label,
+  addLabel,
+  onAdd,
+  addDot,
+  items,
+  emptyText,
+  closed,
+  onToggle,
+  selectedIds,
+  onSelect,
+  status,
+  unreadLabel,
+}: {
+  label: string;
+  addLabel: string;
+  onAdd: () => void;
+  addDot?: boolean;
+  items: ConversationItem[];
+  /** Mostrato quando la sezione è vuota (ad esempio per chi è appena arrivato). */
+  emptyText: string;
+  closed: boolean;
+  onToggle: () => void;
+  selectedIds: Set<Id<"conversations">>;
+  onSelect: (id: Id<"conversations">) => void;
+  status: (c: ConversationItem) => PresenceStatus;
+  unreadLabel: (count: number) => string;
+}) {
+  const unreadTotal = items.reduce((sum, c) => sum + c.unreadCount, 0);
+  const shown = closed ? items.filter((c) => c.unreadCount > 0 || selectedIds.has(c._id)) : items;
+
+  return (
+    <section className="pt-3">
+      <div className="group flex items-center gap-1 px-1">
+        <button
+          type="button"
+          aria-expanded={!closed}
+          onClick={onToggle}
+          className="flex h-7 min-w-0 flex-1 items-center gap-1.5 rounded-md px-1.5 text-[15px] font-semibold text-app-text-muted hover:bg-app-field/60 hover:text-app-text"
+        >
+          <ChevronDown className={cn("size-4 shrink-0 transition-transform", closed && "-rotate-90")} strokeWidth={2.4} />
+          <span className="truncate">{label}</span>
+          {closed && unreadTotal > 0 && <UnreadBadge count={unreadTotal} className="ml-auto" />}
+        </button>
+        <button
+          type="button"
+          aria-label={addLabel}
+          title={addLabel}
+          onClick={onAdd}
+          className="relative flex size-7 shrink-0 items-center justify-center rounded-md text-app-text-muted hover:bg-app-field hover:text-app-text"
+        >
+          <Plus className="size-4" strokeWidth={2.4} />
+          {addDot && <span className="absolute top-0.5 right-0.5 size-2.5 rounded-full border-2 border-app-sidebar bg-app-accent" />}
+        </button>
+      </div>
+
+      <div className="mt-0.5 flex flex-col gap-px">
+        {items.length === 0 && !closed && <p className="px-3.5 py-1.5 text-sm text-app-text-dim">{emptyText}</p>}
+        {shown.map((c) => {
           const selected = selectedIds.has(c._id);
-          const status = c.kind === "group" ? presence.group(c.memberCount, c.othersLastSeenAt) : presence.person(c.peerLastSeenAt);
+          const s = status(c);
+          const unread = c.unreadCount > 0;
           return (
             <button
               key={c._id}
               type="button"
+              title={`${c.title} · ${s.text}`}
               onClick={() => onSelect(c._id)}
               className={cn(
-                "flex w-full items-center gap-3 rounded-xl p-2 text-left transition-colors",
-                selected ? "bg-app-accent-soft" : "hover:bg-app-field/60",
+                "flex h-[34px] w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-[15px] transition-colors",
+                selected
+                  ? "bg-app-accent font-semibold text-app-accent-fg"
+                  : unread
+                    ? "font-extrabold text-app-text-strong hover:bg-app-field/70"
+                    : "text-app-text-soft hover:bg-app-field/70",
               )}
             >
-              <span className="relative shrink-0">
-                {c.kind === "group" ? <GroupAvatar /> : <Avatar name={c.title} index={c.avatarIndex} />}
-                {status.online && (
-                  <span className="absolute -right-[3px] -bottom-[3px] size-3.5 rounded-full border-[3px] border-app-sidebar bg-app-online" />
+              <span className="relative flex size-6 shrink-0 items-center justify-center">
+                {c.kind === "group" ? (
+                  <Hash className="size-[18px] opacity-80" strokeWidth={2.2} />
+                ) : (
+                  <>
+                    <Avatar name={c.title} index={c.avatarIndex} src={c.peerAvatarUrl} size={24} />
+                    <span
+                      className={cn(
+                        "absolute -right-[3px] -bottom-[3px] size-3 rounded-full border-2",
+                        selected ? "border-app-accent" : "border-app-sidebar",
+                        s.online ? "bg-app-online" : "bg-app-offline",
+                      )}
+                    />
+                  </>
                 )}
               </span>
-              <span className="min-w-0 flex-1">
-                <span
-                  className={cn(
-                    "block truncate text-[15px] font-bold",
-                    selected || c.unread ? "text-app-text-strong" : "text-app-text",
-                  )}
-                >
-                  {c.title}
+              <span className="min-w-0 flex-1 truncate">{c.title}</span>
+              {unread && (
+                <span title={unreadLabel(c.unreadCount)} className="flex">
+                  <UnreadBadge
+                    count={c.unreadCount}
+                    className={selected ? "bg-app-accent-fg text-app-accent" : undefined}
+                  />
                 </span>
-                <span className={cn("block truncate text-[13px]", status.online ? "font-semibold text-app-online" : "text-app-text-muted")}>
-                  {status.text}
-                </span>
-              </span>
-              {c.unread && <span className="size-2.5 shrink-0 rounded-full bg-app-accent" />}
+              )}
             </button>
           );
         })}
       </div>
-    </aside>
+    </section>
   );
 }

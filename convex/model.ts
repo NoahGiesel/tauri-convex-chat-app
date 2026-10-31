@@ -11,6 +11,10 @@ export type ErrorCode =
   | "not_member"
   | "invalid_invite"
   | "own_invite"
+  | "invalid_name"
+  | "bio_too_long"
+  | "invalid_image"
+  | "user_not_found"
   | "request_not_found"
   | "friendship_not_found"
   | "not_friends"
@@ -39,12 +43,19 @@ export async function requireProfile(ctx: QueryCtx): Promise<Doc<"profiles">> {
 }
 
 /** I soli campi di un profilo che gli altri utenti possono vedere (mai l'email). */
-export const publicProfile = (p: Doc<"profiles">) => ({
+export const publicProfile = async (ctx: QueryCtx, p: Doc<"profiles">) => ({
   _id: p._id,
   name: p.name,
   avatarIndex: p.avatarIndex,
+  avatarUrl: await avatarUrl(ctx, p),
+  bio: p.bio ?? null,
   lastSeenAt: p.lastSeenAt,
 });
+
+/** Indirizzo della foto profilo, o null se l'utente non ne ha caricata una. */
+export async function avatarUrl(ctx: QueryCtx, p: Doc<"profiles">): Promise<string | null> {
+  return p.avatarStorageId ? await ctx.storage.getUrl(p.avatarStorageId) : null;
+}
 
 /** Chiave stabile per una coppia di profili, indipendente dall'ordine. */
 export const pairKey = (a: Id<"profiles">, b: Id<"profiles">): string => (a < b ? `${a}_${b}` : `${b}_${a}`);

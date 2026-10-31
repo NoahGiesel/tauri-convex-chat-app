@@ -1,6 +1,7 @@
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Avatar } from "@/components/avatar";
+import { ProfileEditor } from "@/components/profile-editor";
 import { SettingsLanguage } from "@/components/settings-language";
 import { useI18n } from "@/i18n/i18n-provider";
 import { authClient } from "@/lib/auth-client";
@@ -19,7 +20,7 @@ export function SettingsAccount() {
       </div>
 
       <section className="flex items-center gap-4 rounded-[18px] border border-app-border bg-app-panel p-6">
-        <Avatar name={me?.name ?? ""} index={0} size={52} accent />
+        <Avatar name={me?.name ?? ""} index={0} src={me?.avatarUrl} size={52} accent />
         <div className="min-w-0 flex-1">
           <div className="truncate text-lg font-extrabold text-app-text-strong">{me?.name ?? "…"}</div>
           <div className="truncate text-sm text-app-text-muted">{me?.email}</div>
@@ -32,6 +33,8 @@ export function SettingsAccount() {
           {t("common.signOut")}
         </button>
       </section>
+
+      <ProfileEditor />
 
       <SettingsLanguage />
     </div>

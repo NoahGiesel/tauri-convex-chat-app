@@ -78,7 +78,7 @@ export function GroupModal({
                 checked ? "border-app-accent-soft-border bg-app-accent-soft" : "border-app-border bg-app-bg",
               )}
             >
-              <Avatar name={f.profile.name} index={f.profile.avatarIndex} size={38} />
+              <Avatar name={f.profile.name} index={f.profile.avatarIndex} src={f.profile.avatarUrl} size={38} />
               <span
                 className={cn("flex-1 truncate text-[15px] font-bold", checked ? "text-app-text-strong" : "text-app-text")}
               >

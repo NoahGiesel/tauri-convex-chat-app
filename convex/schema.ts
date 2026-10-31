@@ -11,6 +11,10 @@ export default defineSchema({
     /** Indice nella palette avatar del tema (art. `avatars` in presets.json). */
     avatarIndex: v.number(),
     lastSeenAt: v.optional(v.number()),
+    /** Breve descrizione scritta dall'utente. */
+    bio: v.optional(v.string()),
+    /** Foto profilo caricata (file nello storage di Convex). Senza foto si usa l'iniziale colorata. */
+    avatarStorageId: v.optional(v.id("_storage")),
   }).index("by_tokenIdentifier", ["tokenIdentifier"]),
 
   /** Link d'invito: monouso, con scadenza. Chi lo usa genera una richiesta d'amicizia. */

@@ -7,6 +7,7 @@ export function Avatar({
   index,
   size = 40,
   accent = false,
+  src,
   className,
 }: {
   name: string;
@@ -14,8 +15,23 @@ export function Avatar({
   size?: number;
   /** Usa il colore d'accento (per "me"). */
   accent?: boolean;
+  /** Foto profilo; senza, si mostra l'iniziale colorata. */
+  src?: string | null;
   className?: string;
 }) {
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt=""
+        aria-hidden
+        draggable={false}
+        className={cn("shrink-0 object-cover select-none", className)}
+        style={{ width: size, height: size, borderRadius: Math.round(size * 0.3) }}
+      />
+    );
+  }
+
   return (
     <span
       aria-hidden

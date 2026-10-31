@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
-import { ensureDirectConversation, fail, getProfile, publicProfile, requireProfile } from "./model";
+import { ensureDirectConversation, fail, getProfile, pairKey, publicProfile, requireProfile } from "./model";
 
 const MAX = 200;
 
@@ -33,7 +33,7 @@ export const list = query({
 
     const resolve = async (f: Doc<"friendships">, otherId: Id<"profiles">) => {
       const other = await ctx.db.get("profiles", otherId);
-      return other ? { friendshipId: f._id, profile: publicProfile(other) } : null;
+      return other ? { friendshipId: f._id, profile: await publicProfile(ctx, other) } : null;
     };
 
     const nonNull = <T,>(x: T | null): x is T => x !== null;
@@ -76,5 +76,35 @@ export const remove = mutation({
       throw fail("friendship_not_found");
     }
     await ctx.db.delete("friendships", friendship._id);
+  },
+});
+
+/** Chiede l'amicizia a una persona trovata nella ricerca. Se mi aveva già scritto lei, la richiesta viene accettata. */
+export const request = mutation({
+  args: { profileId: v.id("profiles") },
+  handler: async (ctx, args) => {
+    const me = await requireProfile(ctx);
+    if (args.profileId === me._id) throw fail("own_invite");
+    const other = await ctx.db.get("profiles", args.profileId);
+    if (!other) throw fail("user_not_found");
+
+    const key = pairKey(me._id, other._id);
+    const existing = await ctx.db
+      .query("friendships")
+      .withIndex("by_pairKey", (q) => q.eq("pairKey", key))
+      .unique();
+
+    if (existing?.status === "accepted") return "already_friends" as const;
+    if (existing) {
+      if (existing.addressee === me._id) {
+        await ctx.db.patch("friendships", existing._id, { status: "accepted" });
+        await ensureDirectConversation(ctx, me._id, other._id);
+        return "accepted" as const;
+      }
+      return "already_requested" as const;
+    }
+
+    await ctx.db.insert("friendships", { requester: me._id, addressee: other._id, status: "pending", pairKey: key });
+    return "requested" as const;
   },
 });

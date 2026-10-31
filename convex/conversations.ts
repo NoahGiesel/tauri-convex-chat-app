@@ -1,9 +1,10 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { areFriends, ensureDirectConversation, fail, getProfile, requireMember, requireProfile } from "./model";
+import { areFriends, avatarUrl, ensureDirectConversation, fail, getProfile, requireMember, requireProfile } from "./model";
 
 const MAX_CONVERSATIONS = 100;
 const MAX_GROUP_MEMBERS = 20;
+const MAX_UNREAD_COUNT = 100;
 
 /** Lista unica delle chat (dirette e gruppi), dalla più recente. */
 export const list = query({
@@ -27,6 +28,8 @@ export const list = query({
         let avatarIndex = 0;
         let peerId = null;
         let peerLastSeenAt: number | undefined;
+        let peerAvatarUrl: string | null = null;
+        let peerBio: string | null = null;
         let memberCount = 0;
         let othersLastSeenAt: number[] = [];
 
@@ -42,6 +45,8 @@ export const list = query({
             avatarIndex = peer.avatarIndex;
             peerId = peer._id;
             peerLastSeenAt = peer.lastSeenAt;
+            peerAvatarUrl = await avatarUrl(ctx, peer);
+            peerBio = peer.bio ?? null;
           }
         } else {
           const rows = await ctx.db
@@ -55,11 +60,15 @@ export const list = query({
           othersLastSeenAt = others.flatMap((p) => (p?.lastSeenAt !== undefined ? [p.lastSeenAt] : []));
         }
 
-        const last = await ctx.db
+        // Messaggi degli altri arrivati dopo l'ultima lettura (conteggio limitato: l'interfaccia mostra "99+").
+        const sinceRead = await ctx.db
           .query("messages")
-          .withIndex("by_conversation", (q) => q.eq("conversationId", conversation._id))
+          .withIndex("by_conversation", (q) =>
+            q.eq("conversationId", conversation._id).gt("_creationTime", membership.lastReadAt),
+          )
           .order("desc")
-          .first();
+          .take(MAX_UNREAD_COUNT);
+        const unreadCount = sinceRead.filter((m) => m.authorId !== me._id).length;
 
         return {
           _id: conversation._id,
@@ -68,10 +77,12 @@ export const list = query({
           avatarIndex,
           peerId,
           peerLastSeenAt,
+          peerAvatarUrl,
+          peerBio,
           lastMessageAt: conversation.lastMessageAt,
           memberCount,
           othersLastSeenAt,
-          unread: last !== null && last.authorId !== me._id && conversation.lastMessageAt > membership.lastReadAt,
+          unreadCount,
         };
       }),
     );
@@ -156,9 +167,18 @@ export const get = query({
       .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
       .take(MAX_GROUP_MEMBERS);
     const profiles = await Promise.all(memberRows.map((m) => ctx.db.get("profiles", m.profileId)));
-    const members = profiles
-      .filter((p) => p !== null)
-      .map((p) => ({ _id: p._id, name: p.name, avatarIndex: p.avatarIndex, lastSeenAt: p.lastSeenAt }));
+    const members = await Promise.all(
+      profiles
+        .filter((p) => p !== null)
+        .map(async (p) => ({
+          _id: p._id,
+          name: p.name,
+          avatarIndex: p.avatarIndex,
+          avatarUrl: await avatarUrl(ctx, p),
+          bio: p.bio ?? null,
+          lastSeenAt: p.lastSeenAt,
+        })),
+    );
 
     const peer = members.find((m) => m._id !== me._id);
     return {

@@ -137,7 +137,13 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
             const s = isGroup
               ? presence.group(info.members.length, others.flatMap((m) => (m.lastSeenAt !== undefined ? [m.lastSeenAt] : [])))
               : presence.person(others[0]?.lastSeenAt);
-            return <p className={cn("text-[13px]", s.online ? "font-semibold text-app-online" : "text-app-text-muted")}>{s.text}</p>;
+            const bio = isGroup ? null : others[0]?.bio;
+            return (
+              <>
+                <p className={cn("text-[13px]", s.online ? "font-semibold text-app-online" : "text-app-text-muted")}>{s.text}</p>
+                {bio && <p className="truncate text-[13px] text-app-text-muted">{bio}</p>}
+              </>
+            );
           })()}
         </div>
       </header>
@@ -185,7 +191,7 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
                       <Sparkles className="size-5" strokeWidth={1.8} />
                     </span>
                   ) : (
-                    <Avatar name={m.authorName} index={m.authorAvatarIndex} size={38} accent={m.mine} />
+                    <Avatar name={m.authorName} index={m.authorAvatarIndex} src={m.authorAvatarUrl} size={38} accent={m.mine} />
                   ))}
               </div>
               <div className="min-w-0 flex-1">
