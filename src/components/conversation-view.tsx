@@ -1,16 +1,19 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { useMutation, usePaginatedQuery, useQuery } from "convex/react";
-import { Send, Smile, Sparkles } from "lucide-react";
+import { useAction, useMutation, usePaginatedQuery, useQuery } from "convex/react";
+import { Paperclip, Send, Smile, Sparkles } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { Avatar } from "@/components/avatar";
 import { EmojiGifPicker, type PickerTab } from "@/components/emoji-gif-picker";
 import { MessageEditor } from "@/components/message-editor";
+import { MessageBody, isEditableStyle } from "@/components/message-body";
 import { ReactionChips, ReactionToolbar } from "@/components/message-reactions";
 import { useI18n } from "@/i18n/i18n-provider";
 import { usePresence } from "@/lib/presence";
 import { errorKey } from "@/lib/errors";
 import { fetchGifs } from "@/lib/giphy";
+import { uploadFile } from "@/lib/media-upload";
+import { classifyMedia, MEDIA_ACCEPT } from "../../convex/mediaRules";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 30;
@@ -18,7 +21,19 @@ const NEAR_BOTTOM_PX = 80;
 const SAME_BLOCK_MS = 5 * 60 * 1000;
 
 /** Comandi che si scrivono nel campo del messaggio, come `/giphy gatti`. */
-const COMMANDS = [{ name: "giphy", description: "composer.cmdGiphy" }] as const;
+const COMMANDS = [
+  { name: "me", description: "composer.cmdMe" },
+  { name: "code", description: "composer.cmdCode" },
+  { name: "pre", description: "composer.cmdPre" },
+  { name: "giphy", description: "composer.cmdGiphy" },
+  { name: "spoiler", description: "composer.cmdSpoiler" },
+  { name: "quote", description: "composer.cmdQuote" },
+  { name: "random", description: "composer.cmdRandom" },
+  { name: "flip", description: "composer.cmdFlip" },
+] as const;
+
+type TextStyle = "me" | "code" | "pre" | "spoiler" | "quote";
+const TEXT_STYLES: readonly string[] = ["me", "code", "pre", "spoiler", "quote"];
 
 export function ConversationView({ conversationId }: { conversationId: Id<"conversations"> }) {
   const { t, locale, language } = useI18n();
@@ -31,6 +46,13 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
   );
   const sendMessage = useMutation(api.messages.send);
   const sendGif = useMutation(api.messages.sendGif);
+  const createUpload = useAction(api.media.createUpload);
+  const sendMedia = useMutation(api.messages.sendMedia);
+  const [upload, setUpload] = useState<{ name: string; percent: number } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const rollDice = useMutation(api.messages.roll);
+  const flipCoin = useMutation(api.messages.flip);
+  const [picked, setPicked] = useState({ prefix: "", index: 0 });
   const editMessage = useMutation(api.messages.edit);
   const removeMessage = useMutation(api.messages.remove);
   const markRead = useMutation(api.conversations.markRead);
@@ -184,6 +206,7 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
   // Scrivendo "/" compaiono i comandi disponibili; Invio o Tab completano il nome.
   const slash = /^\/(\w*)$/.exec(draft);
   const suggestions = slash ? COMMANDS.filter((c) => c.name.startsWith(slash[1].toLowerCase())) : [];
+  const selected = slash && picked.prefix === slash[1] ? Math.min(picked.index, suggestions.length - 1) : 0;
 
   /** `/giphy testo`: cerca su GIPHY e invia una GIF a caso tra i risultati. */
   async function runGiphy(search: string) {
@@ -208,33 +231,137 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
     }
   }
 
-  async function submit() {
-    const body = draft.trim();
-    if (!body || searchingGif) return;
-    const command = /^\/giphy(?:\s+([\s\S]*))?$/i.exec(body);
-    if (command) {
-      void runGiphy((command[1] ?? "").trim());
+  /** Allegato: foto o video, caricato direttamente su Cloudflare R2. */
+  async function sendFile(file: File) {
+    if (upload) return;
+    const check = classifyMedia(file.type, file.size);
+    if (!check.ok) {
+      setError(t(`error.${check.reason}`));
       return;
     }
+    setError(null);
+    stickToBottom.current = true;
+    setUpload({ name: file.name, percent: 0 });
+    try {
+      const { key, uploadUrl } = await createUpload({ conversationId, mime: file.type, size: file.size });
+      await uploadFile(uploadUrl, file, (percent) => setUpload({ name: file.name, percent }));
+      await sendMedia({ conversationId, key, mime: file.type, size: file.size, name: file.name });
+    } catch (e) {
+      setError(e instanceof Error && e.message === "upload_failed" ? t("composer.uploadFailed") : t(errorKey(e)));
+    } finally {
+      setUpload(null);
+    }
+  }
+
+  /** Invia con `action`; se fallisce rimette il testo nel campo. */
+  async function post(action: () => Promise<unknown>, restore: string) {
     setDraft("");
     setError(null);
     stickToBottom.current = true;
     try {
-      await sendMessage({ conversationId, body });
+      await action();
     } catch (e) {
-      setDraft(body); // non perdere quello che avevi scritto
+      setDraft(restore); // non perdere quello che avevi scritto
       setError(t(errorKey(e)));
     }
   }
 
-  function onKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
-    if (suggestions.length > 0 && (e.key === "Enter" || e.key === "Tab") && !e.shiftKey && !e.nativeEvent.isComposing) {
-      e.preventDefault();
-      setDraft(`/${suggestions[0].name} `);
+  async function submit() {
+    const body = draft.trim();
+    if (!body || searchingGif) return;
+
+    const parsed = /^\/(\w+)(?:\s+([\s\S]*))?$/.exec(body);
+    const name = parsed?.[1].toLowerCase();
+    const arg = (parsed?.[2] ?? "").trim();
+
+    if (name === "giphy") {
+      void runGiphy(arg);
       return;
     }
+    if (name && TEXT_STYLES.includes(name)) {
+      if (!arg) {
+        setError(t("composer.commandNeedsText"));
+        return;
+      }
+      await post(() => sendMessage({ conversationId, body: arg, style: name as TextStyle }), body);
+      return;
+    }
+    if (name === "random") {
+      let min = 1;
+      let max = 100;
+      if (arg) {
+        const range = /^(-?\d+)\s*-\s*(-?\d+)$/.exec(arg);
+        if (range) {
+          min = Number(range[1]);
+          max = Number(range[2]);
+        } else if (/^\d+$/.test(arg)) {
+          max = Number(arg);
+        } else {
+          setError(t("composer.randomUsage"));
+          return;
+        }
+      }
+      await post(() => rollDice({ conversationId, min, max }), body);
+      return;
+    }
+    if (name === "flip") {
+      await post(() => flipCoin({ conversationId }), body);
+      return;
+    }
+    // Comando sconosciuto: si invia come testo normale.
+    await post(() => sendMessage({ conversationId, body }), body);
+  }
+
+  // Freccia su/giù con il campo vuoto: scorre gli ultimi 10 messaggi di testo che hai inviato.
+  const historyPos = useRef(-1); // -1 = non stai scorrendo
+  const draftBeforeHistory = useRef("");
+  const sentHistory = useMemo(
+    () =>
+      results
+        .filter((m) => m.mine && m.kind === "text" && m.style !== "random" && m.style !== "flip")
+        .slice(0, 10)
+        .map((m) => (m.style ? `/${m.style} ${m.body}` : m.body)),
+    [results],
+  );
+
+  function browseHistory(e: KeyboardEvent<HTMLTextAreaElement>): boolean {
+    const up = e.key === "ArrowUp";
+    if ((!up && e.key !== "ArrowDown") || e.shiftKey || e.altKey || e.metaKey || e.ctrlKey || e.nativeEvent.isComposing) return false;
+    const browsing = historyPos.current >= 0;
+    if (!browsing && (!up || draft !== "")) return false; // si parte solo dal campo vuoto
+    if (browsing && draft.includes("\n")) return false; // testo su più righe: la freccia muove il cursore
+    if (up) {
+      if (sentHistory.length === 0) return false;
+      if (!browsing) draftBeforeHistory.current = draft;
+      historyPos.current = Math.min(historyPos.current + 1, sentHistory.length - 1);
+      setDraft(sentHistory[historyPos.current]);
+    } else {
+      historyPos.current -= 1;
+      setDraft(historyPos.current >= 0 ? sentHistory[historyPos.current] : draftBeforeHistory.current);
+    }
+    e.preventDefault();
+    return true;
+  }
+
+  function onKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+    if (suggestions.length > 0 && !e.nativeEvent.isComposing) {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        const step = e.key === "ArrowDown" ? 1 : -1;
+        const index = (selected + step + suggestions.length) % suggestions.length;
+        setPicked({ prefix: slash?.[1] ?? "", index });
+        return;
+      }
+      if ((e.key === "Enter" || e.key === "Tab") && !e.shiftKey) {
+        e.preventDefault();
+        setDraft(`/${suggestions[selected].name} `);
+        return;
+      }
+    }
+    if (suggestions.length === 0 && browseHistory(e)) return;
     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
+      historyPos.current = -1;
       void submit();
     }
   }
@@ -321,7 +448,7 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
                 <ReactionToolbar
                   messageId={m._id}
                   onError={setError}
-                  onEdit={m.mine && m.kind === "text" ? () => setEditingId(m._id) : undefined}
+                  onEdit={m.mine && m.kind === "text" && isEditableStyle(m.style) ? () => setEditingId(m._id) : undefined}
                   onDelete={m.mine && m.kind !== "ai" ? () => void deleteMessage(m._id) : undefined}
                 />
               )}
@@ -338,6 +465,29 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
                   <div className="mt-2 max-w-[560px] rounded-[14px] border border-app-ai-border bg-app-ai-bg px-3.5 py-3 text-[15px] leading-relaxed break-words whitespace-pre-wrap text-app-text">
                     {m.body}
                   </div>
+                ) : m.kind === "media" && m.media ? (
+                  m.media.type === "image" ? (
+                    <img
+                      src={m.media.url}
+                      alt={m.body}
+                      loading="lazy"
+                      onLoad={() => {
+                        if (stickToBottom.current && scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+                      }}
+                      className="mt-1 max-h-80 max-w-[min(420px,100%)] rounded-xl"
+                    />
+                  ) : (
+                    <video
+                      src={m.media.url}
+                      controls
+                      playsInline
+                      preload="metadata"
+                      onLoadedMetadata={() => {
+                        if (stickToBottom.current && scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+                      }}
+                      className="mt-1 max-h-80 max-w-[min(420px,100%)] rounded-xl bg-black"
+                    />
+                  )
                 ) : m.kind === "gif" ? (
                   <img
                     src={m.body}
@@ -357,10 +507,13 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
                       onCancel={() => setEditingId(null)}
                     />
                   ) : (
-                    <p className={cn("text-[15px] leading-normal break-words whitespace-pre-wrap text-app-text", row.head && "mt-[3px]")}>
-                      {m.body}
-                      {m.editedAt && <span className="ml-1.5 text-xs text-app-text-dim">{t("chat.edited")}</span>}
-                    </p>
+                    <MessageBody
+                      style={m.style}
+                      body={m.body}
+                      authorName={m.authorName}
+                      edited={!!m.editedAt}
+                      className={row.head ? "mt-[3px]" : undefined}
+                    />
                   )
                 )}
                 <ReactionChips messageId={m._id} reactions={m.reactions} onError={setError} />
@@ -371,6 +524,11 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
       </div>
 
       <footer className="shrink-0 px-6 pb-5">
+        {upload && (
+          <p className="pb-2 text-sm text-app-text-muted">
+            {t("composer.uploading")} {upload.name} · {upload.percent}%
+          </p>
+        )}
         {searchingGif && <p className="pb-2 text-sm text-app-text-muted">{t("composer.giphySearching")}</p>}
         {error && (
           <p role="alert" className="pb-2 text-sm text-destructive">
@@ -385,14 +543,14 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
                   key={c.name}
                   type="button"
                   role="option"
-                  aria-selected={i === 0}
+                  aria-selected={i === selected}
                   onMouseDown={(e) => {
                     e.preventDefault(); // il campo di testo non perde il focus
                     setDraft(`/${c.name} `);
                   }}
                   className={cn(
                     "flex w-full items-baseline gap-1.5 rounded-lg px-3 py-2 text-left text-sm",
-                    i === 0 ? "bg-app-accent-soft" : "hover:bg-app-field",
+                    i === selected ? "bg-app-accent-soft" : "hover:bg-app-field",
                   )}
                 >
                   <strong className="text-app-text-strong">/{c.name}:</strong>
@@ -414,13 +572,44 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
           <textarea
             ref={composerRef}
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={(e) => {
+              historyPos.current = -1;
+              setDraft(e.target.value);
+            }}
             onKeyDown={onKeyDown}
+            onPaste={(e) => {
+              const file = e.clipboardData.files[0];
+              if (file) {
+                e.preventDefault();
+                void sendFile(file);
+              }
+            }}
             rows={1}
             aria-label={t("chat.composer")}
             placeholder={t("chat.composer")}
             className="field-sizing-content max-h-40 min-h-11 flex-1 resize-none bg-transparent px-3 py-[11px] text-[15px] text-app-text outline-none placeholder:text-app-text-dim"
           />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={MEDIA_ACCEPT}
+            hidden
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = ""; // permette di scegliere di nuovo lo stesso file
+              if (file) void sendFile(file);
+            }}
+          />
+          <button
+            type="button"
+            aria-label={t("composer.attach")}
+            title={t("composer.attach")}
+            disabled={!!upload}
+            onClick={() => fileInputRef.current?.click()}
+            className="flex size-11 shrink-0 items-center justify-center rounded-xl text-app-text-muted hover:bg-app-field hover:text-app-text disabled:opacity-40"
+          >
+            <Paperclip className="size-5" strokeWidth={1.9} />
+          </button>
           <button
             type="button"
             aria-label={t("composer.emoji")}

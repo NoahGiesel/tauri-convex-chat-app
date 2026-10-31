@@ -83,7 +83,28 @@ export default defineSchema({
     authorId: v.optional(v.id("profiles")),
     /** Quando l'autore ha modificato il testo; assente se il messaggio è originale. */
     editedAt: v.optional(v.number()),
-    kind: v.union(v.literal("text"), v.literal("ai"), v.literal("gif")),
+    kind: v.union(v.literal("text"), v.literal("ai"), v.literal("gif"), v.literal("media")),
+    /** Allegato su Cloudflare R2 (solo per kind "media"; `body` contiene il nome del file). */
+    media: v.optional(
+      v.object({
+        key: v.string(),
+        type: v.union(v.literal("image"), v.literal("video")),
+        mime: v.string(),
+        size: v.number(),
+      }),
+    ),
+    /** Come mostrare un messaggio di testo scritto con un comando (/code, /quote…). Per "random" e "flip" il corpo è il risultato. */
+    style: v.optional(
+      v.union(
+        v.literal("me"),
+        v.literal("code"),
+        v.literal("pre"),
+        v.literal("spoiler"),
+        v.literal("quote"),
+        v.literal("random"),
+        v.literal("flip"),
+      ),
+    ),
     /** Testo del messaggio; per `kind: "gif"` è l'indirizzo della GIF (solo GIPHY). */
     body: v.string(),
     /** Per `kind: "ai"`: chi ha lanciato `/ask`. */

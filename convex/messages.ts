@@ -4,6 +4,9 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { mutation, query, type MutationCtx } from "./_generated/server";
 import { avatarUrl, fail, getProfile, requireMember, requireProfile } from "./model";
 import { MAX_REACTIONS_PER_MESSAGE } from "./reactions";
+import { internal } from "./_generated/api";
+import { classifyMedia } from "./mediaRules";
+import { signedReadUrl } from "./r2";
 
 const MAX_BODY = 4000;
 const MAX_MEMBERS = 50;
@@ -14,11 +17,13 @@ async function postMessage(
   ctx: MutationCtx,
   me: Doc<"profiles">,
   conversationId: Id<"conversations">,
-  kind: "text" | "gif",
+  kind: "text" | "gif" | "media",
   body: string,
+  style?: Doc<"messages">["style"],
+  media?: Doc<"messages">["media"],
 ) {
   const now = Date.now();
-  const messageId = await ctx.db.insert("messages", { conversationId, authorId: me._id, kind, body });
+  const messageId = await ctx.db.insert("messages", { conversationId, authorId: me._id, kind, body, style, media });
   await ctx.db.patch("conversations", conversationId, { lastMessageAt: now });
 
   // Aggiorna l'ordinamento della lista chat di ogni membro; per chi scrive il messaggio è già letto.
@@ -105,6 +110,10 @@ export const list = query({
         mine: message.authorId === me._id,
         reactions: [...grouped.values()],
         editedAt: message.editedAt ?? null,
+        style: message.style ?? null,
+        media: message.media
+          ? { url: await signedReadUrl(message.media.key), type: message.media.type, size: message.media.size }
+          : null,
       });
     }
     return { ...result, page };
@@ -113,7 +122,14 @@ export const list = query({
 
 /** Invia un messaggio di testo. */
 export const send = mutation({
-  args: { conversationId: v.id("conversations"), body: v.string() },
+  args: {
+    conversationId: v.id("conversations"),
+    body: v.string(),
+    /** Formato scelto con un comando: /me, /code, /pre, /spoiler, /quote. */
+    style: v.optional(
+      v.union(v.literal("me"), v.literal("code"), v.literal("pre"), v.literal("spoiler"), v.literal("quote")),
+    ),
+  },
   handler: async (ctx, args) => {
     const me = await requireProfile(ctx);
     await requireMember(ctx, args.conversationId, me._id);
@@ -122,7 +138,7 @@ export const send = mutation({
     if (body.length === 0) throw fail("message_empty");
     if (body.length > MAX_BODY) throw fail("message_too_long");
 
-    return await postMessage(ctx, me, args.conversationId, "text", body);
+    return await postMessage(ctx, me, args.conversationId, "text", body, args.style);
   },
 });
 
@@ -145,7 +161,10 @@ export const edit = mutation({
     const message = await ctx.db.get("messages", args.messageId);
     if (!message) throw fail("message_not_found");
     await requireMember(ctx, message.conversationId, me._id);
-    if (message.kind !== "text" || message.authorId !== me._id) throw fail("cannot_edit");
+    // I risultati di /random e /flip non si modificano.
+    if (message.kind !== "text" || message.authorId !== me._id || message.style === "random" || message.style === "flip") {
+      throw fail("cannot_edit");
+    }
 
     const body = args.body.trim();
     if (body.length === 0) throw fail("message_empty");
@@ -175,5 +194,56 @@ export const remove = mutation({
       for (const r of batch) await ctx.db.delete("reactions", r._id);
     }
     await ctx.db.delete("messages", message._id);
+    if (message.media) await ctx.scheduler.runAfter(0, internal.media.deleteObject, { key: message.media.key });
+  },
+});
+
+const MAX_RANDOM = 1_000_000_000;
+
+/** `/random`: estrae un numero a caso tra min e max (il sorteggio lo fa il server, così nessuno può truccarlo). */
+export const roll = mutation({
+  args: { conversationId: v.id("conversations"), min: v.number(), max: v.number() },
+  handler: async (ctx, args) => {
+    const me = await requireProfile(ctx);
+    await requireMember(ctx, args.conversationId, me._id);
+    const { min, max } = args;
+    if (!Number.isInteger(min) || !Number.isInteger(max) || min > max || Math.abs(min) > MAX_RANDOM || Math.abs(max) > MAX_RANDOM) {
+      throw fail("invalid_range");
+    }
+    const n = min + Math.floor(Math.random() * (max - min + 1));
+    return await postMessage(ctx, me, args.conversationId, "text", `${n}|${min}|${max}`, "random");
+  },
+});
+
+/** `/flip`: lancia una moneta. */
+export const flip = mutation({
+  args: { conversationId: v.id("conversations") },
+  handler: async (ctx, args) => {
+    const me = await requireProfile(ctx);
+    await requireMember(ctx, args.conversationId, me._id);
+    const side = Math.random() < 0.5 ? "heads" : "tails";
+    return await postMessage(ctx, me, args.conversationId, "text", side, "flip");
+  },
+});
+
+/** Registra un allegato già caricato su R2 (vedi `media.createUpload`). */
+export const sendMedia = mutation({
+  args: { conversationId: v.id("conversations"), key: v.string(), mime: v.string(), size: v.number(), name: v.string() },
+  handler: async (ctx, args) => {
+    const me = await requireProfile(ctx);
+    await requireMember(ctx, args.conversationId, me._id);
+    const check = classifyMedia(args.mime, args.size);
+    if (!check.ok) throw fail(check.reason);
+    // La chiave deve essere quella generata per questa chat, con l'estensione giusta.
+    if (!args.key.startsWith(`${args.conversationId}/`) || !/^[A-Za-z0-9]+\/[0-9a-f-]{36}\.[a-z0-9]{2,4}$/.test(args.key) || !args.key.endsWith(`.${check.ext}`)) {
+      throw fail("invalid_media");
+    }
+    const name = args.name.trim().slice(0, 120) || "file";
+    return await postMessage(ctx, me, args.conversationId, "media", name, undefined, {
+      key: args.key,
+      type: check.type,
+      mime: args.mime,
+      size: args.size,
+    });
   },
 });
