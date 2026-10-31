@@ -247,7 +247,12 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
       await uploadFile(uploadUrl, file, (percent) => setUpload({ name: file.name, percent }));
       await sendMedia({ conversationId, key, mime: file.type, size: file.size, name: file.name });
     } catch (e) {
-      setError(e instanceof Error && e.message === "upload_failed" ? t("composer.uploadFailed") : t(errorKey(e)));
+      if (e instanceof Error && e.message.startsWith("upload_failed")) {
+        console.error(e.message, "origin:", window.location.origin);
+        setError(`${t("composer.uploadFailed")} (${e.message.slice("upload_failed:".length)}; ${window.location.origin})`);
+      } else {
+        setError(t(errorKey(e)));
+      }
     } finally {
       setUpload(null);
     }

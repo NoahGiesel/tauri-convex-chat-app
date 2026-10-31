@@ -3,11 +3,13 @@ import { fail } from "./model";
 
 /** Client S3 per Cloudflare R2. Le chiavi stanno nelle variabili d'ambiente di Convex, mai nel client. */
 export function r2() {
-  const { R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET } = process.env;
+  const { R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET, R2_JURISDICTION } = process.env;
+  // Bucket creati con giurisdizione "eu" (o "fedramp") hanno un indirizzo diverso.
+  const host = R2_JURISDICTION ? `${R2_ACCOUNT_ID}.${R2_JURISDICTION.trim()}.r2.cloudflarestorage.com` : `${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
   if (!R2_ACCOUNT_ID || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY || !R2_BUCKET) throw fail("media_not_configured");
   return {
     client: new AwsClient({ accessKeyId: R2_ACCESS_KEY_ID, secretAccessKey: R2_SECRET_ACCESS_KEY, service: "s3", region: "auto" }),
-    endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${R2_BUCKET}`,
+    endpoint: `https://${host}/${R2_BUCKET}`,
   };
 }
 

@@ -7,8 +7,9 @@ export function uploadFile(url: string, file: File, onProgress: (percent: number
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
     };
-    xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error("upload_failed")));
-    xhr.onerror = () => reject(new Error("upload_failed"));
+    xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`upload_failed:HTTP ${xhr.status} ${xhr.responseText.slice(0, 200)}`)));
+    // Nessuna risposta leggibile: di solito è CORS (origine non permessa) o rete assente.
+    xhr.onerror = () => reject(new Error("upload_failed:network/CORS"));
     xhr.send(file);
   });
 }
