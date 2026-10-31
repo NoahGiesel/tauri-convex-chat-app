@@ -264,4 +264,6 @@ export const de: Messages = {
   "error.media_too_large": "Datei zu groß (Bilder bis 20 MB, Videos bis 100 MB).",
   "error.media_not_configured": "Der Medienspeicher ist noch nicht eingerichtet.",
   "error.invalid_media": "Ungültiger Anhang.",
+  "common.close": "Schließen",
+  "chat.fullscreen": "Vollbild",
 };

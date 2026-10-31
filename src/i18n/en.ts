@@ -263,6 +263,8 @@ export const en = {
   "error.media_too_large": "File too large (images up to 20 MB, videos up to 100 MB).",
   "error.media_not_configured": "Media storage is not set up yet.",
   "error.invalid_media": "Invalid attachment.",
+  "common.close": "Close",
+  "chat.fullscreen": "Full screen",
 } as const;
 
 export type MessageKey = keyof typeof en;

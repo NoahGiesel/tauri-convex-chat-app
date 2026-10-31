@@ -1,10 +1,11 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useAction, useMutation, usePaginatedQuery, useQuery } from "convex/react";
-import { Paperclip, Send, Smile, Sparkles } from "lucide-react";
+import { Maximize2, Paperclip, Send, Smile, Sparkles } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { Avatar } from "@/components/avatar";
 import { EmojiGifPicker, type PickerTab } from "@/components/emoji-gif-picker";
+import { MediaLightbox, type LightboxItem } from "@/components/media-lightbox";
 import { MessageEditor } from "@/components/message-editor";
 import { MessageBody, isEditableStyle } from "@/components/message-body";
 import { ReactionChips, ReactionToolbar } from "@/components/message-reactions";
@@ -12,6 +13,7 @@ import { useI18n } from "@/i18n/i18n-provider";
 import { usePresence } from "@/lib/presence";
 import { errorKey } from "@/lib/errors";
 import { fetchGifs } from "@/lib/giphy";
+import { compressImage } from "@/lib/image-compress";
 import { uploadFile } from "@/lib/media-upload";
 import { classifyMedia, MEDIA_ACCEPT } from "../../convex/mediaRules";
 import { cn } from "@/lib/utils";
@@ -50,6 +52,7 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
   const sendMedia = useMutation(api.messages.sendMedia);
   const [upload, setUpload] = useState<{ name: string; percent: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [lightbox, setLightbox] = useState<LightboxItem | null>(null);
   const rollDice = useMutation(api.messages.roll);
   const flipCoin = useMutation(api.messages.flip);
   const [picked, setPicked] = useState({ prefix: "", index: 0 });
@@ -232,24 +235,35 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
   }
 
   /** Allegato: foto o video, caricato direttamente su Cloudflare R2. */
-  async function sendFile(file: File) {
+  async function sendFile(original: File) {
     if (upload) return;
+    const first = classifyMedia(original.type, original.size);
+    if (!first.ok) {
+      setError(t(`error.${first.reason}`));
+      return;
+    }
+    setUpload({ name: original.name, percent: 0 });
+    // Le foto vengono ricompresse (qualità 70%) per risparmiare spazio; i video restano com'erano.
+    const file = first.type === "image" ? await compressImage(original) : original;
     const check = classifyMedia(file.type, file.size);
     if (!check.ok) {
+      setUpload(null);
       setError(t(`error.${check.reason}`));
       return;
     }
     setError(null);
     stickToBottom.current = true;
     setUpload({ name: file.name, percent: 0 });
+    let target = "";
     try {
       const { key, uploadUrl } = await createUpload({ conversationId, mime: file.type, size: file.size });
+      target = new URL(uploadUrl).host;
       await uploadFile(uploadUrl, file, (percent) => setUpload({ name: file.name, percent }));
       await sendMedia({ conversationId, key, mime: file.type, size: file.size, name: file.name });
     } catch (e) {
       if (e instanceof Error && e.message.startsWith("upload_failed")) {
         console.error(e.message, "origin:", window.location.origin);
-        setError(`${t("composer.uploadFailed")} (${e.message.slice("upload_failed:".length)}; ${window.location.origin})`);
+        setError(`${t("composer.uploadFailed")} (${e.message.slice("upload_failed:".length)}; ${window.location.origin} → ${target})`);
       } else {
         setError(t(errorKey(e)));
       }
@@ -479,9 +493,11 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
                       onLoad={() => {
                         if (stickToBottom.current && scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
                       }}
-                      className="mt-1 max-h-80 max-w-[min(420px,100%)] rounded-xl"
+                      onClick={() => setLightbox({ url: m.media!.url, type: "image", name: m.body })}
+                      className="mt-1 max-h-80 max-w-[min(420px,100%)] cursor-zoom-in rounded-xl"
                     />
                   ) : (
+                    <div className="group/video relative mt-1 w-fit max-w-[min(420px,100%)]">
                     <video
                       src={m.media.url}
                       controls
@@ -490,8 +506,18 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
                       onLoadedMetadata={() => {
                         if (stickToBottom.current && scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
                       }}
-                      className="mt-1 max-h-80 max-w-[min(420px,100%)] rounded-xl bg-black"
+                      className="max-h-80 max-w-full rounded-xl bg-black"
                     />
+                    <button
+                      type="button"
+                      aria-label={t("chat.fullscreen")}
+                      title={t("chat.fullscreen")}
+                      onClick={() => setLightbox({ url: m.media!.url, type: "video", name: m.body })}
+                      className="absolute top-2 right-2 flex size-8 items-center justify-center rounded-lg bg-black/60 text-white opacity-0 transition-opacity group-hover/video:opacity-100 focus-visible:opacity-100"
+                    >
+                      <Maximize2 className="size-4" />
+                    </button>
+                    </div>
                   )
                 ) : m.kind === "gif" ? (
                   <img
@@ -527,6 +553,8 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
           );
         })}
       </div>
+
+      {lightbox && <MediaLightbox item={lightbox} onClose={() => setLightbox(null)} />}
 
       <footer className="shrink-0 px-6 pb-5">
         {upload && (

@@ -264,4 +264,6 @@ export const es: Messages = {
   "error.media_too_large": "Archivo demasiado grande (imágenes hasta 20 MB, vídeos hasta 100 MB).",
   "error.media_not_configured": "El almacenamiento de medios aún no está configurado.",
   "error.invalid_media": "Adjunto no válido.",
+  "common.close": "Cerrar",
+  "chat.fullscreen": "Pantalla completa",
 };

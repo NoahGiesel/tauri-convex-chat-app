@@ -264,4 +264,6 @@ export const ro: Messages = {
   "error.media_too_large": "Fișier prea mare (imagini până la 20 MB, videoclipuri până la 100 MB).",
   "error.media_not_configured": "Stocarea media nu este configurată încă.",
   "error.invalid_media": "Atașament invalid.",
+  "common.close": "Închide",
+  "chat.fullscreen": "Ecran complet",
 };
