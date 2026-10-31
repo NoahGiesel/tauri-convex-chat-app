@@ -1,19 +1,22 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useAction, useMutation, usePaginatedQuery, useQuery } from "convex/react";
-import { Maximize2, Paperclip, Send, Smile, Sparkles } from "lucide-react";
+import { ArrowDown, Film, Images, Maximize2, Paperclip, Send, Smile, Sparkles, X } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { Avatar } from "@/components/avatar";
 import { EmojiGifPicker, type PickerTab } from "@/components/emoji-gif-picker";
 import { MediaLightbox, type LightboxItem } from "@/components/media-lightbox";
+import { LinkPreview } from "@/components/link-preview";
+import { MediaLibrary } from "@/components/media-library";
 import { MessageEditor } from "@/components/message-editor";
-import { MessageBody, isEditableStyle } from "@/components/message-body";
+import { Linkified, MessageBody, isEditableStyle } from "@/components/message-body";
 import { ReactionChips, ReactionToolbar } from "@/components/message-reactions";
 import { useI18n } from "@/i18n/i18n-provider";
 import { usePresence } from "@/lib/presence";
 import { errorKey } from "@/lib/errors";
 import { fetchGifs } from "@/lib/giphy";
 import { compressImage } from "@/lib/image-compress";
+import { splitLinks } from "@/lib/links";
 import { uploadFile } from "@/lib/media-upload";
 import { classifyMedia, MEDIA_ACCEPT } from "../../convex/mediaRules";
 import { cn } from "@/lib/utils";
@@ -35,6 +38,12 @@ const COMMANDS = [
 ] as const;
 
 type TextStyle = "me" | "code" | "pre" | "spoiler" | "quote";
+const MAX_ATTACHMENTS = 10;
+interface PendingFile {
+  id: string;
+  file: File;
+  previewUrl: string | null;
+}
 const TEXT_STYLES: readonly string[] = ["me", "code", "pre", "spoiler", "quote"];
 
 export function ConversationView({ conversationId }: { conversationId: Id<"conversations"> }) {
@@ -49,10 +58,15 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
   const sendMessage = useMutation(api.messages.send);
   const sendGif = useMutation(api.messages.sendGif);
   const createUpload = useAction(api.media.createUpload);
-  const sendMedia = useMutation(api.messages.sendMedia);
+  const sendAttachments = useMutation(api.messages.sendAttachments);
   const [upload, setUpload] = useState<{ name: string; percent: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [lightbox, setLightbox] = useState<LightboxItem | null>(null);
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  // Un'anteprima che compare cambia l'altezza: se eri in fondo alla chat, resti in fondo.
+  const keepBottom = useCallback(() => {
+    if (stickToBottom.current && scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  }, []);
   const rollDice = useMutation(api.messages.roll);
   const flipCoin = useMutation(api.messages.flip);
   const [picked, setPicked] = useState({ prefix: "", index: 0 });
@@ -184,10 +198,70 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
     }
   }, [messages.length, newestId]);
 
-  function onScroll() {
+  // Aprendo una chat si parte dall'ultimo messaggio e ci si resta mentre il contenuto cambia altezza
+  // (immagini, video e anteprime che si caricano dopo): finché non scorri verso l'alto.
+  const contentRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const content = contentRef.current;
+    if (!content) return;
+    const observer = new ResizeObserver(() => {
+      const el = scrollRef.current;
+      if (el && el.clientHeight > 0 && stickToBottom.current) el.scrollTop = el.scrollHeight;
+    });
+    observer.observe(content);
+    return () => observer.disconnect();
+  }, []);
+
+  // Aprendo una chat la lista resta invisibile finché le foto e i video che si vedono in fondo non sono caricati
+  // (al massimo 3 secondi); solo allora scorre all'ultimo messaggio e si mostra, senza salti visibili.
+  const [revealed, setRevealed] = useState(false);
+  const [awayFromBottom, setAwayFromBottom] = useState(false); // scrollato in alto: compare "vai all'ultimo messaggio"
+  useEffect(() => {
+    if (revealed || status === "LoadingFirstPage") return;
     const el = scrollRef.current;
     if (!el) return;
-    stickToBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < NEAR_BOTTOM_PX;
+    let cancelled = false;
+    void (async () => {
+      el.scrollTop = el.scrollHeight;
+      const view = el.getBoundingClientRect();
+      const waiting = [...el.querySelectorAll<HTMLImageElement | HTMLVideoElement>("img, video")].filter((node) => {
+        const loaded = node instanceof HTMLImageElement ? node.complete : node.readyState >= 1;
+        const r = node.getBoundingClientRect();
+        return !loaded && r.bottom > view.top - 200 && r.top < view.bottom + 200;
+      });
+      const loads = waiting.map(
+        (node) =>
+          new Promise<void>((resolve) => {
+            node.addEventListener(node instanceof HTMLImageElement ? "load" : "loadedmetadata", () => resolve(), { once: true });
+            node.addEventListener("error", () => resolve(), { once: true });
+          }),
+      );
+      await Promise.race([Promise.all(loads), new Promise<void>((resolve) => window.setTimeout(resolve, 3000))]);
+      if (cancelled) return;
+      stickToBottom.current = true;
+      el.scrollTop = el.scrollHeight;
+      setRevealed(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [status, revealed]);
+
+  // Un elemento nascosto (display: none) perde la posizione di scorrimento: la ricordiamo mentre l'elenco "Media e link" è aperto.
+  const savedScrollTop = useRef(0);
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (libraryOpen || !el) return;
+    el.scrollTop = stickToBottom.current ? el.scrollHeight : savedScrollTop.current;
+  }, [libraryOpen]);
+
+  function onScroll() {
+    const el = scrollRef.current;
+    if (!el || el.clientHeight === 0) return; // nascosto: nessun dato di scorrimento valido
+    savedScrollTop.current = el.scrollTop;
+    const fromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    stickToBottom.current = fromBottom < NEAR_BOTTOM_PX;
+    setAwayFromBottom(fromBottom > 300);
   }
 
   function loadOlder() {
@@ -235,35 +309,76 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
   }
 
   /** Allegato: foto o video, caricato direttamente su Cloudflare R2. */
-  async function sendFile(original: File) {
-    if (upload) return;
-    const first = classifyMedia(original.type, original.size);
-    if (!first.ok) {
-      setError(t(`error.${first.reason}`));
-      return;
+  // Foto e video scelti o incollati restano nel campo di scrittura finché non premi Invio.
+  const [pending, setPending] = useState<PendingFile[]>([]);
+  const pendingRef = useRef<PendingFile[]>([]);
+  pendingRef.current = pending;
+  useEffect(
+    () => () => {
+      for (const p of pendingRef.current) if (p.previewUrl) URL.revokeObjectURL(p.previewUrl);
+    },
+    [],
+  );
+
+  function stageFiles(files: File[]) {
+    const next: PendingFile[] = [];
+    let problem: string | null = null;
+    for (const file of files) {
+      if (pending.length + next.length >= MAX_ATTACHMENTS) {
+        problem = t("error.too_many_attachments");
+        break;
+      }
+      const check = classifyMedia(file.type, file.size);
+      if (!check.ok) {
+        problem = t(`error.${check.reason}`);
+        continue;
+      }
+      next.push({ id: crypto.randomUUID(), file, previewUrl: check.type === "image" ? URL.createObjectURL(file) : null });
     }
-    setUpload({ name: original.name, percent: 0 });
-    // Le foto vengono ricompresse (qualità 70%) per risparmiare spazio; i video restano com'erano.
-    const file = first.type === "image" ? await compressImage(original) : original;
-    const check = classifyMedia(file.type, file.size);
-    if (!check.ok) {
-      setUpload(null);
-      setError(t(`error.${check.reason}`));
-      return;
-    }
+    setError(problem);
+    if (next.length > 0) setPending((p) => [...p, ...next]);
+    composerRef.current?.focus();
+  }
+
+  function unstage(id: string) {
+    setPending((p) => {
+      const gone = p.find((x) => x.id === id);
+      if (gone?.previewUrl) URL.revokeObjectURL(gone.previewUrl);
+      return p.filter((x) => x.id !== id);
+    });
+  }
+
+  /** Carica gli allegati su R2 (foto ricompresse) e li invia in un solo messaggio con il testo come didascalia. */
+  async function sendWithAttachments(caption: string) {
+    const staged = pending;
     setError(null);
     stickToBottom.current = true;
-    setUpload({ name: file.name, percent: 0 });
     let target = "";
     try {
-      const { key, uploadUrl } = await createUpload({ conversationId, mime: file.type, size: file.size });
-      target = new URL(uploadUrl).host;
-      await uploadFile(uploadUrl, file, (percent) => setUpload({ name: file.name, percent }));
-      await sendMedia({ conversationId, key, mime: file.type, size: file.size, name: file.name });
+      const files: { key: string; mime: string; size: number; name: string }[] = [];
+      for (const [i, p] of staged.entries()) {
+        const label = staged.length > 1 ? `${i + 1}/${staged.length} ${p.file.name}` : p.file.name;
+        setUpload({ name: label, percent: 0 });
+        const first = classifyMedia(p.file.type, p.file.size);
+        // Le foto vengono ricompresse (qualità 70%) per risparmiare spazio; i video restano com'erano.
+        const file = first.ok && first.type === "image" ? await compressImage(p.file) : p.file;
+        const check = classifyMedia(file.type, file.size);
+        if (!check.ok) throw new Error(`media:${check.reason}`);
+        const { key, uploadUrl } = await createUpload({ conversationId, mime: file.type, size: file.size });
+        target = new URL(uploadUrl).host;
+        await uploadFile(uploadUrl, file, (percent) => setUpload({ name: label, percent }));
+        files.push({ key, mime: file.type, size: file.size, name: file.name });
+      }
+      await sendAttachments({ conversationId, body: caption, files });
+      for (const p of staged) if (p.previewUrl) URL.revokeObjectURL(p.previewUrl);
+      setPending([]);
+      setDraft("");
     } catch (e) {
       if (e instanceof Error && e.message.startsWith("upload_failed")) {
         console.error(e.message, "origin:", window.location.origin);
         setError(`${t("composer.uploadFailed")} (${e.message.slice("upload_failed:".length)}; ${window.location.origin} → ${target})`);
+      } else if (e instanceof Error && e.message.startsWith("media:")) {
+        setError(t(e.message === "media:media_too_large" ? "error.media_too_large" : "error.media_type"));
       } else {
         setError(t(errorKey(e)));
       }
@@ -287,7 +402,13 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
 
   async function submit() {
     const body = draft.trim();
-    if (!body || searchingGif) return;
+    if ((!body && pending.length === 0) || searchingGif || upload) return;
+
+    // Con degli allegati nel campo, il testo diventa la didascalia (anche se inizia con "/").
+    if (pending.length > 0) {
+      await sendWithAttachments(body);
+      return;
+    }
 
     const parsed = /^\/(\w+)(?:\s+([\s\S]*))?$/.exec(body);
     const name = parsed?.[1].toLowerCase();
@@ -389,9 +510,9 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
 
   return (
     <>
-      <header className="flex shrink-0 items-center gap-3 border-b border-app-border px-6 py-3">
-        <div className="min-w-0 flex-1">
-          <h2 className="truncate text-[17px] font-extrabold text-app-text-strong">{info?.title ?? "…"}</h2>
+      <header className="flex h-12 shrink-0 items-center gap-3 border-b border-app-border px-5">
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+          <h2 className="max-w-[50%] shrink-0 truncate text-[15px] font-extrabold text-app-text-strong">{info?.title ?? "…"}</h2>
           {info && (() => {
             const others = info.members.filter((m) => m._id !== info.myProfileId);
             const s = isGroup
@@ -400,15 +521,33 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
             const bio = isGroup ? null : others[0]?.bio;
             return (
               <>
-                <p className={cn("text-[13px]", s.online ? "font-semibold text-app-online" : "text-app-text-muted")}>{s.text}</p>
-                {bio && <p className="truncate text-[13px] text-app-text-muted">{bio}</p>}
+                <span className={cn("shrink-0 text-xs", s.online ? "font-semibold text-app-online" : "text-app-text-muted")}>{s.text}</span>
+                {bio && <span className="min-w-0 truncate text-xs text-app-text-dim">· {bio}</span>}
               </>
             );
           })()}
         </div>
+        <button
+          type="button"
+          aria-label={t("library.open")}
+          title={t("library.open")}
+          aria-pressed={libraryOpen}
+          onClick={() => setLibraryOpen((o) => !o)}
+          className={cn(
+            "flex size-8 shrink-0 items-center justify-center rounded-lg text-app-text-muted hover:bg-app-field hover:text-app-text",
+            libraryOpen && "bg-app-field text-app-text",
+          )}
+        >
+          <Images className="size-[18px]" strokeWidth={1.9} />
+        </button>
       </header>
 
-      <div ref={scrollRef} onScroll={onScroll} className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+      {libraryOpen && <MediaLibrary conversationId={conversationId} onOpenMedia={setLightbox} />}
+
+      {/* Messaggi e campo di scrittura restano montati (così non si perde la posizione) ma nascosti mentre si guarda l'elenco. */}
+      <div className={cn("flex min-h-0 flex-1 flex-col", libraryOpen && "hidden")}>
+      <div ref={scrollRef} onScroll={onScroll} className={cn("min-h-0 flex-1 overflow-y-auto px-6 py-5", !revealed && "opacity-0")}>
+        <div ref={contentRef}>
         {status === "CanLoadMore" && (
           <div className="flex justify-center pb-3">
             <button
@@ -482,43 +621,50 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
                 )}
                 {isAi ? (
                   <div className="mt-2 max-w-[560px] rounded-[14px] border border-app-ai-border bg-app-ai-bg px-3.5 py-3 text-[15px] leading-relaxed break-words whitespace-pre-wrap text-app-text">
-                    {m.body}
+                    <Linkified text={m.body} />
                   </div>
-                ) : m.kind === "media" && m.media ? (
-                  m.media.type === "image" ? (
-                    <img
-                      src={m.media.url}
-                      alt={m.body}
-                      loading="lazy"
-                      onLoad={() => {
-                        if (stickToBottom.current && scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-                      }}
-                      onClick={() => setLightbox({ url: m.media!.url, type: "image", name: m.body })}
-                      className="mt-1 max-h-80 max-w-[min(420px,100%)] cursor-zoom-in rounded-xl"
-                    />
-                  ) : (
-                    <div className="group/video relative mt-1 w-fit max-w-[min(420px,100%)]">
-                    <video
-                      src={m.media.url}
-                      controls
-                      playsInline
-                      preload="metadata"
-                      onLoadedMetadata={() => {
-                        if (stickToBottom.current && scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-                      }}
-                      className="max-h-80 max-w-full rounded-xl bg-black"
-                    />
-                    <button
-                      type="button"
-                      aria-label={t("chat.fullscreen")}
-                      title={t("chat.fullscreen")}
-                      onClick={() => setLightbox({ url: m.media!.url, type: "video", name: m.body })}
-                      className="absolute top-2 right-2 flex size-8 items-center justify-center rounded-lg bg-black/60 text-white opacity-0 transition-opacity group-hover/video:opacity-100 focus-visible:opacity-100"
-                    >
-                      <Maximize2 className="size-4" />
-                    </button>
+                ) : m.kind === "media" && m.attachments.length > 0 ? (
+                  <div>
+                    {m.body && (
+                      <MessageBody style={null} body={m.body} authorName={m.authorName} edited={false} className={row.head ? "mt-[3px]" : undefined} />
+                    )}
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      {m.attachments.map((a, i) => {
+                        const single = m.attachments.length === 1;
+                        return a.type === "image" ? (
+                          <img
+                            key={i}
+                            src={a.url}
+                            alt={a.name}
+                            loading="lazy"
+                            onLoad={keepBottom}
+                            onClick={() => setLightbox({ url: a.url, type: "image", name: a.name })}
+                            className={cn("cursor-zoom-in rounded-xl", single ? "max-h-80 max-w-[min(420px,100%)]" : "max-h-52 max-w-[min(260px,100%)]")}
+                          />
+                        ) : (
+                          <div key={i} className={cn("group/video relative w-fit", single ? "max-w-[min(420px,100%)]" : "max-w-[min(260px,100%)]")}>
+                            <video
+                              src={a.url}
+                              controls
+                              playsInline
+                              preload="metadata"
+                              onLoadedMetadata={keepBottom}
+                              className={cn("rounded-xl bg-black", single ? "max-h-80" : "max-h-52", "max-w-full")}
+                            />
+                            <button
+                              type="button"
+                              aria-label={t("chat.fullscreen")}
+                              title={t("chat.fullscreen")}
+                              onClick={() => setLightbox({ url: a.url, type: "video", name: a.name })}
+                              className="absolute top-2 right-2 flex size-8 items-center justify-center rounded-lg bg-black/60 text-white opacity-0 transition-opacity group-hover/video:opacity-100 focus-visible:opacity-100"
+                            >
+                              <Maximize2 className="size-4" />
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
-                  )
+                  </div>
                 ) : m.kind === "gif" ? (
                   <img
                     src={m.body}
@@ -547,11 +693,35 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
                     />
                   )
                 )}
+                {editingId !== m._id &&
+                  (m.kind === "media" || (m.kind === "text" && (m.style === null || m.style === "me" || m.style === "quote"))) &&
+                  [...new Set(splitLinks(m.body).flatMap((p) => (p.type === "link" ? [p.href] : [])))]
+                    .slice(0, 2)
+                    .map((href) => <LinkPreview key={href} url={href} onLayout={keepBottom} />)}
                 <ReactionChips messageId={m._id} reactions={m.reactions} onError={setError} />
               </div>
             </div>
           );
         })}
+        </div>
+        <div className="pointer-events-none sticky bottom-0 h-0">
+          <button
+            type="button"
+            aria-label={t("chat.jumpToLatest")}
+            title={t("chat.jumpToLatest")}
+            tabIndex={awayFromBottom ? 0 : -1}
+            onClick={() => {
+              stickToBottom.current = true;
+              scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+            }}
+            className={cn(
+              "pointer-events-auto absolute right-1 bottom-3 flex size-10 items-center justify-center rounded-full border border-app-border-strong bg-app-panel text-app-text shadow-lg transition-all hover:bg-app-field",
+              awayFromBottom ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0",
+            )}
+          >
+            <ArrowDown className="size-5" strokeWidth={2} />
+          </button>
+        </div>
       </div>
 
       {lightbox && <MediaLightbox item={lightbox} onClose={() => setLightbox(null)} />}
@@ -567,6 +737,31 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
           <p role="alert" className="pb-2 text-sm text-destructive">
             {error}
           </p>
+        )}
+        {pending.length > 0 && (
+          <div className="mb-2 flex flex-wrap gap-2.5 rounded-xl border border-app-border bg-app-bg p-2.5">
+            {pending.map((p) => (
+              <div key={p.id} className="relative">
+                {p.previewUrl ? (
+                  <img src={p.previewUrl} alt={p.file.name} className="size-20 rounded-xl object-cover" />
+                ) : (
+                  <div className="flex size-20 flex-col items-center justify-center gap-1 rounded-xl bg-app-field px-1.5 text-app-text-muted">
+                    <Film className="size-6" />
+                    <span className="w-full truncate text-center text-[10px]">{p.file.name}</span>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  aria-label={t("composer.removeAttachment")}
+                  title={t("composer.removeAttachment")}
+                  onClick={() => unstage(p.id)}
+                  className="absolute -top-1.5 -right-1.5 flex size-6 items-center justify-center rounded-full border border-app-border-strong bg-app-panel text-app-text shadow hover:bg-app-field"
+                >
+                  <X className="size-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
         )}
         <div className="relative flex items-end gap-1 rounded-2xl border border-app-border bg-app-bg p-1.5">
           {suggestions.length > 0 && (
@@ -611,10 +806,10 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
             }}
             onKeyDown={onKeyDown}
             onPaste={(e) => {
-              const file = e.clipboardData.files[0];
-              if (file) {
+              const files = Array.from(e.clipboardData.files);
+              if (files.length > 0) {
                 e.preventDefault();
-                void sendFile(file);
+                stageFiles(files);
               }
             }}
             rows={1}
@@ -626,11 +821,12 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
             ref={fileInputRef}
             type="file"
             accept={MEDIA_ACCEPT}
+            multiple
             hidden
             onChange={(e) => {
-              const file = e.target.files?.[0];
+              const files = Array.from(e.target.files ?? []);
               e.target.value = ""; // permette di scegliere di nuovo lo stesso file
-              if (file) void sendFile(file);
+              if (files.length > 0) stageFiles(files);
             }}
           />
           <button
@@ -673,13 +869,14 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
             type="button"
             aria-label={t("chat.send")}
             onClick={() => void submit()}
-            disabled={draft.trim().length === 0}
+            disabled={draft.trim().length === 0 && pending.length === 0}
             className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-app-accent text-app-accent-fg transition-opacity hover:opacity-90 disabled:opacity-40"
           >
             <Send className="size-5" strokeWidth={2} />
           </button>
         </div>
       </footer>
+      </div>
     </>
   );
 }

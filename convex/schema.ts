@@ -85,6 +85,18 @@ export default defineSchema({
     editedAt: v.optional(v.number()),
     kind: v.union(v.literal("text"), v.literal("ai"), v.literal("gif"), v.literal("media")),
     /** Allegato su Cloudflare R2 (solo per kind "media"; `body` contiene il nome del file). */
+    /** Allegati del messaggio (foto e video su R2); `body` è la didascalia. Sostituisce `media`, che resta per i messaggi vecchi. */
+    attachments: v.optional(
+      v.array(
+        v.object({
+          key: v.string(),
+          type: v.union(v.literal("image"), v.literal("video")),
+          mime: v.string(),
+          size: v.number(),
+          name: v.string(),
+        }),
+      ),
+    ),
     media: v.optional(
       v.object({
         key: v.string(),
@@ -109,5 +121,22 @@ export default defineSchema({
     body: v.string(),
     /** Per `kind: "ai"`: chi ha lanciato `/ask`. */
     requestedBy: v.optional(v.id("profiles")),
-  }).index("by_conversation", ["conversationId"]),
+    /** true se il messaggio contiene link (alimenta l'elenco "Media e link"); assente altrimenti. */
+    hasLink: v.optional(v.boolean()),
+  })
+    .index("by_conversation", ["conversationId"])
+    .index("by_conversation_and_kind", ["conversationId", "kind"])
+    .index("by_conversation_and_hasLink", ["conversationId", "hasLink"]),
+
+  /** Anteprime dei link (Open Graph), condivise da tutti: si scaricano una volta sola per indirizzo. */
+  linkPreviews: defineTable({
+    url: v.string(),
+    /** false se la pagina non si è potuta leggere (si riprova dopo un'ora). */
+    ok: v.boolean(),
+    title: v.optional(v.string()),
+    description: v.optional(v.string()),
+    image: v.optional(v.string()),
+    siteName: v.optional(v.string()),
+    fetchedAt: v.number(),
+  }).index("by_url", ["url"]),
 });

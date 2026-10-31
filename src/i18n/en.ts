@@ -265,6 +265,16 @@ export const en = {
   "error.invalid_media": "Invalid attachment.",
   "common.close": "Close",
   "chat.fullscreen": "Full screen",
+  "composer.pendingHint": "Press Enter to send",
+  "composer.removeAttachment": "Remove attachment",
+  "error.too_many_attachments": "Too many attachments (up to 10 per message).",
+  "library.open": "Media",
+  "library.media": "Media",
+  "library.links": "Links",
+  "library.noMedia": "No photos or videos yet.",
+  "library.noLinks": "No links yet.",
+  "library.loadMore": "Load more",
+  "chat.jumpToLatest": "Jump to latest message",
 } as const;
 
 export type MessageKey = keyof typeof en;

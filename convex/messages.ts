@@ -5,6 +5,7 @@ import { mutation, query, type MutationCtx } from "./_generated/server";
 import { avatarUrl, fail, getProfile, requireMember, requireProfile } from "./model";
 import { MAX_REACTIONS_PER_MESSAGE } from "./reactions";
 import { internal } from "./_generated/api";
+import { carriesLinks } from "./linkRules";
 import { classifyMedia } from "./mediaRules";
 import { signedReadUrl } from "./r2";
 
@@ -21,9 +22,10 @@ async function postMessage(
   body: string,
   style?: Doc<"messages">["style"],
   media?: Doc<"messages">["media"],
+  attachments?: Doc<"messages">["attachments"],
 ) {
   const now = Date.now();
-  const messageId = await ctx.db.insert("messages", { conversationId, authorId: me._id, kind, body, style, media });
+  const messageId = await ctx.db.insert("messages", { conversationId, authorId: me._id, kind, body, style, media, attachments, hasLink: carriesLinks(kind, style, body) ? true : undefined });
   await ctx.db.patch("conversations", conversationId, { lastMessageAt: now });
 
   // Aggiorna l'ordinamento della lista chat di ogni membro; per chi scrive il messaggio è già letto.
@@ -102,7 +104,8 @@ export const list = query({
         _id: message._id,
         _creationTime: message._creationTime,
         kind: message.kind,
-        body: message.body,
+        // Nei messaggi con allegati `body` è la didascalia; in quelli vecchi (un solo file) era il nome del file.
+        body: message.kind === "media" && !message.attachments ? "" : message.body,
         authorId: message.authorId ?? null,
         authorName: author?.name ?? (message.kind === "ai" ? "AI" : "Utente rimosso"),
         authorAvatarIndex: author?.avatarIndex ?? 0,
@@ -111,9 +114,14 @@ export const list = query({
         reactions: [...grouped.values()],
         editedAt: message.editedAt ?? null,
         style: message.style ?? null,
-        media: message.media
-          ? { url: await signedReadUrl(message.media.key), type: message.media.type, size: message.media.size }
-          : null,
+        attachments: await Promise.all(
+          (message.attachments ?? (message.media ? [{ ...message.media, name: message.body }] : [])).map(async (a) => ({
+            url: await signedReadUrl(a.key),
+            type: a.type,
+            size: a.size,
+            name: a.name,
+          })),
+        ),
       });
     }
     return { ...result, page };
@@ -171,7 +179,11 @@ export const edit = mutation({
     if (body.length > MAX_BODY) throw fail("message_too_long");
     if (body === message.body) return;
 
-    await ctx.db.patch("messages", message._id, { body, editedAt: Date.now() });
+    await ctx.db.patch("messages", message._id, {
+      body,
+      editedAt: Date.now(),
+      hasLink: carriesLinks(message.kind, message.style, body) ? true : undefined,
+    });
   },
 });
 
@@ -194,7 +206,9 @@ export const remove = mutation({
       for (const r of batch) await ctx.db.delete("reactions", r._id);
     }
     await ctx.db.delete("messages", message._id);
-    if (message.media) await ctx.scheduler.runAfter(0, internal.media.deleteObject, { key: message.media.key });
+    for (const a of message.attachments ?? (message.media ? [message.media] : [])) {
+      await ctx.scheduler.runAfter(0, internal.media.deleteObject, { key: a.key });
+    }
   },
 });
 
@@ -226,24 +240,33 @@ export const flip = mutation({
   },
 });
 
-/** Registra un allegato già caricato su R2 (vedi `media.createUpload`). */
-export const sendMedia = mutation({
-  args: { conversationId: v.id("conversations"), key: v.string(), mime: v.string(), size: v.number(), name: v.string() },
+const MAX_ATTACHMENTS = 10;
+
+/** Registra un messaggio con fino a 10 allegati già caricati su R2 (vedi `media.createUpload`) e una didascalia facoltativa. */
+export const sendAttachments = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    body: v.string(),
+    files: v.array(v.object({ key: v.string(), mime: v.string(), size: v.number(), name: v.string() })),
+  },
   handler: async (ctx, args) => {
     const me = await requireProfile(ctx);
     await requireMember(ctx, args.conversationId, me._id);
-    const check = classifyMedia(args.mime, args.size);
-    if (!check.ok) throw fail(check.reason);
-    // La chiave deve essere quella generata per questa chat, con l'estensione giusta.
-    if (!args.key.startsWith(`${args.conversationId}/`) || !/^[A-Za-z0-9]+\/[0-9a-f-]{36}\.[a-z0-9]{2,4}$/.test(args.key) || !args.key.endsWith(`.${check.ext}`)) {
-      throw fail("invalid_media");
-    }
-    const name = args.name.trim().slice(0, 120) || "file";
-    return await postMessage(ctx, me, args.conversationId, "media", name, undefined, {
-      key: args.key,
-      type: check.type,
-      mime: args.mime,
-      size: args.size,
+    if (args.files.length === 0) throw fail("invalid_media");
+    if (args.files.length > MAX_ATTACHMENTS) throw fail("too_many_attachments");
+    const caption = args.body.trim();
+    if (caption.length > MAX_BODY) throw fail("message_too_long");
+
+    const attachments = args.files.map((f) => {
+      const check = classifyMedia(f.mime, f.size);
+      if (!check.ok) throw fail(check.reason);
+      // La chiave deve essere quella generata per questa chat, con l'estensione giusta.
+      if (!f.key.startsWith(`${args.conversationId}/`) || !/^[A-Za-z0-9]+\/[0-9a-f-]{36}\.[a-z0-9]{2,4}$/.test(f.key) || !f.key.endsWith(`.${check.ext}`)) {
+        throw fail("invalid_media");
+      }
+      return { key: f.key, type: check.type, mime: f.mime, size: f.size, name: f.name.trim().slice(0, 120) || "file" };
     });
+    if (new Set(attachments.map((a) => a.key)).size !== attachments.length) throw fail("invalid_media");
+    return await postMessage(ctx, me, args.conversationId, "media", caption, undefined, undefined, attachments);
   },
 });

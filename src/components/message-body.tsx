@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useI18n } from "@/i18n/i18n-provider";
+import { openLink, splitLinks } from "@/lib/links";
 import { cn } from "@/lib/utils";
 
 export type MessageStyle = "me" | "code" | "pre" | "spoiler" | "quote" | "random" | "flip" | null | undefined;
@@ -15,6 +16,33 @@ interface Props {
   className?: string;
 }
 
+/** Testo con i link cliccabili (si aprono nel browser di sistema). */
+export function Linkified({ text }: { text: string }) {
+  return (
+    <>
+      {splitLinks(text).map((part, i) =>
+        part.type === "text" ? (
+          part.text
+        ) : (
+          <a
+            key={i}
+            href={part.href}
+            rel="noreferrer noopener"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              void openLink(part.href);
+            }}
+            className="text-app-accent-text underline underline-offset-2 hover:opacity-80"
+          >
+            {part.text}
+          </a>
+        ),
+      )}
+    </>
+  );
+}
+
 /** Il testo di un messaggio, formattato secondo il comando con cui è stato scritto. */
 export function MessageBody({ style, body, authorName, edited, className }: Props) {
   const { t } = useI18n();
@@ -26,7 +54,7 @@ export function MessageBody({ style, body, authorName, edited, className }: Prop
       return (
         <p className={cn(base, "whitespace-pre-wrap italic", className)}>
           <span className="not-italic">✱ </span>
-          {authorName} {body}
+          {authorName} <Linkified text={body} />
           {suffix}
         </p>
       );
@@ -47,7 +75,7 @@ export function MessageBody({ style, body, authorName, edited, className }: Prop
     case "quote":
       return (
         <blockquote className={cn(base, "border-l-4 border-app-border-strong pl-3 whitespace-pre-wrap text-app-text-muted", className)}>
-          {body}
+          <Linkified text={body} />
           {suffix}
         </blockquote>
       );
@@ -58,7 +86,7 @@ export function MessageBody({ style, body, authorName, edited, className }: Prop
             title={t("chat.spoilerHint")}
             className="cursor-pointer rounded bg-app-raised px-1 text-transparent transition-colors select-none hover:bg-transparent hover:text-app-text hover:select-text"
           >
-            {body}
+            <Linkified text={body} />
           </span>
           {suffix}
         </p>
@@ -83,7 +111,7 @@ export function MessageBody({ style, body, authorName, edited, className }: Prop
     default:
       return (
         <p className={cn(base, "whitespace-pre-wrap", className)}>
-          {body}
+          <Linkified text={body} />
           {suffix}
         </p>
       );

@@ -30,6 +30,7 @@ export type ErrorCode =
   | "media_too_large"
   | "media_not_configured"
   | "invalid_media"
+  | "too_many_attachments"
   | "invalid_layout"
   | "message_not_found"
   | "invalid_emoji"
