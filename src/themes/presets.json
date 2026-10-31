@@ -198,5 +198,125 @@
         "#100d33"
       ]
     }
+  },
+  {
+    "version": 1,
+    "id": "daylight",
+    "name": "Daylight",
+    "description": "Chiaro e pulito con accento blu: il tema light di riferimento.",
+    "mode": "light",
+    "colors": {
+      "bg": "#eef0f4",
+      "sidebar": "#f6f7fa",
+      "panel": "#ffffff",
+      "field": "#eceef3",
+      "raised": "#e4e7ee",
+      "border": "#dfe2e9",
+      "borderStrong": "#c9ced9",
+      "text": "#1d2129",
+      "textStrong": "#0b0e14",
+      "textSoft": "#3a404c",
+      "textMuted": "#5d6573",
+      "textDim": "#667085",
+      "accent": "#2f6fe4",
+      "accentFg": "#ffffff",
+      "online": "#14805a",
+      "offline": "#9aa1ae",
+      "ai": "#0e7c97",
+      "upload": "#a8650a",
+      "avatars": [
+        "#4a6a96",
+        "#9a603a",
+        "#4a7a66"
+      ],
+      "art": [
+        "#1b3a78",
+        "#2a58b8",
+        "#4a82e0",
+        "#233f80",
+        "#16306a",
+        "#0e2150"
+      ]
+    }
+  },
+  {
+    "version": 1,
+    "id": "paper",
+    "name": "Paper",
+    "description": "Avorio caldo con accento terracotta: come carta stampata.",
+    "mode": "light",
+    "colors": {
+      "bg": "#f2eee6",
+      "sidebar": "#f8f5ee",
+      "panel": "#fffdf8",
+      "field": "#efe9dc",
+      "raised": "#e7dfce",
+      "border": "#e2dac9",
+      "borderStrong": "#cfc5af",
+      "text": "#2a2620",
+      "textStrong": "#14110c",
+      "textSoft": "#4a443a",
+      "textMuted": "#6e6657",
+      "textDim": "#7c7363",
+      "accent": "#c2571a",
+      "accentFg": "#ffffff",
+      "online": "#2f7d4f",
+      "offline": "#a39a88",
+      "ai": "#1f7a94",
+      "upload": "#a8650a",
+      "avatars": [
+        "#5b6f8a",
+        "#9a5f3f",
+        "#5a7d65"
+      ],
+      "art": [
+        "#5a2a12",
+        "#a24a18",
+        "#d9803f",
+        "#7a3818",
+        "#4a200d",
+        "#2c1207"
+      ]
+    }
+  },
+  {
+    "version": 1,
+    "id": "mint",
+    "name": "Mint",
+    "description": "Chiaro con sfumature di verde salvia e accento smeraldo.",
+    "mode": "light",
+    "colors": {
+      "bg": "#edf3ef",
+      "sidebar": "#f5f9f6",
+      "panel": "#ffffff",
+      "field": "#e8f0ea",
+      "raised": "#dde8e0",
+      "border": "#d8e3dc",
+      "borderStrong": "#bfd0c5",
+      "text": "#1b2420",
+      "textStrong": "#0a110e",
+      "textSoft": "#37433d",
+      "textMuted": "#566a5f",
+      "textDim": "#657a6e",
+      "accent": "#217a52",
+      "accentFg": "#ffffff",
+      "online": "#16794f",
+      "offline": "#9aaaa0",
+      "ai": "#1b7f9e",
+      "upload": "#a8650a",
+      "avatars": [
+        "#4b7396",
+        "#9a643f",
+        "#52737f"
+      ],
+      "art": [
+        "#0f3a28",
+        "#1c6b46",
+        "#38a06f",
+        "#164d34",
+        "#0c2f20",
+        "#07190f"
+      ]
+    }
   }
 ]

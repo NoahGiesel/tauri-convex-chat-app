@@ -5,14 +5,22 @@ import { buildTheme, isHex, isThemeDefinition } from "./build-theme";
 import type { ResolvedTheme, ThemeDefinition, ThemePreference } from "./types";
 
 export const PRESETS = presetsJson as unknown as ThemeDefinition[];
-const DEFAULT_ID = "graphite";
+const DEFAULT_DARK_ID = "graphite";
+const DEFAULT_LIGHT_ID = "daylight";
 const STORAGE_KEY = "chat:theme";
+
+/** `system`: segue il tema chiaro/scuro del sistema operativo. */
+export type ThemeMode = "dark" | "light" | "system";
 
 interface ThemeContextValue {
   theme: ResolvedTheme;
   definition: ThemeDefinition;
   themes: ThemeDefinition[]; // preset + importati
   preference: ThemePreference;
+  /** Modalità scelta dall'utente (con `system` il tema effettivo dipende dal sistema). */
+  mode: ThemeMode;
+  setMode: (mode: ThemeMode) => void;
+  /** Seleziona un tema; ricorda anche quale usare per il suo modo (chiaro/scuro) quando si segue il sistema. */
   setTheme: (id: string) => void;
   setCustomAccent: (hex: string | null) => void;
   /** JSON del tema in uso (con l'accento personalizzato, se c'è), pronto da salvare/condividere. */
@@ -24,31 +32,68 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-const defaultPreference = (): ThemePreference => ({ themeId: DEFAULT_ID, customAccent: null, customThemes: [] });
+const defaultPreference = (): ThemePreference => ({
+  themeId: DEFAULT_DARK_ID,
+  customAccent: null,
+  customThemes: [],
+  followSystem: false,
+  darkThemeId: DEFAULT_DARK_ID,
+  lightThemeId: DEFAULT_LIGHT_ID,
+});
 
 function load(): ThemePreference {
+  const fallback = defaultPreference();
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return defaultPreference();
+    if (!raw) return fallback;
     const p = JSON.parse(raw) as Partial<ThemePreference>;
     return {
-      themeId: typeof p.themeId === "string" ? p.themeId : DEFAULT_ID,
+      themeId: typeof p.themeId === "string" ? p.themeId : fallback.themeId,
       customAccent: isHex(p.customAccent) ? p.customAccent : null,
       customThemes: Array.isArray(p.customThemes) ? p.customThemes.filter(isThemeDefinition) : [],
+      followSystem: p.followSystem === true,
+      darkThemeId: typeof p.darkThemeId === "string" ? p.darkThemeId : fallback.darkThemeId,
+      lightThemeId: typeof p.lightThemeId === "string" ? p.lightThemeId : fallback.lightThemeId,
     };
   } catch {
-    return defaultPreference();
+    return fallback;
   }
+}
+
+/** Il sistema operativo è in modalità scura? Si aggiorna se l'utente lo cambia mentre l'app è aperta. */
+function useSystemDark(): boolean {
+  const query = "(prefers-color-scheme: dark)";
+  const [dark, setDark] = useState(() => window.matchMedia?.(query).matches ?? true);
+
+  useEffect(() => {
+    const mq = window.matchMedia?.(query);
+    if (!mq) return;
+    const onChange = () => setDark(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  return dark;
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [preference, setPreference] = useState<ThemePreference>(load);
+  const systemDark = useSystemDark();
 
   const themes = useMemo(() => [...PRESETS, ...preference.customThemes], [preference.customThemes]);
-  const definition = useMemo(
-    () => themes.find((t) => t.id === preference.themeId) ?? PRESETS.find((t) => t.id === DEFAULT_ID) ?? PRESETS[0],
-    [themes, preference.themeId],
-  );
+
+  const activeId = preference.followSystem
+    ? systemDark
+      ? preference.darkThemeId
+      : preference.lightThemeId
+    : preference.themeId;
+
+  const definition = useMemo(() => {
+    const wantsLight = preference.followSystem && !systemDark;
+    const fallbackId = wantsLight ? DEFAULT_LIGHT_ID : DEFAULT_DARK_ID;
+    return themes.find((t) => t.id === activeId) ?? themes.find((t) => t.id === fallbackId) ?? PRESETS[0];
+  }, [themes, activeId, preference.followSystem, systemDark]);
+
   const theme = useMemo(() => buildTheme(definition, preference.customAccent), [definition, preference.customAccent]);
 
   useEffect(() => {
@@ -63,7 +108,37 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   }, [preference]);
 
-  const setTheme = useCallback((id: string) => setPreference((p) => ({ ...p, themeId: id, customAccent: null })), []);
+  const mode: ThemeMode = preference.followSystem ? "system" : definition.mode;
+
+  const setTheme = useCallback((id: string) => {
+    setPreference((p) => {
+      const def = [...PRESETS, ...p.customThemes].find((t) => t.id === id);
+      if (!def) return p;
+      const slot = def.mode === "dark" ? { darkThemeId: id } : { lightThemeId: id };
+      return { ...p, ...slot, themeId: id, customAccent: null };
+    });
+  }, []);
+
+  const setMode = useCallback((next: ThemeMode) => {
+    setPreference((p) => {
+      const all = [...PRESETS, ...p.customThemes];
+      if (next === "system") {
+        // Il tema attuale diventa quello del suo modo; per l'altro si usa l'ultimo scelto.
+        const current = all.find((t) => t.id === p.themeId);
+        return {
+          ...p,
+          followSystem: true,
+          darkThemeId: current?.mode === "dark" ? current.id : p.darkThemeId,
+          lightThemeId: current?.mode === "light" ? current.id : p.lightThemeId,
+        };
+      }
+      const remembered = next === "dark" ? p.darkThemeId : p.lightThemeId;
+      const fallback = next === "dark" ? DEFAULT_DARK_ID : DEFAULT_LIGHT_ID;
+      const id = all.some((t) => t.id === remembered && t.mode === next) ? remembered : fallback;
+      return { ...p, followSystem: false, themeId: id };
+    });
+  }, []);
+
   const setCustomAccent = useCallback((hex: string | null) => setPreference((p) => ({ ...p, customAccent: hex })), []);
   const reset = useCallback(() => setPreference(defaultPreference()), []);
 
@@ -84,17 +159,35 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
     if (!isThemeDefinition(parsed)) return "invalid_format";
     const incoming = parsed;
-    setPreference((p) => ({
-      themeId: incoming.id,
-      customAccent: null,
-      customThemes: [...p.customThemes.filter((t) => t.id !== incoming.id), incoming],
-    }));
+    setPreference((p) => {
+      const slot = incoming.mode === "dark" ? { darkThemeId: incoming.id } : { lightThemeId: incoming.id };
+      return {
+        ...p,
+        ...slot,
+        themeId: incoming.id,
+        customAccent: null,
+        followSystem: false,
+        customThemes: [...p.customThemes.filter((t) => t.id !== incoming.id), incoming],
+      };
+    });
     return null;
   }, []);
 
   const value = useMemo<ThemeContextValue>(
-    () => ({ theme, definition, themes, preference, setTheme, setCustomAccent, exportTheme, importTheme, reset }),
-    [theme, definition, themes, preference, setTheme, setCustomAccent, exportTheme, importTheme, reset],
+    () => ({
+      theme,
+      definition,
+      themes,
+      preference,
+      mode,
+      setMode,
+      setTheme,
+      setCustomAccent,
+      exportTheme,
+      importTheme,
+      reset,
+    }),
+    [theme, definition, themes, preference, mode, setMode, setTheme, setCustomAccent, exportTheme, importTheme, reset],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

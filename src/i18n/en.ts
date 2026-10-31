@@ -115,10 +115,6 @@ export const en = {
   "side.online": "Online",
   "side.noResults": "No chats found.",
   "tabs.close": "Close tab {name}",
-  "layout.single": "Single pane",
-  "layout.columns": "Two panes side by side",
-  "layout.rows": "Two panes stacked",
-  "layout.swap": "Swap",
   "layout.emptyPane": "Choose a chat from the list to open it here.",
   "chat.today": "Today",
   "chat.yesterday": "Yesterday",
@@ -176,6 +172,22 @@ export const en = {
   "settings.updates.restartNote": "The app will restart by itself when it's done.",
   "settings.updates.notifyTitle": "Notify when a new version is available",
   "settings.updates.notifyDescription": "One desktop notification per version",
+
+  "sidebar.collapse": "Collapse sidebar",
+  "sidebar.expand": "Expand sidebar",
+  "sidebar.resize": "Resize sidebar (drag, or use the arrow keys)",
+  "settings.appearance.sidebarPosition": "Sidebar position",
+  "settings.appearance.sidebarPositionDescription": "Show the chat list on the left or on the right.",
+  "settings.appearance.left": "Left",
+  "settings.appearance.right": "Right",
+  "settings.appearance.mode": "Mode",
+  "settings.appearance.modeDark": "Dark",
+  "settings.appearance.modeLight": "Light",
+  "settings.appearance.modeSystem": "System",
+  "settings.appearance.systemHint": "Pick a dark and a light theme: the app follows your system setting.",
+  "presence.lastOnline": "Last online {time}",
+  "presence.offline": "Offline",
+  "presence.groupOnline": "{count} members · {online} online",
 } as const;
 
 export type MessageKey = keyof typeof en;

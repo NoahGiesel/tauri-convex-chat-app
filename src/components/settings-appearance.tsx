@@ -1,15 +1,18 @@
 import { useRef, useState } from "react";
-import { Pencil } from "lucide-react";
+import { Monitor, Moon, Pencil, Sun } from "lucide-react";
+import { useSidebar, type SidebarSide } from "@/hooks/use-sidebar";
 import { useI18n } from "@/i18n/i18n-provider";
 import { mix } from "@/themes/build-theme";
-import { useTheme } from "@/themes/theme-provider";
+import { useTheme, type ThemeMode } from "@/themes/theme-provider";
 import { cn } from "@/lib/utils";
 import { outlineButtonClass, sectionLabelClass } from "@/lib/ui-classes";
 
 /** Impostazioni › Aspetto: temi pronti, accento personalizzato e configurazione JSON importabile/esportabile. */
 export function SettingsAppearance() {
   const { t } = useI18n();
-  const { theme, themes, definition, preference, setTheme, setCustomAccent, exportTheme, importTheme } = useTheme();
+  const { theme, themes, definition, preference, mode, setMode, setTheme, setCustomAccent, exportTheme, importTheme } = useTheme();
+  const { side, setSide } = useSidebar();
+  const visibleThemes = mode === "system" ? themes : themes.filter((p) => p.mode === mode);
   const fileInput = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
 
@@ -51,13 +54,58 @@ export function SettingsAppearance() {
         <p className="mt-2 text-[15px] text-app-text-muted">{t("settings.appearance.subtitle")}</p>
       </div>
 
+      <section className="flex items-center gap-4 rounded-[18px] border border-app-border bg-app-panel px-6 py-5">
+        <div className="min-w-0 flex-1">
+          <div className="text-[15px] font-bold text-app-text-strong">{t("settings.appearance.sidebarPosition")}</div>
+          <div className="mt-0.5 text-[13px] text-app-text-muted">{t("settings.appearance.sidebarPositionDescription")}</div>
+        </div>
+        <div role="group" aria-label={t("settings.appearance.sidebarPosition")} className="flex gap-0.5 rounded-[11px] bg-app-field p-[3px]">
+          {(["left", "right"] as SidebarSide[]).map((value) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={side === value}
+              onClick={() => setSide(value)}
+              className={cn(
+                "h-8 rounded-lg px-4 text-sm font-semibold",
+                side === value ? "bg-app-accent-soft text-app-text-strong" : "text-app-text-muted hover:text-app-text",
+              )}
+            >
+              {t(value === "left" ? "settings.appearance.left" : "settings.appearance.right")}
+            </button>
+          ))}
+        </div>
+      </section>
+
       <section className="flex flex-col gap-3">
         <h2 className={sectionLabelClass}>{t("settings.appearance.themes")}</h2>
+        <div className="flex flex-wrap items-center gap-3">
+          <div role="group" aria-label={t("settings.appearance.mode")} className="flex gap-0.5 rounded-[11px] bg-app-field p-[3px]">
+            {(["dark", "light", "system"] as ThemeMode[]).map((value) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={mode === value}
+                onClick={() => setMode(value)}
+                className={cn(
+                  "flex h-8 items-center gap-2 rounded-lg px-3.5 text-sm font-semibold",
+                  mode === value ? "bg-app-accent-soft text-app-text-strong" : "text-app-text-muted hover:text-app-text",
+                )}
+              >
+                {value === "dark" ? <Moon className="size-4" /> : value === "light" ? <Sun className="size-4" /> : <Monitor className="size-4" />}
+                {t(value === "dark" ? "settings.appearance.modeDark" : value === "light" ? "settings.appearance.modeLight" : "settings.appearance.modeSystem")}
+              </button>
+            ))}
+          </div>
+          {mode === "system" && <p className="text-[13px] text-app-text-muted">{t("settings.appearance.systemHint")}</p>}
+        </div>
         <div className="grid grid-cols-[repeat(auto-fill,minmax(190px,1fr))] gap-3.5">
-          {themes.map((p) => {
+          {visibleThemes.map((p) => {
             const c = p.colors;
-            const selected = p.id === definition.id && !preference.customAccent;
-            const inUse = p.id === definition.id;
+            const inUse = preference.followSystem
+              ? p.id === preference.darkThemeId || p.id === preference.lightThemeId
+              : p.id === definition.id;
+            const selected = inUse && !preference.customAccent;
             return (
               <button
                 key={p.id}

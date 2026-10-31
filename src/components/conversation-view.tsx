@@ -5,6 +5,7 @@ import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { Avatar } from "@/components/avatar";
 import { useI18n } from "@/i18n/i18n-provider";
+import { usePresence } from "@/lib/presence";
 import { errorKey } from "@/lib/errors";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +15,7 @@ const SAME_BLOCK_MS = 5 * 60 * 1000;
 
 export function ConversationView({ conversationId }: { conversationId: Id<"conversations"> }) {
   const { t, locale } = useI18n();
+  const presence = usePresence();
   const info = useQuery(api.conversations.get, { conversationId });
   const { results, status, loadMore } = usePaginatedQuery(
     api.messages.list,
@@ -130,9 +132,13 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
       <header className="flex shrink-0 items-center gap-3 border-b border-app-border px-6 py-3">
         <div className="min-w-0 flex-1">
           <h2 className="truncate text-[17px] font-extrabold text-app-text-strong">{info?.title ?? "…"}</h2>
-          {isGroup && info && (
-            <p className="text-[13px] text-app-text-muted">{t("chat.members", { count: info.members.length })}</p>
-          )}
+          {info && (() => {
+            const others = info.members.filter((m) => m._id !== info.myProfileId);
+            const s = isGroup
+              ? presence.group(info.members.length, others.flatMap((m) => (m.lastSeenAt !== undefined ? [m.lastSeenAt] : [])))
+              : presence.person(others[0]?.lastSeenAt);
+            return <p className={cn("text-[13px]", s.online ? "font-semibold text-app-online" : "text-app-text-muted")}>{s.text}</p>;
+          })()}
         </div>
       </header>
 

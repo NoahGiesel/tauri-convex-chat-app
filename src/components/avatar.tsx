@@ -21,7 +21,7 @@ export function Avatar({
       aria-hidden
       className={cn(
         "inline-flex shrink-0 items-center justify-center font-extrabold select-none",
-        accent ? "text-app-accent-fg" : "text-app-text-strong",
+        accent ? "text-app-accent-fg" : "text-white",
         className,
       )}
       style={{

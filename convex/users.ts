@@ -27,6 +27,18 @@ export const ensureProfile = mutation({
   },
 });
 
+/** Segnala che sono attivo (aggiorna "ultimo accesso"). Limitata per non riscrivere a ogni chiamata. */
+export const heartbeat = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const me = await getProfile(ctx);
+    if (!me) return;
+    const now = Date.now();
+    if (me.lastSeenAt !== undefined && now - me.lastSeenAt < 30_000) return;
+    await ctx.db.patch("profiles", me._id, { lastSeenAt: now });
+  },
+});
+
 /** Il mio profilo (null se non sono autenticato o il profilo non è ancora stato creato). */
 export const me = query({
   args: {},

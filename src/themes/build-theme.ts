@@ -49,19 +49,21 @@ export function buildTheme(def: ThemeDefinition, accentOverride?: string | null)
     c.accent = accentOverride;
     c.accentFg = readableOn(accentOverride);
   }
+  // Nei temi chiari testo e bordi "luminosi" diventano scuri, altrimenti sparirebbero sul bianco.
+  const light = def.mode === "light";
   return {
     ...c,
-    accentBright: mix(c.accent, "#ffffff", 0.78),
-    accentText: mix(c.accent, "#ffffff", 0.55),
+    accentBright: light ? mix(c.accent, "#000000", 0.85) : mix(c.accent, "#ffffff", 0.78),
+    accentText: light ? mix(c.accent, "#000000", 0.7) : mix(c.accent, "#ffffff", 0.55),
     accentSoft: mix(c.accent, c.panel, 0.18),
     accentSoftBorder: mix(c.accent, c.panel, 0.38),
     accentSoftStrong: mix(c.accent, c.panel, 0.32),
-    aiText: mix(c.ai, "#ffffff", 0.6),
+    aiText: light ? mix(c.ai, "#000000", 0.65) : mix(c.ai, "#ffffff", 0.6),
     aiBg: mix(c.ai, c.panel, 0.15),
     aiBorder: mix(c.ai, c.panel, 0.3),
     uploadBg: mix(c.upload, c.panel, 0.16),
     onlineBg: mix(c.online, c.panel, 0.16),
-    backdrop: mix(c.bg, "#000000", 0.45),
+    backdrop: mix(c.bg, "#000000", light ? 0.4 : 0.45),
   };
 }
 

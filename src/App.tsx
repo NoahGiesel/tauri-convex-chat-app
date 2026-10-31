@@ -5,6 +5,7 @@ import { AuthScreen } from "@/components/auth-screen";
 import { ChatApp } from "@/components/chat-app";
 import { SettingsPage, type SettingsSection } from "@/components/settings-page";
 import { UpdateBanner } from "@/components/update-banner";
+import { SidebarProvider } from "@/hooks/use-sidebar";
 import { useI18n } from "@/i18n/i18n-provider";
 
 function Splash({ children }: { children: string }) {
@@ -28,6 +29,7 @@ function Session() {
   if (!me) return <Splash>{t("common.loadingProfile")}</Splash>;
 
   return (
+    <SidebarProvider>
     <div className="flex h-screen flex-col bg-app-bg text-app-text">
       <UpdateBanner
         onOpenSettings={() => {
@@ -50,6 +52,7 @@ function Session() {
         )}
       </div>
     </div>
+    </SidebarProvider>
   );
 }
 

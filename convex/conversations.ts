@@ -27,6 +27,8 @@ export const list = query({
         let avatarIndex = 0;
         let peerId = null;
         let peerLastSeenAt: number | undefined;
+        let memberCount = 0;
+        let othersLastSeenAt: number[] = [];
 
         if (conversation.kind === "direct") {
           const pair = await ctx.db
@@ -41,6 +43,16 @@ export const list = query({
             peerId = peer._id;
             peerLastSeenAt = peer.lastSeenAt;
           }
+        } else {
+          const rows = await ctx.db
+            .query("members")
+            .withIndex("by_conversation", (q) => q.eq("conversationId", conversation._id))
+            .take(MAX_GROUP_MEMBERS);
+          memberCount = rows.length;
+          const others = await Promise.all(
+            rows.filter((m) => m.profileId !== me._id).map((m) => ctx.db.get("profiles", m.profileId)),
+          );
+          othersLastSeenAt = others.flatMap((p) => (p?.lastSeenAt !== undefined ? [p.lastSeenAt] : []));
         }
 
         const last = await ctx.db
@@ -57,8 +69,8 @@ export const list = query({
           peerId,
           peerLastSeenAt,
           lastMessageAt: conversation.lastMessageAt,
-          lastMessagePreview: last ? last.body.slice(0, 120) : null,
-          lastMessageKind: last?.kind ?? null,
+          memberCount,
+          othersLastSeenAt,
           unread: last !== null && last.authorId !== me._id && conversation.lastMessageAt > membership.lastReadAt,
         };
       }),
@@ -153,6 +165,7 @@ export const get = query({
       _id: conversation._id,
       kind: conversation.kind,
       title: conversation.kind === "direct" ? (peer?.name ?? "Chat") : (conversation.name ?? "Gruppo"),
+      myProfileId: me._id,
       members,
     };
   },

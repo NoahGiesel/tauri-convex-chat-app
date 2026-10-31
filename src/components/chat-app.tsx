@@ -10,6 +10,7 @@ import { ConversationView } from "@/components/conversation-view";
 import { GroupModal } from "@/components/group-modal";
 import { InviteModal } from "@/components/invite-modal";
 import { useI18n } from "@/i18n/i18n-provider";
+import { usePresenceHeartbeat } from "@/lib/presence";
 import { cn } from "@/lib/utils";
 
 export type ConversationItem = NonNullable<FunctionReturnType<typeof api.conversations.list>>[number];
@@ -36,6 +37,7 @@ function readLayout(): Layout {
  */
 export function ChatApp({ onOpenSettings }: { onOpenSettings: () => void }) {
   const { t } = useI18n();
+  usePresenceHeartbeat();
   const me = useQuery(api.users.me);
   const conversations = useQuery(api.conversations.list);
   const friends = useQuery(api.friends.list);

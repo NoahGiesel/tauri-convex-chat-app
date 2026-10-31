@@ -60,4 +60,8 @@ export interface ThemePreference {
   customAccent: string | null;
   /** Temi importati dall'utente. */
   customThemes: ThemeDefinition[];
+  /** Se vero, il tema segue il sistema: `darkThemeId` col buio, `lightThemeId` col chiaro. */
+  followSystem: boolean;
+  darkThemeId: string;
+  lightThemeId: string;
 }
