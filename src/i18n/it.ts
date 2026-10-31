@@ -276,4 +276,11 @@ export const it: Messages = {
   "library.noLinks": "Ancora nessun link.",
   "library.loadMore": "Carica altri",
   "chat.jumpToLatest": "Vai all'ultimo messaggio",
+  "notif.photo": "📷 Foto",
+  "notif.video": "🎬 Video",
+  "notif.random": "🎲 Numero casuale",
+  "notif.flip": "🪙 Lancio di una moneta",
+  "notif.spoiler": "Spoiler",
+  "settings.appearance.standbyDark": "Si attiva quando il sistema è in tema scuro",
+  "settings.appearance.standbyLight": "Si attiva quando il sistema è in tema chiaro",
 };

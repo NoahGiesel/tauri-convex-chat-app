@@ -276,4 +276,11 @@ export const de: Messages = {
   "library.noLinks": "Noch keine Links.",
   "library.loadMore": "Mehr laden",
   "chat.jumpToLatest": "Zur neuesten Nachricht",
+  "notif.photo": "📷 Foto",
+  "notif.video": "🎬 Video",
+  "notif.random": "🎲 Zufallszahl",
+  "notif.flip": "🪙 Münzwurf",
+  "notif.spoiler": "Spoiler",
+  "settings.appearance.standbyDark": "Wird verwendet, wenn dein System im Dunkelmodus ist",
+  "settings.appearance.standbyLight": "Wird verwendet, wenn dein System im Hellmodus ist",
 };

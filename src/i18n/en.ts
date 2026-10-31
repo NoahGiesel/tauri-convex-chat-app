@@ -275,6 +275,13 @@ export const en = {
   "library.noLinks": "No links yet.",
   "library.loadMore": "Load more",
   "chat.jumpToLatest": "Jump to latest message",
+  "notif.photo": "📷 Photo",
+  "notif.video": "🎬 Video",
+  "notif.random": "🎲 Random number",
+  "notif.flip": "🪙 Coin flip",
+  "notif.spoiler": "Spoiler",
+  "settings.appearance.standbyDark": "Used when your system is in dark mode",
+  "settings.appearance.standbyLight": "Used when your system is in light mode",
 } as const;
 
 export type MessageKey = keyof typeof en;

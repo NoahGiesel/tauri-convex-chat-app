@@ -276,4 +276,11 @@ export const ro: Messages = {
   "library.noLinks": "Încă nu există linkuri.",
   "library.loadMore": "Încarcă mai multe",
   "chat.jumpToLatest": "Mergi la ultimul mesaj",
+  "notif.photo": "📷 Fotografie",
+  "notif.video": "🎬 Videoclip",
+  "notif.random": "🎲 Număr aleatoriu",
+  "notif.flip": "🪙 Aruncare de monedă",
+  "notif.spoiler": "Spoiler",
+  "settings.appearance.standbyDark": "Se activează când sistemul este în tema întunecată",
+  "settings.appearance.standbyLight": "Se activează când sistemul este în tema luminoasă",
 };

@@ -8,6 +8,8 @@
     "core:webview:allow-create-webview-window",
     "core:window:allow-create",
     "core:window:allow-set-focus",
+    "core:window:allow-set-badge-count",
+    "core:window:allow-request-user-attention",
     "updater:default",
     "process:allow-restart",
     "notification:default",

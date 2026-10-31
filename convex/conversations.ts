@@ -70,6 +70,19 @@ export const list = query({
           .take(MAX_UNREAD_COUNT);
         const unreadCount = sinceRead.filter((m) => m.authorId !== me._id).length;
 
+        // Ultimo messaggio non letto di un altro: serve per le notifiche del sistema (titolo, testo, suono).
+        const newest = sinceRead.find((m) => m.authorId !== me._id);
+        const latest = newest
+          ? {
+              id: newest._id,
+              authorName: newest.authorId ? ((await ctx.db.get("profiles", newest.authorId))?.name ?? "?") : null, // null = AI
+              kind: newest.kind,
+              style: newest.style ?? null,
+              body: (newest.kind === "media" && !newest.attachments ? "" : newest.body).slice(0, 160),
+              attachment: newest.attachments?.[0]?.type ?? newest.media?.type ?? null,
+            }
+          : null;
+
         return {
           _id: conversation._id,
           kind: conversation.kind,
@@ -83,6 +96,7 @@ export const list = query({
           memberCount,
           othersLastSeenAt,
           unreadCount,
+          latest,
         };
       }),
     );

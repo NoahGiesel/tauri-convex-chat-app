@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { useAction, useMutation, usePaginatedQuery, useQuery } from "convex/react";
+import { insertAtTop, useAction, useMutation, usePaginatedQuery, useQuery } from "convex/react";
+import type { OptimisticLocalStore } from "convex/browser";
 import { ArrowDown, Film, Images, Maximize2, Paperclip, Send, Smile, Sparkles, X } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
@@ -55,8 +56,38 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
     { conversationId },
     { initialNumItems: PAGE_SIZE },
   );
-  const sendMessage = useMutation(api.messages.send);
-  const sendGif = useMutation(api.messages.sendGif);
+  // Aggiornamento ottimistico: il messaggio compare subito nella lista e viene sostituito da quello vero
+  // appena il server risponde (se il server lo rifiuta sparisce da solo e il testo torna nel campo).
+  const myProfile = useQuery(api.users.me);
+  const showOptimistically = (store: OptimisticLocalStore, kind: "text" | "gif", body: string, style: "me" | "code" | "pre" | "spoiler" | "quote" | null) => {
+    if (!myProfile) return;
+    insertAtTop({
+      paginatedQuery: api.messages.list,
+      argsToMatch: { conversationId },
+      localQueryStore: store,
+      item: {
+        _id: crypto.randomUUID() as Id<"messages">, // provvisorio: gli id veri non contengono "-"
+        _creationTime: Date.now(),
+        kind,
+        body,
+        authorId: myProfile._id,
+        authorName: myProfile.name,
+        authorAvatarIndex: myProfile.avatarIndex,
+        authorAvatarUrl: myProfile.avatarUrl,
+        mine: true,
+        reactions: [],
+        editedAt: null,
+        style,
+        attachments: [],
+      },
+    });
+  };
+  const sendMessage = useMutation(api.messages.send).withOptimisticUpdate((store, args) =>
+    showOptimistically(store, "text", args.body.trim(), args.style ?? null),
+  );
+  const sendGif = useMutation(api.messages.sendGif).withOptimisticUpdate((store, args) =>
+    showOptimistically(store, "gif", args.url, null),
+  );
   const createUpload = useAction(api.media.createUpload);
   const sendAttachments = useMutation(api.messages.sendAttachments);
   const [upload, setUpload] = useState<{ name: string; percent: number } | null>(null);
@@ -602,7 +633,7 @@ export function ConversationView({ conversationId }: { conversationId: Id<"conve
                     <Avatar name={m.authorName} index={m.authorAvatarIndex} src={m.authorAvatarUrl} size={38} accent={m.mine} />
                   ))}
               </div>
-              {editingId !== m._id && (
+              {editingId !== m._id && !m._id.includes("-") && (
                 <ReactionToolbar
                   messageId={m._id}
                   onError={setError}

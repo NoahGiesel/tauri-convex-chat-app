@@ -102,10 +102,11 @@ export function SettingsAppearance() {
         <div className="grid grid-cols-[repeat(auto-fill,minmax(190px,1fr))] gap-3.5">
           {visibleThemes.map((p) => {
             const c = p.colors;
-            const inUse = preference.followSystem
-              ? p.id === preference.darkThemeId || p.id === preference.lightThemeId
-              : p.id === definition.id;
+            // Un solo tema è "in uso": quello che si vede adesso. Con "Sistema" l'altro (chiaro o scuro) è solo in attesa.
+            const inUse = p.id === definition.id;
             const selected = inUse && !preference.customAccent;
+            const standby =
+              preference.followSystem && !inUse && (p.id === preference.darkThemeId || p.id === preference.lightThemeId);
             return (
               <button
                 key={p.id}
@@ -136,6 +137,15 @@ export function SettingsAppearance() {
                   {selected && (
                     <span className="rounded-full bg-app-accent px-2 py-0.5 text-[11px] font-extrabold text-app-accent-fg">
                       {t("settings.appearance.inUse")}
+                    </span>
+                  )}
+                  {standby && (
+                    <span
+                      title={t(p.mode === "dark" ? "settings.appearance.standbyDark" : "settings.appearance.standbyLight")}
+                      className="flex items-center gap-1 rounded-full bg-app-field px-2 py-0.5 text-[11px] font-bold text-app-text-muted"
+                    >
+                      {p.mode === "dark" ? <Moon className="size-3" /> : <Sun className="size-3" />}
+                      {t(p.mode === "dark" ? "settings.appearance.modeDark" : "settings.appearance.modeLight")}
                     </span>
                   )}
                 </div>

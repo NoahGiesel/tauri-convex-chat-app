@@ -1,3 +1,4 @@
+import { useMessageNotifications } from "@/hooks/use-message-notifications";
 import { useEffect, useMemo, useRef, useState, type DragEvent, type PointerEvent } from "react";
 import { useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
@@ -33,6 +34,7 @@ export function ChatApp({ onOpenSettings }: { onOpenSettings: () => void }) {
   usePresenceHeartbeat();
   const me = useQuery(api.users.me);
   const conversations = useQuery(api.conversations.list);
+  useMessageNotifications(conversations);
   const friends = useQuery(api.friends.list);
 
   const [tabs, setTabs] = useState<ConversationId[]>([]);
