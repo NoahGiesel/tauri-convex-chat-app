@@ -1,12 +1,14 @@
 # Chat desktop (Tauri 2 + React + shadcn + Convex + Better Auth)
 
-Stato: **scheletro con auto-update funzionante**. La chat (Convex + Better Auth) è il prossimo passo.
+Chat privata per pochi amici (macOS + Windows): Tauri 2 + React + Convex + Better Auth, con auto-update.
+
+> **Per rilasciare o deployare leggi [`docs/DEPLOY.md`](docs/DEPLOY.md)**: backend Convex, variabili, secrets GitHub, R2 e checklist di release.
 
 ## Setup iniziale (una volta sola)
 
 ```bash
 # 1. Prerequisiti: Node 22+, Rust (https://rustup.rs), su macOS gli Xcode CLT
-npm install            # genera anche package-lock.json: committalo (serve alla CI)
+pnpm install           # committa pnpm-lock.yaml: la CI usa --frozen-lockfile
 
 # 2. UI: shadcn (rileva Vite + alias "@/")
 npx shadcn@latest init
@@ -16,7 +18,7 @@ npx shadcn@latest add button card progress
 npx tauri icon ./app-icon.png
 
 # 4. Prova in locale
-npm run tauri:dev
+pnpm tauri dev
 ```
 
 ## Auto-update: configurazione
@@ -35,8 +37,10 @@ npm run tauri:dev
 
 ## Rilasciare una nuova versione
 
+(Versione breve: la procedura completa, con il deploy del backend prima del tag, è in `docs/DEPLOY.md`.)
+
 ```bash
-npm version patch          # aggiorna package.json (tauri.conf.json la legge da lì) e crea il tag
+pnpm version patch         # aggiorna package.json (tauri.conf.json la legge da lì) e crea il tag
 git push --follow-tags     # la CI compila macOS + Windows e pubblica la Release con latest.json
 ```
 
