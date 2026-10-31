@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { ConvexReactClient } from "convex/react";
-import { ConvexBetterAuthProvider } from "@convex-dev/better-auth/react";
+import { ConvexBetterAuthProvider, type AuthClient } from "@convex-dev/better-auth/react";
 import "./index.css";
 import App from "./App";
 import { UpdaterProvider } from "@/hooks/use-updater";
@@ -15,7 +15,8 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ThemeProvider>
       <I18nProvider>
-        <ConvexBetterAuthProvider client={convex} authClient={authClient}>
+        {/* Il tipo inferito dei plugin (convex + crossDomain) non combacia con quello del provider, ma il client è lo stesso. */}
+        <ConvexBetterAuthProvider client={convex} authClient={authClient as unknown as AuthClient}>
           <UpdaterProvider>
             <App />
           </UpdaterProvider>

@@ -42,11 +42,11 @@ export function InviteModal({
   const token = createdToken ?? existingToken ?? null;
   const link = token ? LINK_PREFIX + token : "";
 
-  async function run(action: () => Promise<string | void>) {
+  async function run(action: () => Promise<unknown>) {
     setNotice(null);
     try {
       const okText = await action();
-      if (okText) setNotice({ kind: "ok", text: okText });
+      if (typeof okText === "string" && okText) setNotice({ kind: "ok", text: okText });
     } catch (e) {
       setNotice({ kind: "error", text: t(errorKey(e)) });
     }

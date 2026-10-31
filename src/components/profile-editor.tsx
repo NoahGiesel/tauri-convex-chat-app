@@ -47,7 +47,7 @@ export function ProfileEditor() {
   const dirty = name.trim() !== me.name || bio.trim() !== me.bio;
   const valid = name.trim().length >= 1;
 
-  async function run(kind: "save" | "photo", action: () => Promise<void>, okText: string) {
+  async function run(kind: "save" | "photo", action: () => Promise<unknown>, okText: string) {
     setBusy(kind);
     setNotice(null);
     try {
