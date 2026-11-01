@@ -366,7 +366,7 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
   useEffect(() => {
     if (!newestId) return;
     const markIfVisible = () => {
-      if (document.visibilityState === "visible") void markRead({ conversationId });
+      if (document.visibilityState === "visible" && document.hasFocus()) void markRead({ conversationId });
     };
     markIfVisible();
     window.addEventListener("focus", markIfVisible);
