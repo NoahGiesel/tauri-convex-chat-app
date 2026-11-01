@@ -8,6 +8,8 @@
  * @module
  */
 
+import type * as aiUsage from "../aiUsage.js";
+import type * as ask from "../ask.js";
 import type * as auth from "../auth.js";
 import type * as conversations from "../conversations.js";
 import type * as friends from "../friends.js";
@@ -23,6 +25,9 @@ import type * as previews from "../previews.js";
 import type * as r2 from "../r2.js";
 import type * as reactions from "../reactions.js";
 import type * as sidebar from "../sidebar.js";
+import type * as summary from "../summary.js";
+import type * as summaryPrompt from "../summaryPrompt.js";
+import type * as summaryRules from "../summaryRules.js";
 import type * as typing from "../typing.js";
 import type * as users from "../users.js";
 
@@ -33,6 +38,8 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  aiUsage: typeof aiUsage;
+  ask: typeof ask;
   auth: typeof auth;
   conversations: typeof conversations;
   friends: typeof friends;
@@ -48,6 +55,9 @@ declare const fullApi: ApiFromModules<{
   r2: typeof r2;
   reactions: typeof reactions;
   sidebar: typeof sidebar;
+  summary: typeof summary;
+  summaryPrompt: typeof summaryPrompt;
+  summaryRules: typeof summaryRules;
   typing: typeof typing;
   users: typeof users;
 }>;

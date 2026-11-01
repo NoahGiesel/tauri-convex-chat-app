@@ -71,7 +71,8 @@ export const list = query({
         const unreadCount = sinceRead.filter((m) => m.authorId !== me._id).length;
 
         // Ultimo messaggio non letto di un altro: serve per le notifiche del sistema (titolo, testo, suono).
-        const newest = sinceRead.find((m) => m.authorId !== me._id);
+        // I messaggi dell'AI (riassunti) non fanno notifica: restano solo tra i non letti.
+        const newest = sinceRead.find((m) => m.authorId !== me._id && m.kind !== "ai");
         const latest = newest
           ? {
               id: newest._id,

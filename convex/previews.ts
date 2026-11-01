@@ -18,7 +18,7 @@ export interface Preview {
 }
 
 /** Solo http(s) verso siti pubblici: niente localhost, reti interne o indirizzi IP numerici. */
-function isPublicHttpUrl(raw: string): URL | null {
+export function isPublicHttpUrl(raw: string): URL | null {
   let url: URL;
   try {
     url = new URL(raw);
@@ -77,7 +77,7 @@ export function parseHtml(html: string, base: URL): Preview {
 }
 
 /** Scarica al massimo MAX_HTML_BYTES di una pagina HTML, seguendo i redirect a mano (e ricontrollandoli). */
-async function fetchHtml(start: URL): Promise<{ html: string; url: URL } | null> {
+export async function fetchHtml(start: URL): Promise<{ html: string; url: URL } | null> {
   let url = start;
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
     const res = await fetch(url, {

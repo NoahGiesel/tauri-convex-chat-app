@@ -1,14 +1,16 @@
 import { useMemo, useState } from "react";
 import { usePaginatedQuery } from "convex/react";
-import { Link2, Play, X } from "lucide-react";
+import { Link2, Play, Sparkles, X } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
+import { AskCard } from "@/components/ask-card";
+import { SummaryCard } from "@/components/summary-card";
 import type { LightboxItem } from "@/components/media-lightbox";
 import { useI18n } from "@/i18n/i18n-provider";
 import { openLink } from "@/lib/links";
 import { cn } from "@/lib/utils";
 
-type Tab = "media" | "links";
+type Tab = "media" | "links" | "ai";
 const PAGE = 30;
 
 /** Tutte le foto, i video e i link mandati in una chat o in un gruppo. */
@@ -27,7 +29,7 @@ export function MediaLibrary({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div role="tablist" className="flex shrink-0 gap-1 border-b border-app-border px-6 pt-2">
-        {(["media", "links"] as const).map((id) => (
+        {(["media", "links", "ai"] as const).map((id) => (
           <button
             key={id}
             type="button"
@@ -39,7 +41,7 @@ export function MediaLibrary({
               tab === id ? "border-app-accent text-app-text-strong" : "border-transparent text-app-text-muted hover:text-app-text",
             )}
           >
-            {t(id === "media" ? "library.media" : "library.links")}
+            {id === "ai" ? t("chat.aiName") : t(id === "media" ? "library.media" : "library.links")}
           </button>
         ))}
         <button
@@ -53,7 +55,9 @@ export function MediaLibrary({
         </button>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
-        {tab === "media" ? <MediaTab conversationId={conversationId} onOpenMedia={onOpenMedia} /> : <LinksTab conversationId={conversationId} />}
+        {tab === "media" && <MediaTab conversationId={conversationId} onOpenMedia={onOpenMedia} />}
+        {tab === "links" && <LinksTab conversationId={conversationId} />}
+        {tab === "ai" && <AiTab conversationId={conversationId} />}
       </div>
     </div>
   );
@@ -156,6 +160,50 @@ function LinksTab({ conversationId }: { conversationId: Id<"conversations"> }) {
                 </span>
               </span>
             </a>
+          </li>
+        ))}
+      </ul>
+      <LoadMore status={status} onMore={() => loadMore(PAGE)} />
+    </>
+  );
+}
+
+function AiTab({ conversationId }: { conversationId: Id<"conversations"> }) {
+  const { t, language } = useI18n();
+  const { results, status, loadMore } = usePaginatedQuery(api.library.ai, { conversationId }, { initialNumItems: PAGE });
+  const when = (ms: number) => new Date(ms).toLocaleString(language, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+
+  if (status === "LoadingFirstPage") return null;
+  if (results.length === 0) return <p className="pt-10 text-center text-sm text-app-text-muted">{t("library.noAi")}</p>;
+
+  return (
+    <>
+      <ul className="flex flex-col gap-4">
+        {results.map((a) => (
+          <li key={a._id} className="flex flex-col">
+            <div className="flex items-center gap-1.5 text-xs text-app-text-dim">
+              <Sparkles className="size-3.5 text-app-ai" strokeWidth={2} />
+              <span>
+                {t("library.aiRequestedBy", { name: a.requestedByName })} · {when(a._creationTime)}
+              </span>
+            </div>
+            {a.source &&
+              (a.sourceIsLink ? (
+                <a
+                  href={a.source}
+                  rel="noreferrer noopener"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    void openLink(a.source!);
+                  }}
+                  className="mt-1 truncate text-sm font-semibold text-app-accent-text hover:underline"
+                >
+                  {a.source}
+                </a>
+              ) : (
+                <div className="mt-1 truncate text-sm text-app-text-muted">{a.kind === "ask" ? `/ask ${a.source}` : `${a.source}…`}</div>
+              ))}
+            {a.kind === "ask" ? <AskCard status={a.status} body={a.body} /> : <SummaryCard status={a.status} body={a.body} source={a.source} />}
           </li>
         ))}
       </ul>

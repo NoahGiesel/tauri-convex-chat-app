@@ -5,11 +5,14 @@ import { mutation, query, type MutationCtx } from "./_generated/server";
 import { avatarUrl, fail, getProfile, requireMember, requireProfile } from "./model";
 import { MAX_REACTIONS_PER_MESSAGE } from "./reactions";
 import { internal } from "./_generated/api";
-import { carriesLinks } from "./linkRules";
+import { carriesLinks, extractLinks } from "./linkRules";
 import { classifyMedia } from "./mediaRules";
 import { signedReadUrl } from "./r2";
+import { askState, blocksNewSummary, summaryState } from "./summaryRules";
 
-const MAX_BODY = 4000;
+const MAX_BODY = 4000; // didascalie degli allegati
+const MAX_TEXT = 50_000; // messaggi di testo (anche molto lunghi, da riassumere)
+const SUMMARIZABLE_MIN_LENGTH = 10_000;
 const MAX_MEMBERS = 50;
 const MAX_GIF_URL = 500;
 
@@ -101,6 +104,20 @@ export const list = query({
         grouped.set(r.emoji, g);
       }
 
+      // Per i riassunti: cosa è stato trascritto (il link, oppure l'inizio del testo lungo).
+      let summarySource: string | null = null;
+      if (message.summaryOf) {
+        const original = await ctx.db.get("messages", message.summaryOf);
+        if (original) summarySource = extractLinks(original.body)[0] ?? original.body.slice(0, 120);
+      }
+      // Link o testo molto lungo: si può chiedere un riassunto (una sola volta per messaggio).
+      const summarizable =
+        message.kind === "text" && message.style !== "random" && message.style !== "flip" && (message.hasLink === true || message.body.length >= SUMMARIZABLE_MIN_LENGTH);
+      const nowMs = Date.now();
+      const summarized = summarizable
+        ? blocksNewSummary(await ctx.db.query("messages").withIndex("by_summaryOf", (q) => q.eq("summaryOf", message._id)).order("desc").first(), nowMs)
+        : false;
+
       page.push({
         _id: message._id,
         _creationTime: message._creationTime,
@@ -116,6 +133,12 @@ export const list = query({
         editedAt: message.editedAt ?? null,
         style: message.style ?? null,
         gifQuery: message.gifQuery ?? null,
+        summarizable,
+        summarized,
+        summaryOf: message.summaryOf ?? null,
+        summarySource,
+        summaryStatus: message.summaryOf ? summaryState(message, nowMs) : null,
+        askStatus: message.askOf ? askState(message, nowMs) : null,
         attachments: await Promise.all(
           (message.attachments ?? (message.media ? [{ ...message.media, name: message.body }] : [])).map(async (a) => ({
             url: await signedReadUrl(a.key),
@@ -146,7 +169,7 @@ export const send = mutation({
 
     const body = args.body.trim();
     if (body.length === 0) throw fail("message_empty");
-    if (body.length > MAX_BODY) throw fail("message_too_long");
+    if (body.length > MAX_TEXT) throw fail("message_too_long");
 
     return await postMessage(ctx, me, args.conversationId, "text", body, args.style);
   },
@@ -179,7 +202,7 @@ export const edit = mutation({
 
     const body = args.body.trim();
     if (body.length === 0) throw fail("message_empty");
-    if (body.length > MAX_BODY) throw fail("message_too_long");
+    if (body.length > MAX_TEXT) throw fail("message_too_long");
     if (body === message.body) return;
 
     await ctx.db.patch("messages", message._id, {

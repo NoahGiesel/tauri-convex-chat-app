@@ -3,6 +3,7 @@ import { AuthLoading, Authenticated, Unauthenticated, useMutation, useQuery } fr
 import { api } from "../convex/_generated/api";
 import { AuthScreen } from "@/components/auth-screen";
 import { ChatApp } from "@/components/chat-app";
+import { TranscriptPanelProvider } from "@/hooks/use-transcript-panel";
 import { SettingsPage, type SettingsSection } from "@/components/settings-page";
 import { UpdateBanner } from "@/components/update-banner";
 import { PopoutChat } from "@/components/popout-chat";
@@ -36,6 +37,7 @@ function Session() {
 
   return (
     <SidebarProvider>
+    <TranscriptPanelProvider>
     <div className="flex h-screen flex-col bg-app-bg text-app-text">
       <UpdateBanner
         onOpenSettings={() => {
@@ -58,6 +60,7 @@ function Session() {
         )}
       </div>
     </div>
+    </TranscriptPanelProvider>
     </SidebarProvider>
   );
 }

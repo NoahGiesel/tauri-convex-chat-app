@@ -35,7 +35,14 @@ export type ErrorCode =
   | "message_not_found"
   | "invalid_emoji"
   | "too_many_reactions"
-  | "message_too_long";
+  | "message_too_long"
+  | "nothing_to_summarize"
+  | "summary_not_configured"
+  | "summary_failed"
+  | "already_summarized"
+  | "source_unreachable"
+  | "usage_unavailable"
+  | "video_too_long";
 
 export const fail = (code: ErrorCode) => new ConvexError({ code });
 

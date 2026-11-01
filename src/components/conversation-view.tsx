@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { insertAtTop, useAction, useMutation, usePaginatedQuery, useQuery } from "convex/react";
 import type { OptimisticLocalStore } from "convex/browser";
-import { ArrowDown, Film, Images, Maximize2, Paperclip, Send, Smile, Sparkles, X } from "lucide-react";
+import { ArrowDown, Film, Images, Loader2, Maximize2, Paperclip, Send, Smile, Sparkles, X } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { Avatar } from "@/components/avatar";
@@ -11,8 +11,10 @@ import { LinkPreview } from "@/components/link-preview";
 import { MediaLibrary } from "@/components/media-library";
 import { ProfileModal } from "@/components/profile-modal";
 import { MinimizableMedia } from "@/components/minimizable-media";
+import { AskCard } from "@/components/ask-card";
+import { SummaryCard } from "@/components/summary-card";
 import { MessageEditor } from "@/components/message-editor";
-import { Linkified, MessageBody, isEditableStyle } from "@/components/message-body";
+import { Markdown, MessageBody, isEditableStyle } from "@/components/message-body";
 import { ReactionChips, ReactionToolbar } from "@/components/message-reactions";
 import { useI18n } from "@/i18n/i18n-provider";
 import { usePresence } from "@/lib/presence";
@@ -39,6 +41,7 @@ const COMMANDS = [
   { name: "quote", description: "composer.cmdQuote" },
   { name: "random", description: "composer.cmdRandom" },
   { name: "flip", description: "composer.cmdFlip" },
+  { name: "ask", description: "composer.cmdAsk" },
 ] as const;
 
 type TextStyle = "me" | "code" | "pre" | "spoiler" | "quote";
@@ -99,6 +102,12 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
         editedAt: null,
         style,
         gifQuery,
+        summarizable: false,
+        summarized: false,
+        summaryOf: null,
+        summarySource: null,
+        askStatus: null,
+        summaryStatus: null,
         attachments: [],
       },
     });
@@ -149,6 +158,11 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const pickerBoxRef = useRef<HTMLDivElement>(null);
 
+  // Entrando in una chat il cursore è già nel campo di scrittura.
+  useEffect(() => {
+    composerRef.current?.focus({ preventScroll: true });
+  }, [conversationId]);
+
   // Il selettore si chiude cliccando fuori o con Esc.
   useEffect(() => {
     if (!picker) return;
@@ -187,6 +201,25 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
       setEditingId(null);
     } catch (e) {
       setError(t(errorKey(e)));
+    }
+  }
+
+  const askAction = useAction(api.ask.ask);
+  const summarizeAction = useAction(api.summary.summarize);
+  const [summarizing, setSummarizing] = useState<Set<string>>(new Set());
+  async function summarize(id: Id<"messages">) {
+    setError(null);
+    setSummarizing((prev) => new Set(prev).add(id));
+    try {
+      await summarizeAction({ messageId: id, language });
+    } catch (e) {
+      setError(t(errorKey(e)));
+    } finally {
+      setSummarizing((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     }
   }
 
@@ -486,6 +519,20 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
       await post(() => sendMessage({ conversationId, body: arg, style: name as TextStyle }), body);
       return;
     }
+    if (name === "ask") {
+      if (!arg) {
+        setError(t("composer.commandNeedsText"));
+        return;
+      }
+      // La risposta può metterci qualche secondo: il campo si libera subito e l'attesa si vede in chat.
+      setDraft("");
+      setError(null);
+      stickToBottom.current = true;
+      void askAction({ conversationId, prompt: arg, language }).catch((e) => {
+        setError(t(errorKey(e)));
+      });
+      return;
+    }
     if (name === "random") {
       let min = 1;
       let max = 100;
@@ -698,9 +745,15 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
                   </div>
                 )}
                 {isAi ? (
-                  <div className="mt-2 max-w-[560px] rounded-[calc(14px*var(--radius-scale))] border border-app-ai-border bg-app-ai-bg px-3.5 py-3 text-[15px] leading-relaxed break-words whitespace-pre-wrap text-app-text">
-                    <Linkified text={m.body} />
-                  </div>
+                  m.askStatus ? (
+                    <AskCard status={m.askStatus} body={m.body} />
+                  ) : m.summaryStatus ? (
+                    <SummaryCard status={m.summaryStatus} body={m.body} source={m.summarySource} onLayout={keepBottom} />
+                  ) : (
+                    <div className="mt-2 max-w-[560px] rounded-[calc(14px*var(--radius-scale))] border border-app-ai-border bg-app-ai-bg px-3.5 py-3 text-[15px] leading-relaxed break-words whitespace-pre-wrap text-app-text">
+                      <Markdown text={m.body} />
+                    </div>
+                  )
                 ) : m.kind === "media" && m.attachments.length > 0 ? (
                   <div>
                     {m.body && (
@@ -782,6 +835,17 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
                   [...new Set(splitLinks(m.body).flatMap((p) => (p.type === "link" ? [p.href] : [])))]
                     .slice(0, 2)
                     .map((href) => <LinkPreview key={href} url={href} onLayout={keepBottom} />)}
+                {m.summarizable && !m.summarized && editingId !== m._id && (
+                  <button
+                    type="button"
+                    disabled={summarizing.has(m._id)}
+                    onClick={() => void summarize(m._id)}
+                    className="mt-1.5 flex w-fit items-center gap-1.5 rounded-lg border border-app-ai-border bg-app-ai-bg px-2.5 py-1 text-[13px] font-semibold text-app-ai hover:opacity-80 disabled:opacity-60"
+                  >
+                    {summarizing.has(m._id) ? <Loader2 className="size-3.5 animate-spin" strokeWidth={2.2} /> : <Sparkles className="size-3.5" strokeWidth={2} />}
+                    {summarizing.has(m._id) ? t("chat.summarizing") : t("chat.summarize")}
+                  </button>
+                )}
                 <ReactionChips messageId={m._id} reactions={m.reactions} onError={setError} />
               </div>
             </div>

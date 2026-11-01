@@ -6,6 +6,7 @@ import { internalMutation, query, type QueryCtx } from "./_generated/server";
 import { carriesLinks, extractLinks } from "./linkRules";
 import { requireMember, requireProfile } from "./model";
 import { signedReadUrl } from "./r2";
+import { askState, summaryState } from "./summaryRules";
 
 const MAX_LINKS_PER_MESSAGE = 5;
 
@@ -94,5 +95,40 @@ export const backfillLinks = internalMutation({
     }
     if (!result.isDone) await ctx.scheduler.runAfter(0, internal.library.backfillLinks, { cursor: result.continueCursor });
     return null;
+  },
+});
+
+/** Tutto ciò che l'AI helper ha fatto in una chat (per ora le trascrizioni), dal più recente. */
+export const ai = query({
+  args: { conversationId: v.id("conversations"), paginationOpts: paginationOptsValidator },
+  handler: async (ctx, args) => {
+    const me = await requireProfile(ctx);
+    await requireMember(ctx, args.conversationId, me._id);
+    const nameOf = nameLookup(ctx);
+    const now = Date.now();
+
+    const result = await ctx.db
+      .query("messages")
+      .withIndex("by_conversation_and_kind", (q) => q.eq("conversationId", args.conversationId).eq("kind", "ai"))
+      .order("desc")
+      .paginate(args.paginationOpts);
+
+    const page = [];
+    for (const m of result.page) {
+      const original = m.summaryOf ? await ctx.db.get("messages", m.summaryOf) : m.askOf ? await ctx.db.get("messages", m.askOf) : null;
+      const link = original ? extractLinks(original.body)[0] : undefined;
+      page.push({
+        _id: m._id,
+        _creationTime: m._creationTime,
+        body: m.body,
+        kind: m.askOf ? ("ask" as const) : ("summary" as const),
+        status: m.summaryOf ? summaryState(m, now) : m.askOf ? askState(m, now) : ("done" as const),
+        requestedByName: await nameOf(m.requestedBy),
+        // Cosa è stato trascritto: il link, oppure l'inizio del testo lungo.
+        source: original ? (m.askOf ? original.body.replace(/^\/ask\s+/, "") : (link ?? original.body.slice(0, 120))) : null,
+        sourceIsLink: link !== undefined && !m.askOf,
+      });
+    }
+    return { ...result, page };
   },
 });

@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 
 export type SidebarSide = "left" | "right";
 
-export const SIDEBAR_MIN = 220;
+export const SIDEBAR_MIN = 170;
 export const SIDEBAR_MAX = 480;
 export const SIDEBAR_DEFAULT = 300;
 /** Larghezza della barra compressa (solo avatar). */

@@ -1,5 +1,6 @@
 import { ArrowLeft } from "lucide-react";
 import { SettingsAccount } from "@/components/settings-account";
+import { SettingsAi } from "@/components/settings-ai";
 import { SettingsNotifications } from "@/components/settings-notifications";
 import { SettingsAppearance } from "@/components/settings-appearance";
 import { SettingsUpdates } from "@/components/settings-updates";
@@ -7,7 +8,7 @@ import { useUpdater } from "@/hooks/use-updater";
 import { useI18n } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
-export type SettingsSection = "account" | "appearance" | "notifications" | "updates";
+export type SettingsSection = "account" | "appearance" | "notifications" | "ai" | "updates";
 
 /** Impostazioni a tutta finestra: navigazione a sinistra, contenuto a destra (come nel design). */
 export function SettingsPage({
@@ -26,6 +27,7 @@ export function SettingsPage({
     { id: "account", label: t("settings.nav.account") },
     { id: "appearance", label: t("settings.nav.appearance") },
     { id: "notifications", label: t("settings.nav.notifications") },
+    { id: "ai", label: t("settings.nav.ai") },
     { id: "updates", label: t("settings.nav.updates"), dot: status === "available" },
   ];
 
@@ -69,6 +71,7 @@ export function SettingsPage({
         {section === "account" && <SettingsAccount />}
         {section === "appearance" && <SettingsAppearance />}
         {section === "notifications" && <SettingsNotifications />}
+        {section === "ai" && <SettingsAi />}
         {section === "updates" && <SettingsUpdates />}
       </main>
     </div>

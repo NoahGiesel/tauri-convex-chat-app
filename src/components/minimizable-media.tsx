@@ -4,7 +4,18 @@ import { useI18n } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 /** Immagine o GIF con un pulsante "riduci" (solo al passaggio del mouse) che la nasconde; resta una riga per riaprirla. */
-export function MinimizableMedia({ children, className }: { children: ReactNode; className?: string }) {
+export function MinimizableMedia({
+  children,
+  className,
+  label,
+  icon,
+}: {
+  children: ReactNode;
+  className?: string;
+  /** Testo della riga che riapre il contenuto (predefinito: "Mostra immagine"). */
+  label?: string;
+  icon?: ReactNode;
+}) {
   const { t } = useI18n();
   const [hidden, setHidden] = useState(false);
 
@@ -15,8 +26,8 @@ export function MinimizableMedia({ children, className }: { children: ReactNode;
         onClick={() => setHidden(false)}
         className="mt-1 flex w-fit items-center gap-2 rounded-lg border border-app-border bg-app-field px-3 py-1.5 text-[13px] text-app-text-muted hover:text-app-text"
       >
-        <ImageIcon className="size-4" strokeWidth={1.9} />
-        {t("media.show")}
+        {icon ?? <ImageIcon className="size-4" strokeWidth={1.9} />}
+        {label ?? t("media.show")}
       </button>
     );
   }

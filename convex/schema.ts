@@ -125,6 +125,14 @@ export default defineSchema({
     ),
     /** Testo del messaggio; per `kind: "gif"` è l'indirizzo della GIF (solo GIPHY). */
     body: v.string(),
+    /** Per i riassunti: il messaggio (link o testo lungo) che è stato riassunto. */
+    summaryOf: v.optional(v.id("messages")),
+    /** Per i riassunti: "pending" mentre il modello lavora (il testo è ancora vuoto), poi "done". */
+    summaryStatus: v.optional(v.union(v.literal("pending"), v.literal("done"))),
+    /** Per le risposte di /ask: il messaggio con la domanda. */
+    askOf: v.optional(v.id("messages")),
+    /** Per le risposte di /ask: "pending" finché il modello risponde (il testo è ancora vuoto), poi "done". */
+    askStatus: v.optional(v.union(v.literal("pending"), v.literal("done"))),
     /** Per `kind: "ai"`: chi ha lanciato `/ask`. */
     requestedBy: v.optional(v.id("profiles")),
     /** true se il messaggio contiene link (alimenta l'elenco "Media e link"); assente altrimenti. */
@@ -132,7 +140,8 @@ export default defineSchema({
   })
     .index("by_conversation", ["conversationId"])
     .index("by_conversation_and_kind", ["conversationId", "kind"])
-    .index("by_conversation_and_hasLink", ["conversationId", "hasLink"]),
+    .index("by_conversation_and_hasLink", ["conversationId", "hasLink"])
+    .index("by_summaryOf", ["summaryOf"]),
 
   /** Anteprime dei link (Open Graph), condivise da tutti: si scaricano una volta sola per indirizzo. */
   linkPreviews: defineTable({
@@ -152,4 +161,10 @@ export default defineSchema({
     profileId: v.id("profiles"),
     until: v.number(),
   }).index("by_conversation_and_profile", ["conversationId", "profileId"]),
+
+  /** Trascrizioni già fatte, per contenuto e lingua: lo stesso link o testo non si ritrascrive mai (si riusa quella salvata). */
+  transcripts: defineTable({
+    key: v.string(),
+    body: v.string(),
+  }).index("by_key", ["key"]),
 });

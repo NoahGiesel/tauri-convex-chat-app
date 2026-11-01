@@ -9,6 +9,7 @@ import { Avatar, GroupAvatar } from "@/components/avatar";
 import { ConversationList } from "@/components/conversation-list";
 import { ConversationView } from "@/components/conversation-view";
 import { EditGroupModal } from "@/components/edit-group-modal";
+import { TranscriptPanel } from "@/components/transcript-panel";
 import { GroupModal } from "@/components/group-modal";
 import { InviteModal } from "@/components/invite-modal";
 import { useSidebar } from "@/hooks/use-sidebar";
@@ -337,6 +338,8 @@ export function ChatApp({ onOpenSettings }: { onOpenSettings: () => void }) {
           ))}
         </div>
       </section>
+
+      <TranscriptPanel />
 
       {modal === "invite" && <InviteModal onClose={() => setModal(null)} onOpenChat={openChat} />}
       {editGroupId && byId.get(editGroupId) && (
