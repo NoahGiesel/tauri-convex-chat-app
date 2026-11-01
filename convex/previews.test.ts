@@ -5,7 +5,7 @@ import { api } from "./_generated/api";
 import { parseHtml } from "./previews";
 import schema from "./schema";
 
-const modules = import.meta.glob("./**/*.*s");
+const modules = import.meta.glob("./**/*.ts");
 const base = new URL("https://example.com/articles/one");
 const HOUR = 60 * 60 * 1000;
 
@@ -58,11 +58,11 @@ describe("parseHtml", () => {
 
 describe("fetchPreview", () => {
   const page = (html: string, init?: ResponseInit) => new Response(html, { headers: { "content-type": "text/html; charset=utf-8" }, ...init });
-  const titled = page.bind(null, `<meta property="og:title" content="A title">`);
+  const titled = () => page(`<meta property="og:title" content="A title">`);
   let requests: string[];
 
-  /** Nothing leaves the machine: an address with no answer here fails the test. */
-  function answer(routes: Record<string, () => Response>) {
+  /** Niente esce dalla macchina: un indirizzo senza risposta qui fa fallire il test. */
+  function stubFetch(routes: Record<string, () => Response>) {
     vi.stubGlobal("fetch", async (input: URL | string) => {
       const url = String(input);
       requests.push(url);
@@ -92,7 +92,7 @@ describe("fetchPreview", () => {
   it("saves what the page says", async () => {
     const { alice } = await signedIn();
     const url = "https://example.com/a";
-    answer({ [url]: () => page(`<meta property="og:title" content="A title"><meta property="og:description" content="Words">`) });
+    stubFetch({ [url]: () => page(`<meta property="og:title" content="A title"><meta property="og:description" content="Words">`) });
 
     await alice.action(api.previews.fetchPreview, { url });
 
@@ -102,7 +102,7 @@ describe("fetchPreview", () => {
   it("asks YouTube's lookup for a video, and does not load the page", async () => {
     const { alice } = await signedIn();
     const url = "https://www.youtube.com/watch?v=abc";
-    answer({
+    stubFetch({
       [oembed(url)]: () => Response.json({ title: "A video", author_name: "A channel", thumbnail_url: "https://i.ytimg.com/a.jpg" }),
     });
 
@@ -121,7 +121,7 @@ describe("fetchPreview", () => {
   it("recognises the short YouTube address", async () => {
     const { alice } = await signedIn();
     const url = "https://youtu.be/abc";
-    answer({ [oembed(url)]: () => Response.json({ title: "A short link" }) });
+    stubFetch({ [oembed(url)]: () => Response.json({ title: "A short link" }) });
 
     await alice.action(api.previews.fetchPreview, { url });
 
@@ -131,7 +131,7 @@ describe("fetchPreview", () => {
   it("drops a YouTube thumbnail that is not https", async () => {
     const { alice } = await signedIn();
     const url = "https://youtu.be/abc";
-    answer({ [oembed(url)]: () => Response.json({ title: "A video", thumbnail_url: "http://i.ytimg.com/a.jpg" }) });
+    stubFetch({ [oembed(url)]: () => Response.json({ title: "A video", thumbnail_url: "http://i.ytimg.com/a.jpg" }) });
 
     await alice.action(api.previews.fetchPreview, { url });
 
@@ -141,7 +141,7 @@ describe("fetchPreview", () => {
   it("falls back on the page when YouTube's lookup fails", async () => {
     const { alice } = await signedIn();
     const url = "https://www.youtube.com/watch?v=abc";
-    answer({ [oembed(url)]: () => new Response("", { status: 404 }), [url]: titled });
+    stubFetch({ [oembed(url)]: () => new Response("", { status: 404 }), [url]: titled });
 
     await alice.action(api.previews.fetchPreview, { url });
 
@@ -152,7 +152,7 @@ describe("fetchPreview", () => {
   it("follows a redirect to a public site", async () => {
     const { alice } = await signedIn();
     const url = "https://example.com/old";
-    answer({
+    stubFetch({
       [url]: () => new Response(null, { status: 301, headers: { location: "/new" } }),
       "https://example.com/new": titled,
     });
@@ -165,7 +165,7 @@ describe("fetchPreview", () => {
   it("refuses a redirect to a private address, and remembers the failure", async () => {
     const { alice } = await signedIn();
     const url = "https://example.com/trap";
-    answer({ [url]: () => new Response(null, { status: 302, headers: { location: "http://127.0.0.1/admin" } }) });
+    stubFetch({ [url]: () => new Response(null, { status: 302, headers: { location: "http://127.0.0.1/admin" } }) });
 
     await alice.action(api.previews.fetchPreview, { url });
 
@@ -176,7 +176,7 @@ describe("fetchPreview", () => {
   it("stops after three redirects", async () => {
     const { alice } = await signedIn();
     const url = "https://example.com/loop";
-    answer({ [url]: () => new Response(null, { status: 302, headers: { location: url } }) });
+    stubFetch({ [url]: () => new Response(null, { status: 302, headers: { location: url } }) });
 
     await alice.action(api.previews.fetchPreview, { url });
 
@@ -194,7 +194,7 @@ describe("fetchPreview", () => {
   ]) {
     it(`never fetches ${what}`, async () => {
       const { alice } = await signedIn();
-      answer({});
+      stubFetch({});
 
       await alice.action(api.previews.fetchPreview, { url });
 
@@ -212,7 +212,7 @@ describe("fetchPreview", () => {
     it(`saves a failure when the page ${what}`, async () => {
       const { alice } = await signedIn();
       const url = "https://example.com/a";
-      answer({ [url]: response });
+      stubFetch({ [url]: response });
 
       await alice.action(api.previews.fetchPreview, { url });
 
@@ -223,7 +223,7 @@ describe("fetchPreview", () => {
   it("does not fetch a saved preview again", async () => {
     const { alice } = await signedIn();
     const url = "https://example.com/a";
-    answer({ [url]: titled });
+    stubFetch({ [url]: titled });
 
     await alice.action(api.previews.fetchPreview, { url });
     await alice.action(api.previews.fetchPreview, { url });
@@ -235,11 +235,11 @@ describe("fetchPreview", () => {
     const url = "https://example.com/a";
 
     async function failedOnce() {
-      const test = await signedIn();
-      answer({ [url]: () => new Response("", { status: 500 }) });
-      await test.alice.action(api.previews.fetchPreview, { url });
+      const session = await signedIn();
+      stubFetch({ [url]: () => new Response("", { status: 500 }) });
+      await session.alice.action(api.previews.fetchPreview, { url });
       requests = [];
-      return test;
+      return session;
     }
 
     it("waits an hour before trying again", async () => {
@@ -256,7 +256,7 @@ describe("fetchPreview", () => {
         const saved = await ctx.db.query("linkPreviews").first();
         await ctx.db.patch("linkPreviews", saved!._id, { fetchedAt: Date.now() - HOUR - 1 });
       });
-      answer({ [url]: titled });
+      stubFetch({ [url]: titled });
 
       await alice.action(api.previews.fetchPreview, { url });
 
@@ -266,7 +266,7 @@ describe("fetchPreview", () => {
 
   it("refuses someone who is not signed in", async () => {
     const { t } = await signedIn();
-    answer({});
+    stubFetch({});
 
     await expect(t.action(api.previews.fetchPreview, { url: "https://example.com/a" })).rejects.toThrow();
     expect(requests).toEqual([]);
