@@ -1,6 +1,8 @@
 // Evaluated in the launcher and again in each worker, so it has no side effects. `pnpm e2e` does the work.
-import { DRIVEN_USERS, FIRST_INSTANCE_PORT } from './config.mjs';
-import { instanceCapability } from './guards.mjs';
+import { DRIVEN_USERS, FIRST_INSTANCE_PORT, INTERFACE_WAIT_MS } from './config.mjs';
+import { confirmCleanEnv, instanceCapability } from './guards.mjs';
+
+confirmCleanEnv();
 
 export const config = {
   runner: 'local',
@@ -12,5 +14,5 @@ export const config = {
   reporters: ['spec'],
   mochaOpts: { ui: 'bdd', timeout: 30_000 },
   logLevel: 'warn',
-  waitforTimeout: 5_000,
+  waitforTimeout: INTERFACE_WAIT_MS,
 };

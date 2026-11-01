@@ -4,18 +4,22 @@ import net from 'node:net';
 import path from 'node:path';
 import { CONVEX_URL, DEPLOYMENT, EXE, PROFILES, SITE_URL, STUB_URL } from './config.mjs';
 
+const namesATarget = (key) => /^(CONVEX_|VITE_)/i.test(key);
+
 /** The developer's environment is not inherited: `convex import --replace-all` wipes whatever it reaches. */
 export function commandEnv(extra = {}, base = process.env) {
-  const env = { ...base };
-  for (const key of Object.keys(env)) if (key.toUpperCase().startsWith('CONVEX_')) delete env[key];
-  return { ...env, ...extra };
+  return { ...Object.fromEntries(Object.entries(base).filter(([key]) => !namesATarget(key))), ...extra };
+}
+
+/** WDIO loads a `.env` from its working folder into itself, its workers and the apps. */
+export function confirmCleanEnv(env = process.env) {
+  const found = Object.keys(env).filter(namesATarget);
+  if (found.length) throw new Error(`the developer's environment reached the suite: ${found.join(', ')}`);
 }
 
 /** Vite reads `.env` files, and only variables set here win over them. */
 export function buildEnv(base = process.env) {
-  const env = commandEnv({}, base);
-  for (const key of Object.keys(env)) if (key.toUpperCase().startsWith('VITE_')) delete env[key];
-  delete env.CARGO_TARGET_DIR;
+  const { CARGO_TARGET_DIR: _elsewhere, ...env } = commandEnv({}, base);
   return {
     ...env,
     VITE_CONVEX_URL: CONVEX_URL,

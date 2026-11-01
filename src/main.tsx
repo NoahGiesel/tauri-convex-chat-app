@@ -13,10 +13,9 @@ const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 
 // La suite E2E legge da qui gli indirizzi della build. In release il blocco sparisce.
 if (import.meta.env.VITE_E2E) {
-  (window as unknown as { __E2E__: unknown }).__E2E__ = {
-    convexUrl: import.meta.env.VITE_CONVEX_URL,
-    siteUrl: import.meta.env.VITE_CONVEX_SITE_URL,
-  };
+  Object.assign(window, {
+    __E2E__: { convexUrl: import.meta.env.VITE_CONVEX_URL, siteUrl: import.meta.env.VITE_CONVEX_SITE_URL },
+  });
 }
 
 createRoot(document.getElementById("root")!).render(

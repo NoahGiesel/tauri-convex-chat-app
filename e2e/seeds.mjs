@@ -1,13 +1,11 @@
 // Builds the Seeds through real sign-up and public functions, then snapshots them.
 import fs from 'node:fs';
 import path from 'node:path';
-import { getSetCookie } from '@convex-dev/better-auth/client/plugins';
+import { getCookie, getSetCookie } from '@convex-dev/better-auth/client/plugins';
 import { ConvexHttpClient } from 'convex/browser';
-import { anyApi as api } from 'convex/server';
+import { api } from '../convex/_generated/api.js';
 import { APP_ORIGIN, CONVEX_URL, PASSWORD, SESSIONS_FILE, SITE_URL, SNAPSHOTS, USERS } from './config.mjs';
 import { convexInStage } from './stage.mjs';
-
-const cookieHeader = (store) => Object.entries(store).map(([key, { value }]) => `${key}=${value}`).join('; ');
 
 async function signUp({ name, email }) {
   const res = await fetch(`${SITE_URL}/api/auth/sign-up/email`, {
@@ -16,18 +14,18 @@ async function signUp({ name, email }) {
     body: JSON.stringify({ name, email, password: PASSWORD }),
   });
   if (!res.ok) throw new Error(`sign-up ${email}: ${res.status} ${await res.text()}`);
-  // The package's own helper writes the format that crossDomainClient keeps in localStorage.
-  const store = JSON.parse(getSetCookie(res.headers.get('set-better-auth-cookie') ?? ''));
+  // The package's own helpers read and write the format that crossDomainClient keeps in localStorage.
+  const session = getSetCookie(res.headers.get('set-better-auth-cookie') ?? '');
 
   const tokenRes = await fetch(`${SITE_URL}/api/auth/convex/token`, {
-    headers: { origin: APP_ORIGIN, 'better-auth-cookie': cookieHeader(store) },
+    headers: { origin: APP_ORIGIN, 'better-auth-cookie': getCookie(session) },
   });
   if (!tokenRes.ok) throw new Error(`token ${email}: ${tokenRes.status} ${await tokenRes.text()}`);
 
   const client = new ConvexHttpClient(CONVEX_URL);
   client.setAuth((await tokenRes.json()).token);
   const profileId = await client.mutation(api.users.ensureProfile, {});
-  return { client, store, profileId };
+  return { client, session, profileId };
 }
 
 function snapshot(seed) {
@@ -55,6 +53,6 @@ export async function buildSeeds() {
   const users = await buildBase();
   await buildFriends(users);
 
-  const sessions = Object.fromEntries(Object.entries(users).map(([key, { store }]) => [key, JSON.stringify(store)]));
+  const sessions = Object.fromEntries(Object.entries(users).map(([key, { session }]) => [key, session]));
   fs.writeFileSync(SESSIONS_FILE, JSON.stringify(sessions));
 }

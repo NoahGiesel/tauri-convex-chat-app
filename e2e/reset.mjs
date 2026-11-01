@@ -1,11 +1,12 @@
 // A Reset returns the Test backend to exactly one Seed. Fixtures own it, so it runs before every test.
 import fs from 'node:fs';
 import path from 'node:path';
-import { APP_URL, DRIVEN_USERS, SESSIONS_FILE, SNAPSHOTS } from './config.mjs';
+import { APP_URL, DRIVEN_USERS, INTERFACE_WAIT_MS, SESSIONS_FILE, SNAPSHOTS } from './config.mjs';
 import { confirmInstance } from './guards.mjs';
 import { convexInStage } from './stage.mjs';
 
 const MAIN_WINDOW = 'main';
+const WAIT = { timeout: INTERFACE_WAIT_MS, interval: 50 };
 
 const instance = (name) => browser.getInstance(name);
 const forEachInstance = (action) => Promise.all(DRIVEN_USERS.map((name) => action(instance(name), name)));
@@ -13,8 +14,7 @@ const forEachInstance = (action) => Promise.all(DRIVEN_USERS.map((name) => actio
 /** Waits for the app page to load, then checks which backend this instance was built for. */
 async function confirmLoadedApp(b, name) {
   await b.waitUntil(() => b.execute(() => document.readyState === 'complete' && location.href !== 'about:blank'), {
-    timeout: 5_000,
-    interval: 50,
+    ...WAIT,
     timeoutMsg: `${name} did not load the app`,
   });
   confirmInstance(name, await b.execute(() => window.__E2E__));
@@ -42,11 +42,10 @@ const restoreSession = (b, name) => {
 };
 
 /** Live apps write into fresh data through `heartbeat` and `markRead`. `url()` returns before the navigation ends. */
-async function quiet(b, name) {
+async function leaveApp(b, name) {
   await b.url('about:blank');
   await b.waitUntil(async () => (await b.execute(() => location.href)) === 'about:blank', {
-    timeout: 5_000,
-    interval: 50,
+    ...WAIT,
     timeoutMsg: `${name} did not leave the app page`,
   });
 }
@@ -59,7 +58,7 @@ async function loadApp(b, name) {
 export async function reset(seed) {
   await forEachInstance(closePopouts);
   await forEachInstance(restoreSession);
-  await forEachInstance(quiet);
+  await forEachInstance(leaveApp);
   convexInStage(['import', '--replace-all', '--yes', path.join(SNAPSHOTS, `${seed}.zip`)]);
   await forEachInstance(loadApp);
 }

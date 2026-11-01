@@ -20,6 +20,7 @@ if (process.platform !== 'win32') {
 
 const log = (message) => console.log(`[e2e] ${message}`);
 const running = new Set();
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function track(child) {
   running.add(child);
@@ -28,7 +29,9 @@ function track(child) {
 }
 
 /** On Windows, killing a process leaves its children alive, and they would keep the ports. */
-const killTree = (pid) => spawnSync('taskkill', ['/pid', String(pid), '/T', '/F'], { stdio: 'ignore' });
+function stopRunning() {
+  for (const { pid } of running) spawnSync('taskkill', ['/pid', String(pid), '/T', '/F'], { env: commandEnv(), stdio: 'ignore' });
+}
 
 /** Stops what a killed parent left behind, chosen by path so that an installed Chat is never touched. */
 function stopLeftovers() {
@@ -37,12 +40,12 @@ function stopLeftovers() {
       Where-Object { $_.ProcessId -ne $PID -and ($_.ExecutablePath -eq $env:E2E_EXE -or ($_.CommandLine -and $_.CommandLine.Contains($env:E2E_STAGE))) } |
       ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }`;
   spawnSync('powershell', ['-NoProfile', '-NonInteractive', '-Command', script], {
-    env: { ...process.env, E2E_EXE: EXE, E2E_STAGE: STAGE },
+    env: commandEnv({ E2E_EXE: EXE, E2E_STAGE: STAGE }),
     stdio: 'ignore',
   });
 }
 
-function finish(command, args, options) {
+function runToEnd(command, args, options) {
   return new Promise((resolve, reject) => {
     const child = track(spawn(command, args, options));
     child.once('error', reject);
@@ -54,7 +57,7 @@ async function waitFor(what, check, timeoutMs = 120_000) {
   const end = Date.now() + timeoutMs;
   while (Date.now() < end) {
     if (await check().catch(() => false)) return;
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await sleep(100);
   }
   throw new Error(`timed out waiting for ${what}`);
 }
@@ -62,7 +65,7 @@ async function waitFor(what, check, timeoutMs = 120_000) {
 async function buildTestBuild() {
   const tauri = path.join(ROOT, 'node_modules', '@tauri-apps', 'cli', 'tauri.js');
   const config = JSON.stringify({ identifier: IDENTIFIER });
-  await finish(process.execPath, [tauri, 'build', '--debug', '--no-bundle', '--features', 'e2e', '--config', config], {
+  await runToEnd(process.execPath, [tauri, 'build', '--debug', '--no-bundle', '--features', 'e2e', '--config', config], {
     cwd: ROOT,
     env: buildEnv(),
     stdio: 'inherit',
@@ -105,10 +108,10 @@ async function removeWithRetries(target) {
       return;
     } catch {
       // WebView2 outlives the app by a moment and holds its folder until it exits.
-      await new Promise((resolve) => setTimeout(resolve, 250));
+      await sleep(250);
     }
   }
-  log(`could not delete ${target}`);
+  throw new Error(`could not delete ${target}`);
 }
 
 async function makeProfiles() {
@@ -118,18 +121,22 @@ async function makeProfiles() {
 
 async function runTests() {
   const wdio = path.join(ROOT, 'node_modules', '@wdio', 'cli', 'bin', 'wdio.js');
-  await finish(process.execPath, [wdio, 'run', path.join(E2E_DIR, 'wdio.conf.mjs')], {
-    cwd: ROOT,
+  await runToEnd(process.execPath, [wdio, 'run', path.join(E2E_DIR, 'wdio.conf.mjs')], {
+    // WDIO loads the .env in its working folder, and the repo root holds the developer's.
+    cwd: E2E_DIR,
     env: commandEnv(),
     stdio: 'inherit',
   });
 }
 
 async function cleanUp() {
-  for (const child of running) killTree(child.pid);
+  stopRunning();
   stopLeftovers();
-  await waitFor('ports to be free', async () => (await findBusyPorts(PORTS)).length === 0, 15_000);
-  await removeWithRetries(PROFILES);
+  try {
+    await waitFor('ports to be free', async () => (await findBusyPorts(PORTS)).length === 0, 15_000);
+  } finally {
+    await removeWithRetries(PROFILES);
+  }
 }
 
 // This stops before the clean-up on purpose: what holds the port is not ours to stop.
@@ -142,7 +149,7 @@ if (busy.length) {
 let failed = false;
 process.on('SIGINT', () => {
   failed = true;
-  for (const child of running) killTree(child.pid);
+  stopRunning();
 });
 
 try {
@@ -165,7 +172,8 @@ try {
   await cleanUp();
 } catch (err) {
   failed = true;
-  console.error(`[e2e] FAILED: ${err.message}. Still busy: ${(await findBusyPorts(PORTS)).join(', ')}`);
+  const stillBusy = await findBusyPorts(PORTS);
+  console.error(`[e2e] FAILED: ${err.message}${stillBusy.length ? `. Still busy: ${stillBusy.join(', ')}` : ''}`);
 }
 
 process.exit(failed ? 1 : 0);

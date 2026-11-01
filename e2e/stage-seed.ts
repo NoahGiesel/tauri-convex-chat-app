@@ -5,9 +5,11 @@ import { internalMutation } from "./_generated/server";
 export const fixAvatars = internalMutation({
   args: {},
   handler: async (ctx) => {
-    let i = 0;
-    for await (const profile of ctx.db.query("profiles").withIndex("by_tokenIdentifier")) {
-      await ctx.db.patch("profiles", profile._id, { avatarIndex: i++ % 3 });
+    // By email, because IDs and tokens differ between runs.
+    const profiles = await ctx.db.query("profiles").withIndex("by_tokenIdentifier").collect();
+    profiles.sort((a, b) => a.email.localeCompare(b.email));
+    for (const [i, profile] of profiles.entries()) {
+      await ctx.db.patch("profiles", profile._id, { avatarIndex: i % 3 });
     }
   },
 });

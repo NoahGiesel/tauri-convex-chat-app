@@ -6,11 +6,10 @@ import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { after, afterEach, beforeEach, describe, it } from 'node:test';
-import { fileURLToPath } from 'node:url';
-import { buildEnv, commandEnv, confirmStage, findBusyPorts, confirmInstance, instanceCapability } from './guards.mjs';
+import { ROOT } from './config.mjs';
+import { buildEnv, commandEnv, confirmCleanEnv, confirmStage, findBusyPorts, confirmInstance, instanceCapability } from './guards.mjs';
 import { prepareStage } from './stage.mjs';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // What the CLI really writes, comment and blank lines included.
 const LOCAL_ENV = [
   '# Deployment used by `npx convex dev`',
@@ -47,10 +46,25 @@ describe('the environment a command gets', () => {
     assert.deepEqual(env, { PATH: 'kept' });
   });
 
+  it('drops every VITE_* variable, which belong to the Test build alone', () => {
+    assert.deepEqual(commandEnv({}, { VITE_CONVEX_URL: 'https://real.convex.cloud', vite_other: 'real', PATH: 'kept' }), { PATH: 'kept' });
+  });
+
   it('keeps what the suite sets itself', () => {
     assert.deepEqual(commandEnv({ CONVEX_AGENT_MODE: 'anonymous' }, { CONVEX_AGENT_MODE: 'other' }), {
       CONVEX_AGENT_MODE: 'anonymous',
     });
+  });
+});
+
+describe('WDIO', () => {
+  it('refuses an environment that a .env file reached', () => {
+    assert.throws(() => confirmCleanEnv({ CONVEX_DEPLOYMENT: 'dev:real' }), /CONVEX_DEPLOYMENT/);
+    assert.throws(() => confirmCleanEnv({ VITE_CONVEX_URL: 'https://real.convex.cloud' }), /VITE_CONVEX_URL/);
+  });
+
+  it('accepts the environment the suite gives it', () => {
+    assert.doesNotThrow(() => confirmCleanEnv(commandEnv({}, { CONVEX_DEPLOYMENT: 'dev:real', VITE_E2E: '1', PATH: 'kept' })));
   });
 });
 
@@ -61,10 +75,6 @@ describe('the Test build', () => {
     assert.equal(env.VITE_CONVEX_SITE_URL, 'http://127.0.0.1:3311');
     assert.equal(env.VITE_E2E, '1');
     assert.equal(env.CONVEX_URL, undefined);
-  });
-
-  it('drops VITE_* variables the suite does not set', () => {
-    assert.equal(buildEnv({ VITE_SOMETHING_NEW: 'real' }).VITE_SOMETHING_NEW, undefined);
   });
 
   it('cannot be sent to another target folder, which would leave an old binary in place', () => {

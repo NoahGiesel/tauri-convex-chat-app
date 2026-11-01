@@ -10,14 +10,16 @@ export const SESSIONS_FILE = path.join(STAGE, 'sessions.json');
 export const PROFILES = path.join(E2E_DIR, '.profiles');
 export const EXE = path.join(ROOT, 'src-tauri', 'target', 'debug', 'tauri-convex-chat.exe');
 
-export const CONVEX_URL = 'http://127.0.0.1:3310';
-export const SITE_URL = 'http://127.0.0.1:3311';
-export const STUB_URL = 'http://127.0.0.1:3312';
 export const CONVEX_PORT = 3310;
 export const SITE_PORT = 3311;
+const STUB_PORT = 3312;
+export const CONVEX_URL = `http://127.0.0.1:${CONVEX_PORT}`;
+export const SITE_URL = `http://127.0.0.1:${SITE_PORT}`;
+export const STUB_URL = `http://127.0.0.1:${STUB_PORT}`;
 /** The first instance's WebDriver port. The service gives the next instance this port plus one. */
 export const FIRST_INSTANCE_PORT = 4540;
-export const PORTS = [CONVEX_PORT, SITE_PORT, 3312, FIRST_INSTANCE_PORT, FIRST_INSTANCE_PORT + 1];
+export const PORTS = [CONVEX_PORT, SITE_PORT, STUB_PORT, FIRST_INSTANCE_PORT, FIRST_INSTANCE_PORT + 1];
+export const INTERFACE_WAIT_MS = 5_000;
 
 /** In this order: `alice` gets 4540 and `bob` gets 4541. */
 export const DRIVEN_USERS = ['alice', 'bob'];
