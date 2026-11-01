@@ -40,6 +40,7 @@ export const BACKEND_VERSION = 'precompiled-2026-10-22-1447815';
 // Test-only and committed on purpose. It must never be set on a real deployment.
 export const TEST_SECRET = 'e2e-test-only-secret-never-use-on-a-real-deployment';
 
+export const EXPIRED_INVITE_TOKEN = 'e2e-expired-invite';
 export const PASSWORD = 'correct-horse-battery';
 export const USERS = {
   alice: { name: 'Alice Test', email: 'alice@e2e.invalid' },

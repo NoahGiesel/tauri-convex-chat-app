@@ -1,4 +1,5 @@
 // Copied into the stage's convex/ as e2eSeed.ts. It never lives in the repo's convex/, because `npx convex deploy` works from there.
+import { v } from "convex/values";
 import { internalMutation } from "./_generated/server";
 
 /** The one thing public functions cannot do here: make the random avatar index deterministic. */
@@ -11,5 +12,16 @@ export const fixAvatars = internalMutation({
     for (const [i, profile] of profiles.entries()) {
       await ctx.db.patch("profiles", profile._id, { avatarIndex: i % 3 });
     }
+  },
+});
+
+/** Public functions only make invites that are valid for 7 days. */
+export const expiredInvite = internalMutation({
+  args: { token: v.string(), createdByEmail: v.string() },
+  handler: async (ctx, args) => {
+    const profiles = await ctx.db.query("profiles").withIndex("by_tokenIdentifier").collect();
+    const inviter = profiles.find((profile) => profile.email === args.createdByEmail);
+    if (!inviter) throw new Error(`no profile for ${args.createdByEmail}`);
+    await ctx.db.insert("invites", { token: args.token, createdBy: inviter._id, expiresAt: Date.now() - 60 * 60 * 1000 });
   },
 });

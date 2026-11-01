@@ -1,10 +1,10 @@
 // A Reset returns the Test backend to exactly one Seed. Fixtures own it, so it runs before every test.
 import fs from 'node:fs';
 import path from 'node:path';
-import { APP_URL, DRIVEN_USERS, FAILURES, INTERFACE_WAIT_MS, SESSIONS_FILE, SNAPSHOTS, TEST_RAN_FILE } from './config.mjs';
+import { APP_URL, DRIVEN_USERS, FAILURES, INTERFACE_WAIT_MS, SESSIONS_FILE, TEST_RAN_FILE } from './config.mjs';
 import { confirmInstance } from './guards.mjs';
 import { screenshotName } from './report.mjs';
-import { convexInStage } from './stage.mjs';
+import { importSeed } from './stage.mjs';
 
 const MAIN_WINDOW = 'main';
 const WAIT = { timeout: INTERFACE_WAIT_MS, interval: 50 };
@@ -100,6 +100,6 @@ export async function reset(seed, { signedIn = true } = {}) {
   await forEachInstance(closePopouts);
   await forEachInstance((b, name) => prepareStorage(b, name, signedIn));
   await forEachInstance(leaveApp);
-  convexInStage(['import', '--replace-all', '--yes', path.join(SNAPSHOTS, `${seed}.zip`)]);
+  importSeed(seed);
   await forEachInstance(loadApp);
 }

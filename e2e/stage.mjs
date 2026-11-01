@@ -2,7 +2,7 @@
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { BACKEND_VERSION, CONVEX_PORT, ROOT, SITE_PORT, STAGE, TEST_LIMIT_MS } from './config.mjs';
+import { BACKEND_VERSION, CONVEX_PORT, ROOT, SITE_PORT, SNAPSHOTS, STAGE, TEST_LIMIT_MS } from './config.mjs';
 import { commandEnv, confirmStage } from './guards.mjs';
 
 const CONVEX_BIN = path.join(ROOT, 'node_modules', 'convex', 'bin', 'main.js');
@@ -46,4 +46,9 @@ export function convexInStage(args) {
   const res = spawnSync(process.execPath, [CONVEX_BIN, ...args], { cwd: STAGE, env: commandEnv(), encoding: 'utf8', timeout: TEST_LIMIT_MS });
   if (res.status !== 0) throw new Error(`convex ${args.join(' ')} failed\n${res.stdout}\n${res.stderr}`);
   return res;
+}
+
+/** Replaces everything on the Test backend with one Seed. */
+export function importSeed(seed) {
+  convexInStage(['import', '--replace-all', '--yes', path.join(SNAPSHOTS, `${seed}.zip`)]);
 }
