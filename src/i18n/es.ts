@@ -356,4 +356,9 @@ export const es: Messages = {
   "composer.cmdAsk": "Pregunta lo que quieras al AI helper",
   "chat.asking": "AI helper está pensando…",
   "chat.askFailed": "El AI helper no pudo responder",
+  "settings.linkBrowser.title": "Navegador para enlaces",
+  "settings.linkBrowser.description": "Elige qué navegador abre los enlaces (p. ej. el que ya tiene tus pestañas abiertas).",
+  "settings.linkBrowser.system": "Predeterminado del sistema",
+  "settings.nav.preferences": "Preferencias",
+  "settings.preferences.subtitle": "Idioma y comportamiento general de la aplicación.",
 };

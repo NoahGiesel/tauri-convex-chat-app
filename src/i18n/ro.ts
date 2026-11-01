@@ -356,4 +356,9 @@ export const ro: Messages = {
   "composer.cmdAsk": "Întreabă orice pe AI helper",
   "chat.asking": "AI helper se gândește…",
   "chat.askFailed": "AI helper nu a putut răspunde",
+  "settings.linkBrowser.title": "Browser pentru linkuri",
+  "settings.linkBrowser.description": "Alege browserul în care se deschid linkurile (ex. cel cu filele deja deschise).",
+  "settings.linkBrowser.system": "Implicit sistem",
+  "settings.nav.preferences": "Preferințe",
+  "settings.preferences.subtitle": "Limba și comportamentul general al aplicației.",
 };

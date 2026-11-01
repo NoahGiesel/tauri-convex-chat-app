@@ -1,6 +1,7 @@
 import { ArrowLeft } from "lucide-react";
 import { SettingsAccount } from "@/components/settings-account";
 import { SettingsAi } from "@/components/settings-ai";
+import { SettingsPreferences } from "@/components/settings-preferences";
 import { SettingsNotifications } from "@/components/settings-notifications";
 import { SettingsAppearance } from "@/components/settings-appearance";
 import { SettingsUpdates } from "@/components/settings-updates";
@@ -8,7 +9,7 @@ import { useUpdater } from "@/hooks/use-updater";
 import { useI18n } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
-export type SettingsSection = "account" | "appearance" | "notifications" | "ai" | "updates";
+export type SettingsSection = "account" | "preferences" | "appearance" | "notifications" | "ai" | "updates";
 
 /** Impostazioni a tutta finestra: navigazione a sinistra, contenuto a destra (come nel design). */
 export function SettingsPage({
@@ -25,6 +26,7 @@ export function SettingsPage({
 
   const items: { id: SettingsSection; label: string; dot?: boolean }[] = [
     { id: "account", label: t("settings.nav.account") },
+    { id: "preferences", label: t("settings.nav.preferences") },
     { id: "appearance", label: t("settings.nav.appearance") },
     { id: "notifications", label: t("settings.nav.notifications") },
     { id: "ai", label: t("settings.nav.ai") },
@@ -69,6 +71,7 @@ export function SettingsPage({
 
       <main className="min-w-0 flex-1 overflow-y-auto px-[clamp(16px,5vw,64px)] py-8">
         {section === "account" && <SettingsAccount />}
+        {section === "preferences" && <SettingsPreferences />}
         {section === "appearance" && <SettingsAppearance />}
         {section === "notifications" && <SettingsNotifications />}
         {section === "ai" && <SettingsAi />}

@@ -355,6 +355,11 @@ export const en = {
   "composer.cmdAsk": "Ask the AI helper anything",
   "chat.asking": "AI helper is thinking…",
   "chat.askFailed": "The AI helper couldn't answer",
+  "settings.linkBrowser.title": "Browser for links",
+  "settings.linkBrowser.description": "Choose which browser opens links (e.g. the one where your tabs already are).",
+  "settings.linkBrowser.system": "System default",
+  "settings.nav.preferences": "Preferences",
+  "settings.preferences.subtitle": "Language and general app behaviour.",
 } as const;
 
 export type MessageKey = keyof typeof en;

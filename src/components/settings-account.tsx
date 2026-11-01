@@ -2,7 +2,6 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Avatar } from "@/components/avatar";
 import { ProfileEditor } from "@/components/profile-editor";
-import { SettingsLanguage } from "@/components/settings-language";
 import { useI18n } from "@/i18n/i18n-provider";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
@@ -35,8 +34,6 @@ export function SettingsAccount() {
       </section>
 
       <ProfileEditor />
-
-      <SettingsLanguage />
     </div>
   );
 }
