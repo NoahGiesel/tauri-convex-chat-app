@@ -3,20 +3,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { ConvexHttpClient } from 'convex/browser';
 import { anyApi as api } from 'convex/server';
-import { parseSetCookieHeader } from 'better-auth/cookies';
+import { getSetCookie } from '@convex-dev/better-auth/client/plugins';
 import { APP_ORIGIN, CLOUD, FRIENDS_ROWS, PASSWORD, SESSIONS_FILE, SITE, SNAPSHOTS, USERS, convexSync } from './config.mjs';
 import { readRows } from './fixtures.mjs';
 
-/** Mirrors what crossDomainClient stores in localStorage. This is a private format. */
-function toCookieStore(header) {
-  const store = {};
-  for (const [name, cookie] of parseSetCookieHeader(header)) {
-    if (name.endsWith('convex_jwt')) continue;
-    const maxAge = cookie['max-age'];
-    store[name] = { value: cookie.value, expires: new Date(Date.now() + Number(maxAge) * 1000).toISOString() };
-  }
-  return store;
-}
+/** The package's own helper writes the format crossDomainClient keeps in localStorage. */
+const toCookieStore = (header) => JSON.parse(getSetCookie(header));
 
 const cookieHeader = (store) => Object.entries(store).map(([k, v]) => `${k}=${v.value}`).join('; ');
 
