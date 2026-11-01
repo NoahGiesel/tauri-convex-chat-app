@@ -2,7 +2,7 @@ import { useMessageNotifications } from "@/hooks/use-message-notifications";
 import { useEffect, useMemo, useRef, useState, type DragEvent, type PointerEvent } from "react";
 import { useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
-import { X } from "lucide-react";
+import { PanelLeftOpen, X } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { Avatar, GroupAvatar } from "@/components/avatar";
@@ -10,6 +10,7 @@ import { ConversationList } from "@/components/conversation-list";
 import { ConversationView } from "@/components/conversation-view";
 import { GroupModal } from "@/components/group-modal";
 import { InviteModal } from "@/components/invite-modal";
+import { useSidebar } from "@/hooks/use-sidebar";
 import { useI18n } from "@/i18n/i18n-provider";
 import { openChatWindow } from "@/lib/popout";
 import { usePresence, usePresenceHeartbeat } from "@/lib/presence";
@@ -30,6 +31,7 @@ const MIN_PANE_PX = 280;
  * Per dividere la vista si trascina una scheda sulla metà sinistra o destra di una chat già aperta.
  */
 export function ChatApp({ onOpenSettings }: { onOpenSettings: () => void }) {
+  const sidebar = useSidebar();
   const { t } = useI18n();
   usePresenceHeartbeat();
   const presence = usePresence();
@@ -191,6 +193,17 @@ export function ChatApp({ onOpenSettings }: { onOpenSettings: () => void }) {
       <section className="flex min-w-0 flex-1 flex-col bg-app-panel">
         {/* Schede delle chat aperte, con lo stato di chi c'è dentro: trascinale su un pannello per dividere la vista */}
         <div className="flex h-[58px] shrink-0 items-end gap-1 overflow-x-auto bg-app-bg px-2.5 pt-2.5">
+          {sidebar.hidden && (
+            <button
+              type="button"
+              aria-label={t("sidebar.show")}
+              title={t("sidebar.show")}
+              onClick={() => sidebar.setHidden(false)}
+              className="mr-1 mb-1.5 flex size-9 shrink-0 items-center justify-center rounded-[calc(10px*var(--radius-scale))] text-app-text-muted hover:bg-app-field hover:text-app-text"
+            >
+              <PanelLeftOpen className="size-5" strokeWidth={1.8} />
+            </button>
+          )}
           {tabs.map((id) => {
             const c = byId.get(id);
             if (!c) return null;

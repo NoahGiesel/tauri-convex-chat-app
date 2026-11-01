@@ -302,4 +302,10 @@ export const it: Messages = {
   "chat.typing.one": "{name} sta scrivendo…",
   "chat.typing.two": "{a} e {b} stanno scrivendo…",
   "chat.typing.many": "Più persone stanno scrivendo…",
+  "side.devBuild": "Versione di sviluppo",
+  "side.devBuildHint": "Stai usando la versione di sviluppo locale, non l'app rilasciata.",
+  "media.minimize": "Riduci",
+  "media.show": "Mostra immagine",
+  "sidebar.hide": "Nascondi barra laterale (Ctrl/Cmd+B)",
+  "sidebar.show": "Mostra barra laterale (Ctrl/Cmd+B)",
 };

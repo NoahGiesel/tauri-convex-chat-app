@@ -302,4 +302,10 @@ export const ro: Messages = {
   "chat.typing.one": "{name} scrie…",
   "chat.typing.two": "{a} și {b} scriu…",
   "chat.typing.many": "Mai multe persoane scriu…",
+  "side.devBuild": "Versiune de dezvoltare",
+  "side.devBuildHint": "Folosești versiunea locală de dezvoltare, nu aplicația lansată.",
+  "media.minimize": "Minimizează",
+  "media.show": "Arată imaginea",
+  "sidebar.hide": "Ascunde bara laterală (Ctrl/Cmd+B)",
+  "sidebar.show": "Arată bara laterală (Ctrl/Cmd+B)",
 };

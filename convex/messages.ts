@@ -23,9 +23,10 @@ async function postMessage(
   style?: Doc<"messages">["style"],
   media?: Doc<"messages">["media"],
   attachments?: Doc<"messages">["attachments"],
+  gifQuery?: string,
 ) {
   const now = Date.now();
-  const messageId = await ctx.db.insert("messages", { conversationId, authorId: me._id, kind, body, style, media, attachments, hasLink: carriesLinks(kind, style, body) ? true : undefined });
+  const messageId = await ctx.db.insert("messages", { conversationId, authorId: me._id, kind, body, style, media, attachments, gifQuery, hasLink: carriesLinks(kind, style, body) ? true : undefined });
   await ctx.db.patch("conversations", conversationId, { lastMessageAt: now });
 
   // Aggiorna l'ordinamento della lista chat di ogni membro; per chi scrive il messaggio è già letto.
@@ -114,6 +115,7 @@ export const list = query({
         reactions: [...grouped.values()],
         editedAt: message.editedAt ?? null,
         style: message.style ?? null,
+        gifQuery: message.gifQuery ?? null,
         attachments: await Promise.all(
           (message.attachments ?? (message.media ? [{ ...message.media, name: message.body }] : [])).map(async (a) => ({
             url: await signedReadUrl(a.key),
@@ -152,12 +154,13 @@ export const send = mutation({
 
 /** Invia una GIF scelta da GIPHY. */
 export const sendGif = mutation({
-  args: { conversationId: v.id("conversations"), url: v.string() },
+  args: { conversationId: v.id("conversations"), url: v.string(), query: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const me = await requireProfile(ctx);
     await requireMember(ctx, args.conversationId, me._id);
     if (!isGiphyUrl(args.url)) throw fail("invalid_gif");
-    return await postMessage(ctx, me, args.conversationId, "gif", args.url);
+    const query = args.query?.trim().slice(0, 100) || undefined;
+    return await postMessage(ctx, me, args.conversationId, "gif", args.url, undefined, undefined, undefined, query);
   },
 });
 

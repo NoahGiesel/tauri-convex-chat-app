@@ -301,6 +301,12 @@ export const en = {
   "chat.typing.one": "{name} is typing…",
   "chat.typing.two": "{a} and {b} are typing…",
   "chat.typing.many": "Several people are typing…",
+  "side.devBuild": "Development build",
+  "side.devBuildHint": "You are running the local development version, not the released app.",
+  "media.minimize": "Minimize",
+  "media.show": "Show image",
+  "sidebar.hide": "Hide sidebar (Ctrl/Cmd+B)",
+  "sidebar.show": "Show sidebar (Ctrl/Cmd+B)",
 } as const;
 
 export type MessageKey = keyof typeof en;

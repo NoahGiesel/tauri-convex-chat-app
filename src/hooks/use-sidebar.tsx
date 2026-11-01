@@ -13,13 +13,15 @@ const STORAGE_KEY = "chat:sidebar";
 interface SidebarPrefs {
   width: number;
   collapsed: boolean;
+  /** Nascosta del tutto: resta solo un pulsante per riaprirla. */
+  hidden: boolean;
   side: SidebarSide;
 }
 
 const clamp = (width: number) => Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, Math.round(width)));
 
 function load(): SidebarPrefs {
-  const fallback: SidebarPrefs = { width: SIDEBAR_DEFAULT, collapsed: false, side: "left" };
+  const fallback: SidebarPrefs = { width: SIDEBAR_DEFAULT, collapsed: false, hidden: false, side: "left" };
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return fallback;
@@ -27,6 +29,7 @@ function load(): SidebarPrefs {
     return {
       width: typeof p.width === "number" ? clamp(p.width) : fallback.width,
       collapsed: p.collapsed === true,
+      hidden: p.hidden === true,
       side: p.side === "right" ? "right" : "left",
     };
   } catch {
@@ -38,6 +41,7 @@ interface SidebarContextValue extends SidebarPrefs {
   setWidth: (width: number) => void;
   resetWidth: () => void;
   setCollapsed: (collapsed: boolean) => void;
+  setHidden: (hidden: boolean) => void;
   setSide: (side: SidebarSide) => void;
 }
 
@@ -58,11 +62,12 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   const setWidth = useCallback((width: number) => setPrefs((p) => ({ ...p, width: clamp(width) })), []);
   const resetWidth = useCallback(() => setPrefs((p) => ({ ...p, width: SIDEBAR_DEFAULT })), []);
   const setCollapsed = useCallback((collapsed: boolean) => setPrefs((p) => ({ ...p, collapsed })), []);
+  const setHidden = useCallback((hidden: boolean) => setPrefs((p) => ({ ...p, hidden })), []);
   const setSide = useCallback((side: SidebarSide) => setPrefs((p) => ({ ...p, side })), []);
 
   const value = useMemo<SidebarContextValue>(
-    () => ({ ...prefs, setWidth, resetWidth, setCollapsed, setSide }),
-    [prefs, setWidth, resetWidth, setCollapsed, setSide],
+    () => ({ ...prefs, setWidth, resetWidth, setCollapsed, setHidden, setSide }),
+    [prefs, setWidth, resetWidth, setCollapsed, setHidden, setSide],
   );
 
   return <SidebarContext.Provider value={value}>{children}</SidebarContext.Provider>;

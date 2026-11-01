@@ -10,6 +10,7 @@ import { MediaLightbox, type LightboxItem } from "@/components/media-lightbox";
 import { LinkPreview } from "@/components/link-preview";
 import { MediaLibrary } from "@/components/media-library";
 import { ProfileModal } from "@/components/profile-modal";
+import { MinimizableMedia } from "@/components/minimizable-media";
 import { MessageEditor } from "@/components/message-editor";
 import { Linkified, MessageBody, isEditableStyle } from "@/components/message-body";
 import { ReactionChips, ReactionToolbar } from "@/components/message-reactions";
@@ -78,7 +79,7 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
   // Aggiornamento ottimistico: il messaggio compare subito nella lista e viene sostituito da quello vero
   // appena il server risponde (se il server lo rifiuta sparisce da solo e il testo torna nel campo).
   const myProfile = useQuery(api.users.me);
-  const showOptimistically = (store: OptimisticLocalStore, kind: "text" | "gif", body: string, style: "me" | "code" | "pre" | "spoiler" | "quote" | null) => {
+  const showOptimistically = (store: OptimisticLocalStore, kind: "text" | "gif", body: string, style: "me" | "code" | "pre" | "spoiler" | "quote" | null, gifQuery: string | null = null) => {
     if (!myProfile) return;
     insertAtTop({
       paginatedQuery: api.messages.list,
@@ -97,6 +98,7 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
         reactions: [],
         editedAt: null,
         style,
+        gifQuery,
         attachments: [],
       },
     });
@@ -105,7 +107,7 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
     showOptimistically(store, "text", args.body.trim(), args.style ?? null),
   );
   const sendGif = useMutation(api.messages.sendGif).withOptimisticUpdate((store, args) =>
-    showOptimistically(store, "gif", args.url, null),
+    showOptimistically(store, "gif", args.url, null, args.query?.trim() || null),
   );
   const createUpload = useAction(api.media.createUpload);
   const sendAttachments = useMutation(api.messages.sendAttachments);
@@ -197,12 +199,12 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
     }
   }
 
-  async function submitGif(url: string) {
+  async function submitGif(url: string, query?: string) {
     setPicker(null);
     setError(null);
     stickToBottom.current = true;
     try {
-      await sendGif({ conversationId, url });
+      await sendGif({ conversationId, url, query });
     } catch (e) {
       setError(t(errorKey(e)));
     }
@@ -358,7 +360,7 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
         return;
       }
       setDraft("");
-      await submitGif(gifs[Math.floor(Math.random() * gifs.length)].url);
+      await submitGif(gifs[Math.floor(Math.random() * gifs.length)].url, search);
     } catch (e) {
       setError(e instanceof Error && e.message === "no_key" ? t("composer.gifNoKey") : t("composer.gifError"));
     } finally {
@@ -708,8 +710,8 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
                       {m.attachments.map((a, i) => {
                         const single = m.attachments.length === 1;
                         return a.type === "image" ? (
+                          <MinimizableMedia key={i}>
                           <img
-                            key={i}
                             src={a.url}
                             alt={a.name}
                             loading="lazy"
@@ -717,6 +719,7 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
                             onClick={() => setLightbox({ url: a.url, type: "image", name: a.name })}
                             className={cn("cursor-zoom-in rounded-xl", single ? "max-h-80 max-w-[min(420px,100%)]" : "max-h-52 max-w-[min(260px,100%)]")}
                           />
+                          </MinimizableMedia>
                         ) : (
                           <div key={i} className={cn("group/video relative w-fit", single ? "max-w-[min(420px,100%)]" : "max-w-[min(260px,100%)]")}>
                             <video
@@ -742,6 +745,9 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
                     </div>
                   </div>
                 ) : m.kind === "gif" ? (
+                  <div>
+                    {m.gifQuery && <div className="text-[13px] text-app-text-muted italic">/giphy {m.gifQuery}</div>}
+                  <MinimizableMedia className="mt-1">
                   <img
                     src={m.body}
                     alt={t("chat.gifAlt")}
@@ -750,8 +756,10 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
                       // L'immagine cambia l'altezza dopo il caricamento: se eri in fondo, resta in fondo.
                       if (stickToBottom.current && scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
                     }}
-                    className="mt-1 max-h-60 max-w-[min(320px,100%)] rounded-xl"
+                    className="max-h-60 max-w-[min(320px,100%)] rounded-xl"
                   />
+                  </MinimizableMedia>
+                  </div>
                 ) : (
                   editingId === m._id ? (
                     <MessageEditor

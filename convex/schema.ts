@@ -84,6 +84,8 @@ export default defineSchema({
     /** Quando l'autore ha modificato il testo; assente se il messaggio è originale. */
     editedAt: v.optional(v.number()),
     kind: v.union(v.literal("text"), v.literal("ai"), v.literal("gif"), v.literal("media")),
+    /** Testo cercato con /giphy (solo per kind "gif" inviate col comando). */
+    gifQuery: v.optional(v.string()),
     /** Allegato su Cloudflare R2 (solo per kind "media"; `body` contiene il nome del file). */
     /** Allegati del messaggio (foto e video su R2); `body` è la didascalia. Sostituisce `media`, che resta per i messaggi vecchi. */
     attachments: v.optional(

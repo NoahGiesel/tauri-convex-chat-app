@@ -302,4 +302,10 @@ export const de: Messages = {
   "chat.typing.one": "{name} schreibt…",
   "chat.typing.two": "{a} und {b} schreiben…",
   "chat.typing.many": "Mehrere Personen schreiben…",
+  "side.devBuild": "Entwicklungsversion",
+  "side.devBuildHint": "Du verwendest die lokale Entwicklungsversion, nicht die veröffentlichte App.",
+  "media.minimize": "Minimieren",
+  "media.show": "Bild anzeigen",
+  "sidebar.hide": "Seitenleiste ausblenden (Strg/Cmd+B)",
+  "sidebar.show": "Seitenleiste einblenden (Strg/Cmd+B)",
 };

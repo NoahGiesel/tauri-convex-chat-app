@@ -7,7 +7,10 @@ import App from "./App";
 import { UpdaterProvider } from "@/hooks/use-updater";
 import { I18nProvider } from "@/i18n/i18n-provider";
 import { authClient } from "@/lib/auth-client";
+import { installAutoHideScrollbars } from "@/lib/auto-hide-scrollbars";
 import { ThemeProvider } from "@/themes/theme-provider";
+
+installAutoHideScrollbars();
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 

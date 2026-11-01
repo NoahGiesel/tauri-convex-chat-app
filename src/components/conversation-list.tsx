@@ -1,10 +1,11 @@
-import { useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import {
   Hash,
   PanelLeftClose,
   PanelLeftOpen,
   PanelRightClose,
   PanelRightOpen,
+  EyeOff,
   Search,
   Settings,
   UserPlus,
@@ -42,10 +43,22 @@ export function ConversationList({
   onOpenSettings: () => void;
 }) {
   const { t } = useI18n();
-  const { width, collapsed, side, setWidth, resetWidth, setCollapsed } = useSidebar();
+  const { width, collapsed, hidden, side, setWidth, resetWidth, setCollapsed, setHidden } = useSidebar();
   const [query, setQuery] = useState("");
   const [dragging, setDragging] = useState(false);
   const asideRef = useRef<HTMLElement>(null);
+
+  // Ctrl/Cmd+B nasconde o mostra la barra.
+  useEffect(() => {
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "b") {
+        e.preventDefault();
+        setHidden(!hidden);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [hidden, setHidden]);
 
   const visible = useMemo(() => {
     const q = query.trim().toLocaleLowerCase();
@@ -120,6 +133,9 @@ export function ConversationList({
     onRight ? "order-last border-l border-app-border" : "border-r border-app-border",
   );
 
+  // ---------- barra nascosta: non occupa spazio (il pulsante per riaprirla sta nella riga delle schede) ----------
+  if (hidden) return null;
+
   // ---------- barra compressa: solo avatar ----------
   if (collapsed) {
     return (
@@ -133,11 +149,26 @@ export function ConversationList({
         >
           <ExpandIcon className="size-5" strokeWidth={1.8} />
         </button>
+        <button
+          type="button"
+          aria-label={t("sidebar.hide")}
+          title={t("sidebar.hide")}
+          onClick={() => setHidden(true)}
+          className="flex size-10 items-center justify-center rounded-[calc(10px*var(--radius-scale))] text-app-text-muted hover:bg-app-field"
+        >
+          <EyeOff className="size-[18px]" strokeWidth={1.8} />
+        </button>
 
-        <div className="relative size-11">
+        <button
+          type="button"
+          aria-label={t("nav.settings")}
+          title={t("nav.settings")}
+          onClick={onOpenSettings}
+          className="relative size-11 cursor-pointer rounded-[calc(11px*var(--radius-scale))]"
+        >
           <Avatar name={me?.name ?? ""} index={0} src={me?.avatarUrl} size={44} accent />
           <span className="absolute -right-[3px] -bottom-[3px] size-3.5 rounded-full border-[3px] border-app-sidebar bg-app-online" />
-        </div>
+        </button>
         <div className="h-px w-8 bg-app-border" />
 
         <div className="flex min-h-0 flex-1 flex-col items-center gap-2.5 overflow-y-auto px-2 py-1">
@@ -195,6 +226,11 @@ export function ConversationList({
         >
           <Settings className="size-5" strokeWidth={1.8} />
         </button>
+        {import.meta.env.DEV && (
+          <span className="mt-1 rounded-md bg-amber-400/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-400" title={t("side.devBuildHint")}>
+            DEV
+          </span>
+        )}
       </aside>
     );
   }
@@ -205,10 +241,16 @@ export function ConversationList({
       {handle}
 
       <div className="flex items-center gap-2 p-4">
-        <div className="relative size-[46px] shrink-0">
+        <button
+          type="button"
+          aria-label={t("nav.settings")}
+          title={t("nav.settings")}
+          onClick={onOpenSettings}
+          className="relative size-[46px] shrink-0 cursor-pointer rounded-[calc(11px*var(--radius-scale))]"
+        >
           <Avatar name={me?.name ?? ""} index={0} src={me?.avatarUrl} size={46} accent />
           <span className="absolute -right-[3px] -bottom-[3px] size-3.5 rounded-full border-[3px] border-app-sidebar bg-app-online" />
-        </div>
+        </button>
         <div className="mr-1 ml-1 min-w-0 flex-1">
           <div className="truncate text-base font-bold text-app-text-strong">{me?.name ?? "…"}</div>
           <div className="text-[13px] font-semibold text-app-online">{t("side.online")}</div>
@@ -266,6 +308,11 @@ export function ConversationList({
           />
         )}
       </div>
+      {import.meta.env.DEV && (
+        <div className="shrink-0 border-t border-app-border px-4 py-2.5 text-xs font-semibold text-amber-400" title={t("side.devBuildHint")}>
+          ● {t("side.devBuild")}
+        </div>
+      )}
     </aside>
   );
 }
