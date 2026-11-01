@@ -90,7 +90,12 @@ export function user(name) {
       await b.keys('Enter');
     },
     async sees(text, timeout = 10_000) {
-      await b.$(`//*[contains(normalize-space(.), "${text}") and not(*)]`).waitForDisplayed({ timeout });
+      // Look the element up on every poll: an optimistic message row gets replaced,
+      // and an element held across a wait then reads as not displayed forever.
+      await b.waitUntil(
+        async () => b.$(`//*[contains(normalize-space(.), "${text}") and not(*)]`).isDisplayed(),
+        { timeout, interval: 100, timeoutMsg: `${name} did not see "${text}"` },
+      );
     },
     async doesNotSee(text) {
       if (await b.$(`//*[contains(normalize-space(.), "${text}") and not(*)]`).isExisting()) {
