@@ -41,6 +41,10 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # The Test build must never ship: see docs/E2E-SPEC.md, "Keeping the Test build out of releases".
+      - name: Check that the build holds nothing reserved for tests
+        run: node e2e/release-guard.mjs
+
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
