@@ -6,10 +6,11 @@ import { reset } from './reset.mjs';
 const WAIT = { timeout: INTERFACE_WAIT_MS, interval: 100 };
 const COMPOSER = `aria/${en['chat.composer']}`;
 const SETTINGS = `aria/${en['nav.settings']}`;
-const INVITE_BUTTON = `//form//button[normalize-space(.)="${en['invite.add']}"]`;
+/** The form's button, because `aria/` also matches a row's button by its visible text. */
+const REDEEM_BUTTON = `//form//button[normalize-space(.)="${en['invite.add']}"]`;
 const textSelector = (text) => `//*[contains(normalize-space(.), "${text}") and not(*)]`;
 const roleSelector = (role, text) => `//*[@role="${role}"][contains(normalize-space(.), "${text}")]`;
-const rowButton = (word, person) => `aria/${word} ${person}`;
+const named = (key, name) => en[key].replace('{name}', name);
 
 /** Runs in the page. What a screen reader would have nothing to say for, among the controls a person can reach. */
 function unnamedControls() {
@@ -54,8 +55,6 @@ function drivenUser(name) {
     async doesNotSee(text) {
       if (await b.$(textSelector(text)).isExisting()) throw new Error(`${name} still sees "${text}"`);
     },
-    stopsSeeing: (text) =>
-      b.waitUntil(async () => !(await b.$(textSelector(text)).isExisting()), { ...WAIT, timeoutMsg: `${name} still sees "${text}"` }),
 
     seesAuthScreen: () => waitUntilShown(textSelector(en['auth.welcomeBack']), `${name} is not on the auth screen`),
     seesChats: () => waitUntilShown(SETTINGS, `${name} did not reach their chats`),
@@ -91,30 +90,33 @@ function drivenUser(name) {
     },
     async openFriends() {
       await press(`aria/${en['side.addFriend']}`);
-      await waitUntilShown(`//*[@role="dialog"]`, `${name} did not open the friends screen`);
+      await waitUntilShown(`aria/${en['invite.title']}`, `${name} did not open the friends screen`);
     },
     closeFriends: () => press(`aria/${en['invite.close']}`),
     search: (text) => fill(en['invite.searchLabel'], text),
     seesNoOneFound: () => waitUntilShown(textSelector(en['invite.noUsers']), `${name} was shown someone`),
-    seesCanAdd: (person) => waitUntilShown(rowButton(en['invite.add'], person), `${name} cannot add ${person}`),
-    seesRequestTo: (person) => waitUntilShown(rowButton(en['people.cancelRequest'], person), `${name} has no request to ${person}`),
-    seesRequestFrom: (person) => waitUntilShown(rowButton(en['people.decline'], person), `${name} has no request from ${person}`),
-    seesFriend: (person) => waitUntilShown(rowButton(en['people.remove'], person), `${name} is not friends with ${person}`),
+    seesCanAdd: (person) => waitUntilShown(`aria/${named('people.addPerson', person)}`, `${name} cannot add ${person}`),
+    seesRequestTo: (person) => waitUntilShown(`aria/${named('people.cancelRequestTo', person)}`, `${name} has no request to ${person}`),
+    seesRequestFrom: (person) => waitUntilShown(`aria/${named('people.declineRequest', person)}`, `${name} has no request from ${person}`),
+    /** The second Accept exists only once the search list and the list of requests both show this person. */
+    seesAcceptInBothLists: (person) =>
+      waitUntilShown(`(//button[@aria-label="${named('people.acceptRequest', person)}"])[2]`, `${name} has no Accept for ${person} in both lists`),
+    seesFriend: (person) => waitUntilShown(`aria/${named('people.removePerson', person)}`, `${name} is not friends with ${person}`),
     seesRequestSent: () => waitUntilShown(roleSelector('status', en['people.redeemRequested']), `${name} was not told the request went`),
     seesNowFriends: () => waitUntilShown(roleSelector('status', en['people.redeemAccepted']), `${name} was not told they are friends`),
     seesInviteRefused: () => waitUntilShown(roleSelector('alert', en['error.invalid_invite']), `${name} was not refused`),
     seesOwnInviteRefused: () => waitUntilShown(roleSelector('alert', en['error.own_invite']), `${name} was not refused`),
 
-    addFriend: (person) => press(rowButton(en['invite.add'], person)),
+    addFriend: (person) => press(`aria/${named('people.addPerson', person)}`),
     /** The search list comes first, and offers the same button as the list of requests. */
-    acceptInSearch: (person) => press(rowButton(en['people.accept'], person)),
+    acceptInSearch: (person) => press(`(//button[@aria-label="${named('people.acceptRequest', person)}"])[1]`),
     async acceptRequestFrom(person) {
-      await press(`(//button[@aria-label="${en['people.accept']} ${person}"])[last()]`);
+      await press(`(//button[@aria-label="${named('people.acceptRequest', person)}"])[last()]`);
       await waitUntilShown(COMPOSER, `${name} has no chat with ${person}`);
     },
-    declineRequestFrom: (person) => press(rowButton(en['people.decline'], person)),
-    cancelRequestTo: (person) => press(rowButton(en['people.cancelRequest'], person)),
-    removeFriend: (person) => press(rowButton(en['people.remove'], person)),
+    declineRequestFrom: (person) => press(`aria/${named('people.declineRequest', person)}`),
+    cancelRequestTo: (person) => press(`aria/${named('people.cancelRequestTo', person)}`),
+    removeFriend: (person) => press(`aria/${named('people.removePerson', person)}`),
     async createInviteLink() {
       await press(`aria/${en['invite.createLink']}`);
       await waitUntilShown(`aria/${en['invite.yourLink']}`, `${name} has no invite link`);
@@ -122,7 +124,7 @@ function drivenUser(name) {
     },
     async useInvite(link) {
       await fill(en['invite.gotLink'], link);
-      await press(INVITE_BUTTON);
+      await press(REDEEM_BUTTON);
     },
 
     /** `refresh()` returns before the reload ends, so a wait right after it can still read the old page. */
@@ -140,10 +142,11 @@ function drivenUser(name) {
   return user;
 }
 
+const aliceAndBob = () => ({ alice: drivenUser('alice'), bob: drivenUser('bob') });
+
 export async function signedOut() {
   await reset('base', { signedIn: false });
-  const alice = drivenUser('alice');
-  const bob = drivenUser('bob');
+  const { alice, bob } = aliceAndBob();
   await alice.seesAuthScreen();
   await bob.seesAuthScreen();
   return { alice, bob };
@@ -151,8 +154,7 @@ export async function signedOut() {
 
 export async function strangers() {
   await reset('base');
-  const alice = drivenUser('alice');
-  const bob = drivenUser('bob');
+  const { alice, bob } = aliceAndBob();
   await alice.seesChats();
   await bob.seesChats();
   return { alice, bob };
@@ -167,8 +169,7 @@ export async function expiredInviteLink() {
 
 export async function twoFriendsWithChatOpen() {
   await reset('friends');
-  const alice = drivenUser('alice');
-  const bob = drivenUser('bob');
+  const { alice, bob } = aliceAndBob();
   await alice.openChat(USERS.bob.name);
   await bob.openChat(USERS.alice.name);
   return { alice, bob };

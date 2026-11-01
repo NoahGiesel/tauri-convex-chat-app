@@ -128,7 +128,7 @@ export function InviteModal({
               {(p.relation === "none" || p.relation === "incoming") && (
                 <button
                   type="button"
-                  aria-label={`${p.relation === "incoming" ? t("people.accept") : t("invite.add")} ${p.name}`}
+                  aria-label={t(p.relation === "incoming" ? "people.acceptRequest" : "people.addPerson", { name: p.name })}
                   onClick={() =>
                     void run(async () => {
                       const outcome = await requestFriend({ profileId: p._id });
@@ -218,7 +218,7 @@ export function InviteModal({
                 </div>
                 <button
                   type="button"
-                  aria-label={`${t("people.decline")} ${r.profile.name}`}
+                  aria-label={t("people.declineRequest", { name: r.profile.name })}
                   onClick={() => void run(() => removeFriendship({ friendshipId: r.friendshipId }))}
                   className={cn(outlineButtonClass, "h-9 px-3.5 text-sm text-app-text-soft")}
                 >
@@ -226,7 +226,7 @@ export function InviteModal({
                 </button>
                 <button
                   type="button"
-                  aria-label={`${t("people.accept")} ${r.profile.name}`}
+                  aria-label={t("people.acceptRequest", { name: r.profile.name })}
                   onClick={() =>
                     void run(async () => {
                       onOpenChat(await acceptRequest({ friendshipId: r.friendshipId }));
@@ -249,7 +249,7 @@ export function InviteModal({
                 </div>
                 <button
                   type="button"
-                  aria-label={`${t("people.cancelRequest")} ${r.profile.name}`}
+                  aria-label={t("people.cancelRequestTo", { name: r.profile.name })}
                   onClick={() => void run(() => removeFriendship({ friendshipId: r.friendshipId }))}
                   className={cn(outlineButtonClass, "h-9 px-3.5 text-sm text-app-text-soft")}
                 >
@@ -272,7 +272,7 @@ export function InviteModal({
                 <span className="min-w-0 flex-1 truncate text-[15px] font-bold text-app-text-strong">{f.profile.name}</span>
                 <button
                   type="button"
-                  aria-label={`${t("people.remove")} ${f.profile.name}`}
+                  aria-label={t("people.removePerson", { name: f.profile.name })}
                   onClick={() => void run(() => removeFriendship({ friendshipId: f.friendshipId }))}
                   className="rounded-lg px-2.5 py-1.5 text-sm font-semibold text-app-text-muted hover:bg-app-field hover:text-app-text"
                 >

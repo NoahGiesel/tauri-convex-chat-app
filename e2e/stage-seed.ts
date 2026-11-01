@@ -19,9 +19,11 @@ export const fixAvatars = internalMutation({
 export const expiredInvite = internalMutation({
   args: { token: v.string(), createdByEmail: v.string() },
   handler: async (ctx, args) => {
-    const profiles = await ctx.db.query("profiles").withIndex("by_tokenIdentifier").collect();
-    const inviter = profiles.find((profile) => profile.email === args.createdByEmail);
-    if (!inviter) throw new Error(`no profile for ${args.createdByEmail}`);
-    await ctx.db.insert("invites", { token: args.token, createdBy: inviter._id, expiresAt: Date.now() - 60 * 60 * 1000 });
+    for await (const profile of ctx.db.query("profiles")) {
+      if (profile.email !== args.createdByEmail) continue;
+      await ctx.db.insert("invites", { token: args.token, createdBy: profile._id, expiresAt: Date.now() - 60 * 60 * 1000 });
+      return;
+    }
+    throw new Error(`no profile for ${args.createdByEmail}`);
   },
 });

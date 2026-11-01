@@ -64,6 +64,7 @@ These are the only production files the harness needs. The prototype made all of
 | `pnpm-workspace.yaml` | New file, `allowBuilds` set to `false` for `esbuild`, `edgedriver` and `geckodriver` |
 | `src/components/conversation-view.tsx` | Move `dayLabel` out into a pure function that takes the current time |
 | Components | Add `data-testid` where no accessible name exists |
+| `src/components/invite-modal.tsx` | Name each row's button after the person, in every language |
 | `.github/workflows/release.yml` | Add the release guard, and set `releaseDraft: true` |
 | `docs/DEPLOY.md` | The new release checklist |
 | `package.json` | `e2e` script and dev dependencies |

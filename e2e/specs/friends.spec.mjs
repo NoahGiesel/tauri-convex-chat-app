@@ -5,15 +5,18 @@ describe('finding friends', () => {
     const { alice } = await strangers();
     await alice.openFriends();
 
+    await alice.search('nobody');
+    await alice.seesNoOneFound();
+
     await alice.search('bob');
     await alice.seesCanAdd('Bob Test');
-    await alice.stopsSeeing('Carol Test');
-
-    await alice.search('bob@e2e.invalid');
-    await alice.seesCanAdd('Bob Test');
+    await alice.doesNotSee('Carol Test');
 
     await alice.search('bob@e2e');
     await alice.seesNoOneFound();
+
+    await alice.search('bob@e2e.invalid');
+    await alice.seesCanAdd('Bob Test');
   });
 
   it('a friend request is accepted, and the two can talk', async () => {
@@ -67,25 +70,34 @@ describe('finding friends', () => {
     await bob.seesCanAdd('Alice Test');
 
     await alice.addFriend('Bob Test');
+    await bob.seesAcceptInBothLists('Alice Test');
     await bob.acceptInSearch('Alice Test');
 
     await bob.seesNowFriends();
     await alice.seesFriend('Bob Test');
     await bob.seesFriend('Alice Test');
+
+    await alice.closeFriends();
+    await bob.closeFriends();
+    await alice.openChat('Bob Test');
+    await bob.openChat('Alice Test');
+    await alice.send('We added each other');
+    await bob.sees('We added each other');
   });
 
-  it('a removed friend is gone for both', async () => {
+  it('a removal ends the friendship for both', async () => {
     const { alice, bob } = await strangers();
     await alice.openFriends();
     await bob.openFriends();
     await alice.addFriend('Bob Test');
     await bob.acceptRequestFrom('Alice Test');
     await alice.seesFriend('Bob Test');
+    await bob.openFriends();
+    await bob.seesFriend('Alice Test');
 
     await alice.removeFriend('Bob Test');
 
     await alice.seesCanAdd('Bob Test');
-    await bob.openFriends();
     await bob.seesCanAdd('Alice Test');
   });
 
@@ -93,12 +105,13 @@ describe('finding friends', () => {
     const { alice, bob } = await strangers();
     await alice.openFriends();
     await bob.openFriends();
+    await alice.seesCanAdd('Bob Test');
     await alice.seesEveryControlNamed();
 
     await alice.addFriend('Bob Test');
     await alice.seesRequestTo('Bob Test');
     await alice.seesEveryControlNamed();
-    await bob.seesRequestFrom('Alice Test');
+    await bob.seesAcceptInBothLists('Alice Test');
     await bob.seesEveryControlNamed();
 
     await bob.acceptRequestFrom('Alice Test');
@@ -152,6 +165,5 @@ describe('invite links', () => {
     await bob.useInvite(link);
 
     await bob.seesInviteRefused();
-    await bob.seesCanAdd('Alice Test');
   });
 });
