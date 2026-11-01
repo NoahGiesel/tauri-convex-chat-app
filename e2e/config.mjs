@@ -8,6 +8,8 @@ export const STAGE = path.join(E2E_DIR, '.stage');
 export const SNAPSHOTS = path.join(STAGE, 'snapshots');
 export const SESSIONS_FILE = path.join(STAGE, 'sessions.json');
 export const PROFILES = path.join(E2E_DIR, '.profiles');
+/** Outside the stage, so that the pictures of a failed run outlive it until the next run. */
+export const FAILURES = path.join(E2E_DIR, '.failures');
 export const EXE = path.join(ROOT, 'src-tauri', 'target', 'debug', 'tauri-convex-chat.exe');
 
 export const CONVEX_PORT = 3310;
@@ -20,6 +22,8 @@ export const STUB_URL = `http://127.0.0.1:${STUB_PORT}`;
 export const FIRST_INSTANCE_PORT = 4540;
 export const PORTS = [CONVEX_PORT, SITE_PORT, STUB_PORT, FIRST_INSTANCE_PORT, FIRST_INSTANCE_PORT + 1];
 export const INTERFACE_WAIT_MS = 5_000;
+/** One whole test, Fixture included. */
+export const TEST_LIMIT_MS = 30_000;
 
 /** In this order: `alice` gets 4540 and `bob` gets 4541. */
 export const DRIVEN_USERS = ['alice', 'bob'];

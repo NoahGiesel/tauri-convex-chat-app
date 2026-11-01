@@ -10,3 +10,4 @@ src-tauri/gen
 .convex
 e2e/.stage
 e2e/.profiles
+e2e/.failures

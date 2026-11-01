@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { APP_URL, DRIVEN_USERS, INTERFACE_WAIT_MS, SESSIONS_FILE, SNAPSHOTS } from './config.mjs';
 import { confirmInstance } from './guards.mjs';
+import { withinLimit } from './report.mjs';
 import { convexInStage } from './stage.mjs';
 
 const MAIN_WINDOW = 'main';
@@ -22,6 +23,24 @@ async function confirmLoadedApp(b, name) {
 
 // A failing root hook runs no tests at all. Every spec reaches this through its Fixture, before any session exists.
 before('every instance is on the Test backend', () => forEachInstance(confirmLoadedApp));
+
+let lastTest = 'none, it died before the first one ended';
+
+// A throw in a root hook stops every later test, which is the point: a dead instance is never restarted.
+beforeEach('every instance is alive', () => forEachInstance(async (b, name) => {
+  try {
+    await withinLimit(b.execute(() => true), `a ping of ${name}`);
+  } catch (err) {
+    const message = `${name} stopped responding, so the run stops. Last test: ${lastTest}. ${err.message}`;
+    // WDIO fails too when it closes the dead session, and that loses the report holding the throw below.
+    console.error(`[e2e] FAILED: ${message}`);
+    throw new Error(message);
+  }
+}));
+
+afterEach(function rememberLastTest() {
+  lastTest = this.currentTest.fullTitle();
+});
 
 async function closePopouts(b) {
   for (const handle of await b.getWindowHandles()) {

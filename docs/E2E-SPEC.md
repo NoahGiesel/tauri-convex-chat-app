@@ -47,7 +47,7 @@ The order matters. The work happens outside WDIO, because `wdio.conf` is evaluat
 
 `pnpm e2e --grep "<test>"` runs matching tests only, with the same full start.
 
-Everything lives in a new `e2e/` folder. `e2e/.stage` and `e2e/.profiles` are git-ignored.
+Everything lives in a new `e2e/` folder. `e2e/.stage`, `e2e/.profiles` and `e2e/.failures` are git-ignored.
 
 ## App changes
 
@@ -302,7 +302,9 @@ The `Messages` type already fails the build if a language misses a key, so no ke
 
 **Why no retries:** a retry would have hidden the false timeout described above, which failed 1 time in 3. A green rerun of one test helps with diagnosis, and it does not clear the failure.
 
-**A dead instance:** ping both instances in a `beforeEach`. A throw there stops all later tests. With no handling, each later test fails alone in about 1.5 s.
+**A dead instance:** ping both instances in a `beforeEach`. A throw there stops all later tests. With no handling, each later test fails alone in about 1.5 s. All spec files share one WDIO worker, because a worker per file would start new apps and carry on. WDIO also fails when it closes the dead session and loses its report, so the ping prints the instance and the last test itself.
+
+**A failed test** leaves one picture per instance in `e2e/.failures`. The next run clears the folder.
 
 The prototype's check that quiet apps do not write waits 50 s, which is over the test limit. It stays out of the suite, and the Reset's quiet step stays.
 
@@ -387,7 +389,7 @@ No macOS code is written until someone can run it. Until then the suite runs on 
 **Not built or not run anywhere:**
 
 - The release guard and `releaseDraft: true` with two platforms. Tags must not be pushed to test it, so the first real release is the test.
-- `press()`, `pressHoverOnly()`, `--grep` and the five-language test.
+- `press()`, `pressHoverOnly()` and the five-language test.
 - `data-testid` itself.
 - The `history` and `expired-invite` Seeds, Carol's old `lastSeenAt`, and sending 70 messages in a Seed.
 - A `media` Seed with a video and a link message. The prototype's had neither.

@@ -3,13 +3,17 @@
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { DRIVEN_USERS, E2E_DIR, EXE, IDENTIFIER, PORTS, PROFILES, ROOT, SITE_URL, STAGE, STUB_URL, TEST_SECRET } from './config.mjs';
-import { buildEnv, commandEnv, confirmStage, findBusyPorts } from './guards.mjs';
+import { DRIVEN_USERS, E2E_DIR, EXE, FAILURES, IDENTIFIER, PORTS, PROFILES, ROOT, SITE_URL, STAGE, STUB_URL, TEST_SECRET } from './config.mjs';
+import { buildEnv, commandEnv, confirmStage, findBusyPorts, parseRunArgs } from './guards.mjs';
+import { timingReport } from './report.mjs';
 import { buildSeeds } from './seeds.mjs';
 import { convexInStage, prepareStage, startBackend } from './stage.mjs';
 
-if (process.argv.length > 2) {
-  console.error('pnpm e2e takes no flags: the target is fixed and every run does the full start.');
+let grep;
+try {
+  ({ grep } = parseRunArgs(process.argv.slice(2)));
+} catch (err) {
+  console.error(err.message);
   process.exit(1);
 }
 if (process.platform !== 'win32') {
@@ -121,7 +125,8 @@ async function makeProfiles() {
 
 async function runTests() {
   const wdio = path.join(ROOT, 'node_modules', '@wdio', 'cli', 'bin', 'wdio.js');
-  await runToEnd(process.execPath, [wdio, 'run', path.join(E2E_DIR, 'wdio.conf.mjs')], {
+  const filter = grep ? ['--mochaOpts.grep', grep] : [];
+  await runToEnd(process.execPath, [wdio, 'run', path.join(E2E_DIR, 'wdio.conf.mjs'), ...filter], {
     // WDIO loads the .env in its working folder, and the repo root holds the developer's.
     cwd: E2E_DIR,
     env: commandEnv(),
@@ -146,6 +151,17 @@ if (busy.length) {
   process.exit(1);
 }
 
+const steps = [];
+async function timed(name, step) {
+  log(name);
+  const start = Date.now();
+  try {
+    await step();
+  } finally {
+    steps.push({ name, ms: Date.now() - start });
+  }
+}
+
 let failed = false;
 process.on('SIGINT', () => {
   failed = true;
@@ -153,27 +169,26 @@ process.on('SIGINT', () => {
 });
 
 try {
-  log('building the Test build');
-  await buildTestBuild();
-  log('starting the Test backend');
-  await startTestBackend();
-  log('building Seeds');
-  await buildSeeds();
+  await timed('building the Test build', buildTestBuild);
+  await timed('starting the Test backend', startTestBackend);
+  await timed('building Seeds', buildSeeds);
   await makeProfiles();
-  log('running tests');
-  await runTests();
+  await removeWithRetries(FAILURES);
+  await timed('running tests', runTests);
 } catch (err) {
   failed = true;
   console.error(`[e2e] FAILED: ${err.message}`);
 }
 
 try {
-  log('cleaning up');
-  await cleanUp();
+  await timed('cleaning up', cleanUp);
 } catch (err) {
   failed = true;
   const stillBusy = await findBusyPorts(PORTS);
   console.error(`[e2e] FAILED: ${err.message}${stillBusy.length ? `. Still busy: ${stillBusy.join(', ')}` : ''}`);
 }
+
+for (const line of timingReport(steps)) log(line);
+if (fs.existsSync(FAILURES)) log(`screenshots of what failed: ${FAILURES}`);
 
 process.exit(failed ? 1 : 0);
