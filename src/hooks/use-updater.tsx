@@ -192,7 +192,7 @@ export function UpdaterProvider({ children }: { children: ReactNode }) {
   // Check all'avvio, periodico e quando la finestra torna in primo piano.
   // In sviluppo (`pnpm tauri dev`) i check automatici sono spenti; quello manuale dalle impostazioni resta.
   useEffect(() => {
-    if (!isTauri() || import.meta.env.DEV) return;
+    if (!isTauri() || import.meta.env.DEV || import.meta.env.VITE_E2E) return;
     const first = window.setTimeout(() => void checkNow(), FIRST_CHECK_DELAY_MS);
     const interval = window.setInterval(() => void checkNow(), CHECK_INTERVAL_MS);
     const onFocus = () => {
