@@ -17,6 +17,7 @@ import { usePresence } from "@/lib/presence";
 import { errorKey } from "@/lib/errors";
 import { fetchGifs } from "@/lib/giphy";
 import { compressImage } from "@/lib/image-compress";
+import { dayLabel } from "@/lib/day-label";
 import { splitLinks } from "@/lib/links";
 import { uploadFile } from "@/lib/media-upload";
 import { classifyMedia, MEDIA_ACCEPT } from "../../convex/mediaRules";
@@ -188,22 +189,15 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
 
   // Separatori di giorno + raggruppamento dei messaggi consecutivi dello stesso autore.
   const rows = useMemo<Row[]>(() => {
-    const dayLabel = (ts: number) => {
-      const d = new Date(ts);
-      const today = new Date();
-      const yesterday = new Date();
-      yesterday.setDate(today.getDate() - 1);
-      if (d.toDateString() === today.toDateString()) return t("chat.today");
-      if (d.toDateString() === yesterday.toDateString()) return t("chat.yesterday");
-      return d.toLocaleDateString(locale, { day: "numeric", month: "long" });
-    };
+    const now = Date.now();
+    const words = { today: t("chat.today"), yesterday: t("chat.yesterday"), locale };
 
     const out: Row[] = [];
     let prev: Message | undefined;
     for (const m of messages) {
       const day = new Date(m._creationTime).toDateString();
       const newDay = !prev || new Date(prev._creationTime).toDateString() !== day;
-      if (newDay) out.push({ type: "day", key: day, label: dayLabel(m._creationTime) });
+      if (newDay) out.push({ type: "day", key: day, label: dayLabel(m._creationTime, now, words) });
       const head =
         newDay ||
         !prev ||
