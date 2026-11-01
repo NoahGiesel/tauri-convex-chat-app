@@ -4,17 +4,23 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { after, beforeEach, describe, it } from 'node:test';
+import { after, before, beforeEach, describe, it } from 'node:test';
 import { ROOT } from './config.mjs';
 import { commandEnv } from './guards.mjs';
-import { checkRelease } from './release-guard.mjs';
+import { checkRelease } from './release-check.mjs';
 
 const GUARD = path.join(ROOT, 'e2e', 'release-guard.mjs');
+const VITE = path.join(ROOT, 'node_modules', 'vite', 'bin', 'vite.js');
 const WORKFLOW = path.join('.github', 'workflows', 'release.yml');
 const CARGO = path.join('src-tauri', 'Cargo.toml');
 const TAURI_CONFIG = path.join('src-tauri', 'tauri.conf.json');
+const TEST_ONLY_VARS = ['VITE_E2E', 'VITE_GIPHY_API_URL'];
 
 const temps = [];
+// checkRelease reads this process's variables, as the release step does.
+before(() => {
+  for (const name of TEST_ONLY_VARS) delete process.env[name];
+});
 after(() => {
   for (const dir of temps) fs.rmSync(dir, { recursive: true, force: true });
 });
@@ -34,11 +40,14 @@ function releaseCopy() {
 
 function change(root, file, edit) {
   const target = path.join(root, file);
-  const before = fs.readFileSync(target, 'utf8');
-  const after = edit(before);
-  assert.notEqual(after, before, `the test changed nothing in ${file}`);
-  fs.writeFileSync(target, after);
+  const original = fs.readFileSync(target, 'utf8');
+  const edited = edit(original);
+  assert.notEqual(edited, original, `the test changed nothing in ${file}`);
+  fs.writeFileSync(target, edited);
 }
+
+const addFeatures = (root, lines) => change(root, CARGO, (text) => text.replace('[features]', `[features]\n${lines}`));
+const complaints = (root) => checkRelease(root).join('\n');
 
 describe('a release build', () => {
   let root;
@@ -55,47 +64,56 @@ describe('a release build', () => {
     ['--features e2e', '--target universal-apple-darwin --features e2e'],
     ['--features=e2e', '--features=e2e'],
     ['-f e2e', '-f e2e'],
-    ['e2e among other features', '--features custom-protocol,e2e'],
     ['--all-features', '--all-features'],
   ]) {
     it(`fails when its arguments ask for ${what}`, () => {
       change(root, WORKFLOW, (text) => text.replace('args: ""', `args: ${args}`));
-      if (args.includes('custom-protocol')) change(root, CARGO, (text) => text.replace('[features]', '[features]\ncustom-protocol = []'));
-      assert.match(checkRelease(root).join('\n'), /e2e feature/);
+      assert.match(complaints(root), /e2e feature/);
     });
   }
 
+  it('fails when e2e is one of several features', () => {
+    addFeatures(root, 'extra = []');
+    change(root, WORKFLOW, (text) => text.replace('args: ""', 'args: --features extra,e2e'));
+    assert.match(complaints(root), /e2e feature/);
+  });
+
   it('fails when the step that builds asks for the feature itself', () => {
     change(root, WORKFLOW, (text) => text.replace('args: ${{ matrix.args }}', 'args: ${{ matrix.args }} --features e2e'));
-    assert.match(checkRelease(root).join('\n'), /e2e feature/);
+    assert.match(complaints(root), /e2e feature/);
   });
 
   it('fails when the feature is on by default', () => {
-    change(root, CARGO, (text) => text.replace('[features]', '[features]\ndefault = ["e2e"]'));
-    assert.match(checkRelease(root).join('\n'), /e2e feature/);
+    addFeatures(root, 'default = ["e2e"]');
+    assert.match(complaints(root), /e2e feature/);
   });
 
   it('fails when another feature turns it on', () => {
-    change(root, CARGO, (text) => text.replace('[features]', '[features]\ndefault = ["testing"]\ntesting = ["e2e"]'));
-    assert.match(checkRelease(root).join('\n'), /e2e feature/);
+    addFeatures(root, 'default = ["testing"]\ntesting = ["e2e"]');
+    assert.match(complaints(root), /e2e feature/);
   });
 
   it('fails when the Tauri config asks for the feature', () => {
     change(root, TAURI_CONFIG, (text) => text.replace('"build": {', '"build": {\n    "features": ["e2e"],'));
-    assert.match(checkRelease(root).join('\n'), /e2e feature/);
+    assert.match(complaints(root), /e2e feature/);
   });
 
-  for (const name of ['VITE_E2E', 'VITE_GIPHY_API_URL']) {
+  for (const name of TEST_ONLY_VARS) {
     it(`fails when the workflow sets ${name}`, () => {
       change(root, WORKFLOW, (text) => text.replace('          VITE_GIPHY_API_KEY:', `          ${name}: "1"\n          VITE_GIPHY_API_KEY:`));
-      assert.match(checkRelease(root).join('\n'), new RegExp(name));
+      assert.match(complaints(root), new RegExp(name));
     });
 
     it(`fails when an env file that Vite reads sets ${name}`, () => {
       fs.writeFileSync(path.join(root, '.env.production'), `${name}=1\n`);
-      assert.match(checkRelease(root).join('\n'), new RegExp(name));
+      assert.match(complaints(root), new RegExp(name));
     });
   }
+
+  it('does not count a longer name that only starts the same way', () => {
+    fs.writeFileSync(path.join(root, '.env.production'), 'VITE_E2E_NOTES=1\n');
+    assert.deepEqual(checkRelease(root), []);
+  });
 
   it('does not count a name that only a comment mentions', () => {
     change(root, WORKFLOW, (text) => text.replace('jobs:', '# VITE_E2E: never set this\njobs:'));
@@ -104,18 +122,18 @@ describe('a release build', () => {
 
   it('fails, rather than passes, when it cannot tell what cargo would build', () => {
     change(root, CARGO, (text) => text.replace('[features]', '[features'));
-    assert.match(checkRelease(root).join('\n'), /could not read/);
+    assert.match(complaints(root), /could not read/);
   });
 });
 
 describe('the release workflow', () => {
-  const steps = fs.readFileSync(path.join(ROOT, WORKFLOW), 'utf8');
+  const workflow = fs.readFileSync(path.join(ROOT, WORKFLOW), 'utf8');
 
   it('runs the guard before the step that builds and publishes', () => {
-    const guard = steps.indexOf('node e2e/release-guard.mjs');
+    const guard = workflow.indexOf('node e2e/release-guard.mjs');
     assert.ok(guard > 0, 'the guard is not in the workflow');
-    assert.ok(guard < steps.indexOf('tauri-apps/tauri-action'));
-    assert.ok(guard > steps.indexOf('pnpm install'), 'the guard needs Vite');
+    assert.ok(guard < workflow.indexOf('tauri-apps/tauri-action'));
+    assert.ok(guard > workflow.indexOf('pnpm install'), 'the guard needs Vite');
   });
 });
 
@@ -127,11 +145,26 @@ describe('the guard as a command', () => {
     assert.equal(res.status, 0, res.stderr);
   });
 
-  for (const name of ['VITE_E2E', 'VITE_GIPHY_API_URL']) {
+  for (const name of TEST_ONLY_VARS) {
     it(`exits 1 and names ${name} when the build environment sets it`, () => {
       const res = run({ [name]: '1' });
       assert.equal(res.status, 1);
       assert.match(res.stderr, new RegExp(name));
     });
   }
+});
+
+describe('the build itself', () => {
+  for (const name of TEST_ONLY_VARS) {
+    it(`stops at Vite when ${name} is set, whatever route it took`, () => {
+      const res = spawnSync(process.execPath, [VITE, 'build'], { cwd: ROOT, encoding: 'utf8', env: commandEnv({ [name]: '1' }) });
+      assert.notEqual(res.status, 0);
+      assert.match(res.stderr, new RegExp(`${name} belongs to the Test build alone`));
+    });
+  }
+
+  it('holds the compiler stop for a release profile with the e2e feature', () => {
+    const lib = fs.readFileSync(path.join(ROOT, 'src-tauri', 'src', 'lib.rs'), 'utf8');
+    assert.match(lib, /#\[cfg\(all\(feature = "e2e", not\(debug_assertions\)\)\)\]\s+compile_error!/);
+  });
 });

@@ -1,3 +1,7 @@
+// La build di test si compila sempre con `--debug`: così nessuna strada porta il server WebDriver in una release.
+#[cfg(all(feature = "e2e", not(debug_assertions)))]
+compile_error!("the e2e feature is for the Test build alone, which pnpm e2e builds with --debug");
+
 pub fn run() {
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())

@@ -101,7 +101,9 @@ The harness sets these variables for the build:
 
 ### Keeping the Test build out of releases
 
-A step in `.github/workflows/release.yml` fails if the release build enables the `e2e` feature or sets `VITE_E2E` or `VITE_GIPHY_API_URL`. It must check what the build uses, because the `e2e` feature always exists in `Cargo.toml`. With the feature on, an unauthenticated WebDriver server stays in even a release build, and any local process could read the session token.
+A step in `.github/workflows/release.yml` fails if the release build enables the `e2e` feature or sets `VITE_E2E` or `VITE_GIPHY_API_URL`. It must check what the build uses, because the `e2e` feature always exists in `Cargo.toml`. With the feature on, an unauthenticated WebDriver server would be in the build, and any local process could read the session token.
+
+The step, `e2e/release-guard.mjs`, reads what a release names, so it fails early and can run locally with no tag. A text scan cannot see every route, so the build holds the last stop: `src-tauri/src/lib.rs` refuses the feature outside a debug profile, and `vite.config.ts` refuses the variables outside a `--debug` Tauri build.
 
 ## Test backend
 
