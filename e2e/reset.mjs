@@ -1,8 +1,9 @@
 // A Reset returns the Test backend to exactly one Seed. Fixtures own it, so it runs before every test.
 import fs from 'node:fs';
 import path from 'node:path';
-import { APP_URL, DRIVEN_USERS, INTERFACE_WAIT_MS, SESSIONS_FILE, SNAPSHOTS } from './config.mjs';
+import { APP_URL, DRIVEN_USERS, FAILURES, INTERFACE_WAIT_MS, SESSIONS_FILE, SNAPSHOTS, TEST_RAN_FILE } from './config.mjs';
 import { confirmInstance } from './guards.mjs';
+import { screenshotName } from './report.mjs';
 import { convexInStage } from './stage.mjs';
 
 const MAIN_WINDOW = 'main';
@@ -22,6 +23,46 @@ async function confirmLoadedApp(b, name) {
 
 // A failing root hook runs no tests at all. Every spec reaches this through its Fixture, before any session exists.
 before('every instance is on the Test backend', () => forEachInstance(confirmLoadedApp));
+
+/** A hung app answers nothing, and only the limit ends the wait. */
+function withinLimit(work, what) {
+  let timer;
+  const limit = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${what} took over ${INTERFACE_WAIT_MS} ms`)), INTERFACE_WAIT_MS);
+  });
+  return Promise.race([work, limit]).finally(() => clearTimeout(timer));
+}
+
+/** One dead instance must not cost the picture of the other. */
+async function saveScreenshot(b, name, testTitle) {
+  try {
+    fs.mkdirSync(FAILURES, { recursive: true });
+    await withinLimit(b.saveScreenshot(path.join(FAILURES, screenshotName(testTitle, name))), `a screenshot of ${name}`);
+  } catch (err) {
+    console.error(`[e2e] no screenshot of ${name}: ${err.message}`);
+  }
+}
+
+async function stopIfDead(b, name, testTitle) {
+  try {
+    await withinLimit(b.execute(() => true), `a ping of ${name}`);
+  } catch (err) {
+    const message = `${name} stopped responding, so the run stops. Last test: ${testTitle}. ${err.message}`;
+    // WDIO fails too when it closes the dead session, and that loses the report holding the throw below.
+    console.error(`[e2e] FAILED: ${message}`);
+    throw new Error(message);
+  }
+}
+
+// A hook, not WDIO's afterTest: Mocha does not wait for that after a timeout, so a picture would race the next Reset.
+// It runs after the last test too, and a throw in a root hook stops every later test: a dead instance is never restarted.
+afterEach('a failed test leaves pictures, and a dead instance stops the run', async function afterEveryTest() {
+  const { state } = this.currentTest;
+  const title = this.currentTest.fullTitle();
+  fs.writeFileSync(TEST_RAN_FILE, title);
+  if (state === 'failed') await forEachInstance((b, name) => saveScreenshot(b, name, title));
+  await forEachInstance((b, name) => stopIfDead(b, name, title));
+});
 
 async function closePopouts(b) {
   for (const handle of await b.getWindowHandles()) {

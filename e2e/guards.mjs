@@ -6,6 +6,14 @@ import { CONVEX_URL, DEPLOYMENT, EXE, PROFILES, SITE_URL, STUB_URL } from './con
 
 const namesATarget = (key) => /^(CONVEX_|VITE_)/i.test(key);
 
+/** `--grep` narrows what runs. Nothing else is accepted, so no flag can change the target or skip the start. */
+export function parseRunArgs(argv) {
+  const args = argv[0] === '--' ? argv.slice(1) : argv;
+  if (args.length === 0) return {};
+  if (args.length === 2 && args[0] === '--grep' && args[1]) return { grep: args[1] };
+  throw new Error('pnpm e2e takes only --grep "<test>": the target is fixed and every run does the full start.');
+}
+
 /** The developer's environment is not inherited: `convex import --replace-all` wipes whatever it reaches. */
 export function commandEnv(extra = {}, base = process.env) {
   return { ...Object.fromEntries(Object.entries(base).filter(([key]) => !namesATarget(key))), ...extra };

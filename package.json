@@ -11,7 +11,7 @@
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
     "e2e": "node e2e/run.mjs",
-    "e2e:guards": "node --test e2e/guards.test.mjs e2e/release-guard.test.mjs"
+    "e2e:guards": "node --test e2e/guards.test.mjs e2e/release-guard.test.mjs e2e/report.test.mjs"
   },
   "dependencies": {
     "@convex-dev/better-auth": "^0.12.6",

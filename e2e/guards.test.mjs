@@ -7,7 +7,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { after, afterEach, beforeEach, describe, it } from 'node:test';
 import { ROOT } from './config.mjs';
-import { buildEnv, commandEnv, confirmCleanEnv, confirmStage, findBusyPorts, confirmInstance, instanceCapability } from './guards.mjs';
+import { buildEnv, commandEnv, confirmCleanEnv, confirmStage, findBusyPorts, confirmInstance, instanceCapability, parseRunArgs } from './guards.mjs';
 import { prepareStage } from './stage.mjs';
 
 // What the CLI really writes, comment and blank lines included.
@@ -31,13 +31,38 @@ after(() => {
 });
 
 describe('the target', () => {
-  it('takes no flags, so none can change it', () => {
+  it('takes no flag that could change it', () => {
     const res = spawnSync(process.execPath, [path.join(ROOT, 'e2e', 'run.mjs'), '--url', 'https://example.convex.cloud'], {
       encoding: 'utf8',
     });
     assert.equal(res.status, 1);
-    assert.match(res.stderr, /takes no flags/);
+    assert.match(res.stderr, /takes only --grep/);
   });
+});
+
+describe('the arguments of a run', () => {
+  it('are optional: a plain run has no filter', () => {
+    assert.deepEqual(parseRunArgs([]), {});
+  });
+
+  it('can name the tests to run', () => {
+    assert.deepEqual(parseRunArgs(['--grep', 'each sees the other message']), { grep: 'each sees the other message' });
+  });
+
+  it('survive the separator pnpm may keep', () => {
+    assert.deepEqual(parseRunArgs(['--', '--grep', 'unread']), { grep: 'unread' });
+  });
+
+  for (const [what, argv] of [
+    ['--grep with no test', ['--grep']],
+    ['--grep with an empty test', ['--grep', '']],
+    ['a second flag', ['--grep', 'unread', '--url', 'https://example.convex.cloud']],
+    ['anything else', ['--spec', 'two-friends']],
+  ]) {
+    it(`refuse ${what}`, () => {
+      assert.throws(() => parseRunArgs(argv), /takes only --grep/);
+    });
+  }
 });
 
 describe('the environment a command gets', () => {
