@@ -150,7 +150,7 @@ A Reset runs before every test, so tests never depend on order and any one can r
 The Fixture owns the sequence, in this order:
 
 1. Close any popouts left open.
-2. Clear `localStorage` and restore each user's session. This must come first, because `about:blank` has no `localStorage`.
+2. Clear `localStorage` and restore each user's session, except for `signedOut`, which starts with none. This must come first, because `about:blank` has no `localStorage`.
 3. Take both instances to `about:blank`. Wait until each one really is there, because `url()` returns before the navigation ends.
 4. Run `convex import --replace-all --yes <seed>.zip`.
 5. Load the app in both instances, and wait until each one has loaded.
@@ -393,7 +393,7 @@ No macOS code is written until someone can run it. Until then the suite runs on 
 **Not built or not run anywhere:**
 
 - The release guard and `releaseDraft: true` with two platforms. Tags must not be pushed to test it, so the first real release is the test.
-- `press()`, `pressHoverOnly()` and the five-language test.
+- `pressHoverOnly()` and the five-language test.
 - `data-testid` itself.
 - The `history` and `expired-invite` Seeds, Carol's old `lastSeenAt`, and sending 70 messages in a Seed.
 - A `media` Seed with a video and a link message. The prototype's had neither.
@@ -406,7 +406,7 @@ No macOS code is written until someone can run it. Until then the suite runs on 
 - An app that hangs without exiting. The ping and each request have limits, but only a killed app was tried.
 - Section and chat reordering by drag. Only moving a chat into a folder was tried.
 - The tab close button and section controls. They use `opacity-0`, not `display: none`, so `isClickable` may read them differently.
-- Accessible names on modals, friend screens and the auth screen. Only an open chat and two Settings screens were checked.
+- Accessible names on modals and friend screens. Only an open chat, two Settings screens and the auth screen were checked.
 - Whether a theme import accepts a synthetic `change` event.
 - A large Seed. Reset time was measured on very little data.
 - Timings for uploads, popouts and `history`, so 5 s per test is a guess.
