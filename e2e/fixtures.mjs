@@ -52,15 +52,23 @@ function drivenUser(name) {
       if (await b.$(textSelector(text)).isExisting()) throw new Error(`${name} still sees "${text}"`);
     },
 
-    seesAuthScreen: () => waitUntilShown(`aria/${en['auth.signIn']}`, `${name} is not on the auth screen`),
+    seesAuthScreen: () => waitUntilShown(textSelector(en['auth.welcomeBack']), `${name} is not on the auth screen`),
     seesChats: () => waitUntilShown(SETTINGS, `${name} did not reach their chats`),
-    seesRefusal: (text) => waitUntilShown(`//*[@role="alert"][contains(normalize-space(.), "${text}")]`, `${name} was not told "${text}"`),
+    seesSignInRefused: () =>
+      waitUntilShown(`//*[@role="alert"][contains(normalize-space(.), "${en['error.generic']}")]`, `${name} was not refused`),
     async seesEveryControlNamed() {
       const unnamed = await b.execute(unnamedControls);
       if (unnamed.length) throw new Error(`${name} sees controls with no name:\n${unnamed.join('\n')}`);
     },
 
-    startSignUp: () => press(`aria/${en['auth.registerLink']}`),
+    async showPassword() {
+      await press(`aria/${en['auth.showPassword']}`);
+      await waitUntilShown(`aria/${en['auth.hidePassword']}`, `${name} has no way to hide the password`);
+    },
+    async startSignUp() {
+      await press(`aria/${en['auth.registerLink']}`);
+      await waitUntilShown(textSelector(en['auth.createTitle']), `${name} did not reach the sign-up form`);
+    },
     async signUp({ name: fullName, email }) {
       await user.startSignUp();
       await fill(en['auth.name'], fullName);
@@ -77,7 +85,17 @@ function drivenUser(name) {
       await press(SETTINGS);
       await press(`aria/${en['common.signOut']}`);
     },
-    reload: () => b.refresh(),
+    /** `refresh()` returns before the reload ends, so a wait right after it can still read the old page. */
+    async reload() {
+      await b.execute(() => {
+        window.notReloadedYet = true;
+      });
+      await b.refresh();
+      await b.waitUntil(async () => b.execute(() => !window.notReloadedYet && document.readyState === 'complete'), {
+        ...WAIT,
+        timeoutMsg: `${name} did not reload`,
+      });
+    },
   };
   return user;
 }

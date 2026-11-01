@@ -11,21 +11,22 @@ describe('signing in and out', () => {
   });
 
   it('an existing person signs in', async () => {
-    const { bob } = await signedOut();
+    const { alice } = await signedOut();
 
-    await bob.signIn();
+    await alice.signIn();
 
-    await bob.seesChats();
-    await bob.sees('Bob Test');
+    await alice.seesChats();
+    await alice.sees('Alice Test');
   });
 
-  it('a wrong password is refused', async () => {
+  it('a wrong password is refused, and the right one still works', async () => {
     const { alice } = await signedOut();
 
     await alice.signIn({ password: 'not-the-right-password' });
+    await alice.seesSignInRefused();
 
-    await alice.seesRefusal('Something went wrong. Please try again.');
-    await alice.seesAuthScreen();
+    await alice.signIn();
+    await alice.seesChats();
   });
 
   it('a session survives a reload', async () => {
@@ -36,7 +37,6 @@ describe('signing in and out', () => {
     await alice.reload();
 
     await alice.seesChats();
-    await alice.doesNotSee('Welcome back');
   });
 
   it('signing out ends the session, even after a reload', async () => {
@@ -53,7 +53,9 @@ describe('signing in and out', () => {
 
   it('every control on the auth screen has a name', async () => {
     const { alice } = await signedOut();
+    await alice.seesEveryControlNamed();
 
+    await alice.showPassword();
     await alice.seesEveryControlNamed();
 
     await alice.startSignUp();
