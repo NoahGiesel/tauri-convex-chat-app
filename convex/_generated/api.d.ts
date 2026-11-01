@@ -23,6 +23,7 @@ import type * as previews from "../previews.js";
 import type * as r2 from "../r2.js";
 import type * as reactions from "../reactions.js";
 import type * as sidebar from "../sidebar.js";
+import type * as typing from "../typing.js";
 import type * as users from "../users.js";
 
 import type {
@@ -47,6 +48,7 @@ declare const fullApi: ApiFromModules<{
   r2: typeof r2;
   reactions: typeof reactions;
   sidebar: typeof sidebar;
+  typing: typeof typing;
   users: typeof users;
 }>;
 

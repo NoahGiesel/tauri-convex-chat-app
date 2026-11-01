@@ -57,6 +57,27 @@ export const me = query({
   },
 });
 
+/** Profilo pubblico di una persona (mai l'email): per la scheda aperta cliccando su un nome o un avatar. */
+export const profile = query({
+  args: { profileId: v.id("profiles") },
+  handler: async (ctx, args) => {
+    const me = await getProfile(ctx);
+    if (!me) return null;
+    const p = await ctx.db.get("profiles", args.profileId);
+    if (!p) return null;
+    return {
+      _id: p._id,
+      name: p.name,
+      bio: p.bio ?? "",
+      avatarIndex: p.avatarIndex,
+      avatarUrl: await avatarUrl(ctx, p),
+      lastSeenAt: p.lastSeenAt,
+      joinedAt: p._creationTime,
+      isMe: p._id === me._id,
+    };
+  },
+});
+
 const MAX_SEARCH_SCAN = 500;
 const MAX_SEARCH_RESULTS = 20;
 

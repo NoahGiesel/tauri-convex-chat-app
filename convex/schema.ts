@@ -139,4 +139,11 @@ export default defineSchema({
     siteName: v.optional(v.string()),
     fetchedAt: v.number(),
   }).index("by_url", ["url"]),
+
+  /** Chi sta scrivendo in una chat: una riga per persona e conversazione, con la scadenza dell'indicatore. */
+  typing: defineTable({
+    conversationId: v.id("conversations"),
+    profileId: v.id("profiles"),
+    until: v.number(),
+  }).index("by_conversation_and_profile", ["conversationId", "profileId"]),
 });

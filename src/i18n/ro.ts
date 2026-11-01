@@ -294,4 +294,12 @@ export const ro: Messages = {
   "settings.appearance.radiusLow": "Puțin",
   "settings.appearance.radiusNormal": "Normal",
   "settings.appearance.radiusHigh": "Mult",
+  "profile.title": "Profil",
+  "profile.mine": "Profilul tău",
+  "profile.notFound": "Acest profil nu mai este disponibil.",
+  "profile.joined": "Membru din {date}",
+  "profile.noBio": "Nicio descriere încă.",
+  "chat.typing.one": "{name} scrie…",
+  "chat.typing.two": "{a} și {b} scriu…",
+  "chat.typing.many": "Mai multe persoane scriu…",
 };

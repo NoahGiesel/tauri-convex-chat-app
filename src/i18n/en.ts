@@ -293,6 +293,14 @@ export const en = {
   "settings.appearance.radiusLow": "Slight",
   "settings.appearance.radiusNormal": "Normal",
   "settings.appearance.radiusHigh": "Round",
+  "profile.title": "Profile",
+  "profile.mine": "Your profile",
+  "profile.notFound": "This profile is no longer available.",
+  "profile.joined": "Member since {date}",
+  "profile.noBio": "No description yet.",
+  "chat.typing.one": "{name} is typing…",
+  "chat.typing.two": "{a} and {b} are typing…",
+  "chat.typing.many": "Several people are typing…",
 } as const;
 
 export type MessageKey = keyof typeof en;

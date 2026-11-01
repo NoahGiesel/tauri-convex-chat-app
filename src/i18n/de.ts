@@ -294,4 +294,12 @@ export const de: Messages = {
   "settings.appearance.radiusLow": "Leicht",
   "settings.appearance.radiusNormal": "Normal",
   "settings.appearance.radiusHigh": "Rund",
+  "profile.title": "Profil",
+  "profile.mine": "Dein Profil",
+  "profile.notFound": "Dieses Profil ist nicht mehr verfügbar.",
+  "profile.joined": "Mitglied seit {date}",
+  "profile.noBio": "Noch keine Beschreibung.",
+  "chat.typing.one": "{name} schreibt…",
+  "chat.typing.two": "{a} und {b} schreiben…",
+  "chat.typing.many": "Mehrere Personen schreiben…",
 };

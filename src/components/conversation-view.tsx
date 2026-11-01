@@ -9,6 +9,7 @@ import { EmojiGifPicker, type PickerTab } from "@/components/emoji-gif-picker";
 import { MediaLightbox, type LightboxItem } from "@/components/media-lightbox";
 import { LinkPreview } from "@/components/link-preview";
 import { MediaLibrary } from "@/components/media-library";
+import { ProfileModal } from "@/components/profile-modal";
 import { MessageEditor } from "@/components/message-editor";
 import { Linkified, MessageBody, isEditableStyle } from "@/components/message-body";
 import { ReactionChips, ReactionToolbar } from "@/components/message-reactions";
@@ -55,7 +56,20 @@ const TEXT_STYLES: readonly string[] = ["me", "code", "pre", "spoiler", "quote"]
 export function ConversationView({ conversationId, showHeader = false }: { conversationId: Id<"conversations">; showHeader?: boolean }) {
   const { t, locale, language } = useI18n();
   const presence = usePresence();
+  const [profileId, setProfileId] = useState<Id<"profiles"> | null>(null);
+  const typingRows = useQuery(api.typing.list, { conversationId });
+  const pingTyping = useMutation(api.typing.ping);
+  const lastPing = useRef(0);
+  const [tick, setTick] = useState(() => Date.now());
+  const typingNames = (typingRows ?? []).filter((r) => r.until > tick).map((r) => r.name);
+  useEffect(() => {
+    if (!typingRows || typingRows.length === 0) return;
+    const id = setInterval(() => setTick(Date.now()), 1000);
+    setTick(Date.now());
+    return () => clearInterval(id);
+  }, [typingRows]);
   const info = useQuery(api.conversations.get, { conversationId });
+  const lastSeenByProfile = new Map<string, number | undefined>((info?.members ?? []).map((mb) => [mb._id as string, mb.lastSeenAt]));
   const { results, status, loadMore } = usePaginatedQuery(
     api.messages.list,
     { conversationId },
@@ -111,6 +125,21 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
   const markRead = useMutation(api.conversations.markRead);
 
   const [draft, setDraft] = useState("");
+  useEffect(() => {
+    if (draft.trim() === "") {
+      if (lastPing.current !== 0) {
+        lastPing.current = 0;
+        void pingTyping({ conversationId, active: false }).catch(() => {});
+      }
+      return;
+    }
+    if (draft.startsWith("/")) return;
+    const now = Date.now();
+    if (now - lastPing.current > 3000) {
+      lastPing.current = now;
+      void pingTyping({ conversationId, active: true }).catch(() => {});
+    }
+  }, [draft]); // eslint-disable-line react-hooks/exhaustive-deps
   const [error, setError] = useState<string | null>(null);
   const [picker, setPicker] = useState<PickerTab | null>(null);
   const [searchingGif, setSearchingGif] = useState(false);
@@ -573,11 +602,12 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
       </header>
       )}
 
+      {profileId && <ProfileModal profileId={profileId} onClose={() => setProfileId(null)} />}
       {libraryOpen && <MediaLibrary conversationId={conversationId} onOpenMedia={setLightbox} onClose={() => setLibraryOpen(false)} />}
 
       {/* Messaggi e campo di scrittura restano montati (così non si perde la posizione) ma nascosti mentre si guarda l'elenco. */}
       <div className={cn("flex min-h-0 flex-1 flex-col", libraryOpen && "hidden")}>
-      <div ref={scrollRef} onScroll={onScroll} className={cn("min-h-0 flex-1 overflow-y-auto px-6 py-5", !revealed && "opacity-0")}>
+      <div ref={scrollRef} onScroll={onScroll} className={cn("min-h-0 flex-1 overflow-y-auto px-6 pt-5 pb-1", !revealed && "opacity-0")}>
         {!showHeader && (
           <div className="pointer-events-none sticky top-0 z-10 h-0">
             <button
@@ -643,7 +673,9 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
                       <Sparkles className="size-5" strokeWidth={1.8} />
                     </span>
                   ) : (
-                    <Avatar name={m.authorName} index={m.authorAvatarIndex} src={m.authorAvatarUrl} size={38} accent={m.mine} />
+                    <button type="button" disabled={!m.authorId} onClick={() => m.authorId && setProfileId(m.authorId)} className="cursor-pointer rounded-[calc(11px*var(--radius-scale))]">
+                      <Avatar name={m.authorName} index={m.authorAvatarIndex} src={m.authorAvatarUrl} size={38} accent={m.mine} />
+                    </button>
                   ))}
               </div>
               {editingId !== m._id && !m._id.includes("-") && (
@@ -657,7 +689,7 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
               <div className="min-w-0 flex-1">
                 {row.head && (
                   <div className="text-sm">
-                    <strong className={isAi ? "text-app-ai" : m.mine ? "text-app-accent-text" : "text-app-text-strong"}>
+                    <strong onClick={() => !isAi && m.authorId && setProfileId(m.authorId)} className={cn(!isAi && "cursor-pointer hover:underline", isAi ? "text-app-ai" : m.mine || presence.person(lastSeenByProfile.get(m.authorId ?? "")).online ? "text-app-accent-text" : "text-app-accent-text/55")}>
                       {isAi ? t("chat.aiName") : m.authorName}
                     </strong>
                     <span className="ml-1.5 text-xs text-app-text-dim">{time(m._creationTime)}</span>
@@ -807,6 +839,11 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
             ))}
           </div>
         )}
+        <div className="h-4 truncate px-2 text-xs leading-4 text-app-text-muted italic" aria-live="polite">
+          {typingNames.length === 1 && t("chat.typing.one", { name: typingNames[0] })}
+          {typingNames.length === 2 && t("chat.typing.two", { a: typingNames[0], b: typingNames[1] })}
+          {typingNames.length > 2 && t("chat.typing.many")}
+        </div>
         <div className="relative flex items-end gap-1 rounded-2xl border border-app-border bg-app-bg p-1.5">
           {suggestions.length > 0 && (
             <div role="listbox" className="absolute right-0 bottom-full left-0 z-30 mb-2 overflow-hidden rounded-xl border border-app-border-strong bg-app-panel p-1 shadow-xl">
