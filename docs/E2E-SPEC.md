@@ -285,6 +285,8 @@ Vitest and `convex-test` join the repo as dev dependencies, for what E2E cannot 
 - **`dayLabel`:** today, yesterday, older dates and midnight. E2E tests see only "Today".
 - **`parseHtml` and `fetchPreview`,** with a stubbed `fetch`, including the YouTube lookup.
 
+`pnpm test` runs them. The tests of `convex/` live beside the code, because `convex deploy` skips a file name with more than one dot.
+
 The `Messages` type already fails the build if a language misses a key, so no key test is needed.
 
 ## Reliability
@@ -396,7 +398,6 @@ No macOS code is written until someone can run it. Until then the suite runs on 
 - The `history` and `expired-invite` Seeds, Carol's old `lastSeenAt`, and sending 70 messages in a Seed.
 - A `media` Seed with a video and a link message. The prototype's had neither.
 - Anything with a real video.
-- Vitest and `convex-test` in this repo.
 - Most scenarios. The probes covered a group chat, the unread badge, presence, the three drag cases, one photo upload, one deletion, the GIF picker, `/giphy` and one preview card. Settings ran nothing.
 
 **Open behaviour:**
