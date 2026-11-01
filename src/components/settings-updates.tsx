@@ -28,9 +28,9 @@ export function SettingsUpdates() {
         <p className="mt-2 text-[15px] text-app-text-muted">{t("settings.updates.subtitle")}</p>
       </div>
 
-      <section className="flex flex-col gap-[18px] rounded-[18px] border border-app-border bg-app-panel p-6">
+      <section className="flex flex-col gap-[18px] rounded-[calc(18px*var(--radius-scale))] border border-app-border bg-app-panel p-6">
         <div className="flex flex-wrap items-center gap-4">
-          <div className="flex size-[52px] items-center justify-center rounded-[15px] bg-app-accent text-app-accent-fg">
+          <div className="flex size-[52px] items-center justify-center rounded-[calc(15px*var(--radius-scale))] bg-app-accent text-app-accent-fg">
             <MessageSquare className="size-[26px]" strokeWidth={2} />
           </div>
           <div className="min-w-[200px] flex-1">
@@ -113,7 +113,7 @@ export function SettingsUpdates() {
         </div>
       </section>
 
-      <section className="rounded-[18px] border border-app-border bg-app-panel px-6 py-2">
+      <section className="rounded-[calc(18px*var(--radius-scale))] border border-app-border bg-app-panel px-6 py-2">
         <div className="flex items-center gap-4 py-4">
           <div className="flex-1">
             <div className="text-[15px] font-bold text-app-text-strong">{t("settings.updates.notifyTitle")}</div>

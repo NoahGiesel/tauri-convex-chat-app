@@ -130,7 +130,7 @@ function GifTab({ onGif }: { onGif: (url: string) => void }) {
           placeholder={t("composer.gifSearch")}
           autoComplete="off"
           spellCheck={false}
-          className="h-10 w-full rounded-[10px] border border-app-border bg-app-field px-3 text-sm text-app-text outline-none placeholder:text-app-text-dim focus:border-app-accent-bright"
+          className="h-10 w-full rounded-[calc(10px*var(--radius-scale))] border border-app-border bg-app-field px-3 text-sm text-app-text outline-none placeholder:text-app-text-dim focus:border-app-accent-bright"
         />
       </div>
 

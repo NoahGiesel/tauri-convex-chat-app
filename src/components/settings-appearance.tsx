@@ -7,10 +7,17 @@ import { useTheme, type ThemeMode } from "@/themes/theme-provider";
 import { cn } from "@/lib/utils";
 import { outlineButtonClass, sectionLabelClass } from "@/lib/ui-classes";
 
+const RADIUS_STEPS = [
+  { value: 0, label: "settings.appearance.radiusNone" },
+  { value: 0.5, label: "settings.appearance.radiusLow" },
+  { value: 1, label: "settings.appearance.radiusNormal" },
+  { value: 1.5, label: "settings.appearance.radiusHigh" },
+] as const;
+
 /** Impostazioni › Aspetto: temi pronti, accento personalizzato e configurazione JSON importabile/esportabile. */
 export function SettingsAppearance() {
   const { t } = useI18n();
-  const { theme, themes, definition, preference, mode, setMode, setTheme, setCustomAccent, exportTheme, importTheme } = useTheme();
+  const { theme, themes, definition, preference, mode, setMode, setTheme, setCustomAccent, setRadius, exportTheme, importTheme } = useTheme();
   const { side, setSide } = useSidebar();
   const visibleThemes = mode === "system" ? themes : themes.filter((p) => p.mode === mode);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -54,12 +61,12 @@ export function SettingsAppearance() {
         <p className="mt-2 text-[15px] text-app-text-muted">{t("settings.appearance.subtitle")}</p>
       </div>
 
-      <section className="flex items-center gap-4 rounded-[18px] border border-app-border bg-app-panel px-6 py-5">
+      <section className="flex items-center gap-4 rounded-[calc(18px*var(--radius-scale))] border border-app-border bg-app-panel px-6 py-5">
         <div className="min-w-0 flex-1">
           <div className="text-[15px] font-bold text-app-text-strong">{t("settings.appearance.sidebarPosition")}</div>
           <div className="mt-0.5 text-[13px] text-app-text-muted">{t("settings.appearance.sidebarPositionDescription")}</div>
         </div>
-        <div role="group" aria-label={t("settings.appearance.sidebarPosition")} className="flex gap-0.5 rounded-[11px] bg-app-field p-[3px]">
+        <div role="group" aria-label={t("settings.appearance.sidebarPosition")} className="flex gap-0.5 rounded-[calc(11px*var(--radius-scale))] bg-app-field p-[3px]">
           {(["left", "right"] as SidebarSide[]).map((value) => (
             <button
               key={value}
@@ -77,10 +84,33 @@ export function SettingsAppearance() {
         </div>
       </section>
 
+      <section className="flex items-center gap-4 rounded-[calc(18px*var(--radius-scale))] border border-app-border bg-app-panel px-6 py-5">
+        <div className="min-w-0 flex-1">
+          <div className="text-[15px] font-bold text-app-text-strong">{t("settings.appearance.radius")}</div>
+          <div className="mt-0.5 text-[13px] text-app-text-muted">{t("settings.appearance.radiusDescription")}</div>
+        </div>
+        <div role="group" aria-label={t("settings.appearance.radius")} className="flex gap-0.5 rounded-[calc(11px*var(--radius-scale))] bg-app-field p-[3px]">
+          {RADIUS_STEPS.map(({ value, label }) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={preference.radius === value}
+              onClick={() => setRadius(value)}
+              className={cn(
+                "h-8 rounded-lg px-3.5 text-sm font-semibold",
+                preference.radius === value ? "bg-app-accent-soft text-app-text-strong" : "text-app-text-muted hover:text-app-text",
+              )}
+            >
+              {t(label)}
+            </button>
+          ))}
+        </div>
+      </section>
+
       <section className="flex flex-col gap-3">
         <h2 className={sectionLabelClass}>{t("settings.appearance.themes")}</h2>
         <div className="flex flex-wrap items-center gap-3">
-          <div role="group" aria-label={t("settings.appearance.mode")} className="flex gap-0.5 rounded-[11px] bg-app-field p-[3px]">
+          <div role="group" aria-label={t("settings.appearance.mode")} className="flex gap-0.5 rounded-[calc(11px*var(--radius-scale))] bg-app-field p-[3px]">
             {(["dark", "light", "system"] as ThemeMode[]).map((value) => (
               <button
                 key={value}
@@ -118,7 +148,7 @@ export function SettingsAppearance() {
                 )}
               >
                 <div
-                  className="flex h-[92px] overflow-hidden rounded-[10px] border"
+                  className="flex h-[92px] overflow-hidden rounded-[calc(10px*var(--radius-scale))] border"
                   style={{ background: c.panel, borderColor: c.border }}
                 >
                   <div className="flex w-[32%] flex-col gap-1.5 p-2" style={{ background: c.sidebar }}>
@@ -172,13 +202,13 @@ export function SettingsAppearance() {
         <div className="rounded-2xl border border-app-border bg-app-panel px-5 py-1.5">
           {rows.map((r) => (
             <div key={r.label} className="flex items-center gap-3.5 border-b border-app-border py-3 last:border-b-0">
-              <div className="size-[30px] rounded-[9px] border border-app-border-strong" style={{ background: r.hex }} />
+              <div className="size-[30px] rounded-[calc(9px*var(--radius-scale))] border border-app-border-strong" style={{ background: r.hex }} />
               <div className="flex-1 text-[15px] font-semibold text-app-text">{r.label}</div>
               <code className="rounded-lg bg-app-field px-2.5 py-1 font-mono text-[13px] text-app-text-soft">{r.hex}</code>
               {r.editable ? (
                 <label
                   title={t("settings.appearance.customAccent")}
-                  className="relative flex size-9 cursor-pointer items-center justify-center rounded-[10px] text-app-text-muted hover:bg-app-field"
+                  className="relative flex size-9 cursor-pointer items-center justify-center rounded-[calc(10px*var(--radius-scale))] text-app-text-muted hover:bg-app-field"
                 >
                   <Pencil className="size-[18px]" strokeWidth={1.8} />
                   <input
@@ -222,7 +252,7 @@ export function SettingsAppearance() {
             {message.text}
           </p>
         )}
-        <pre className="max-h-60 overflow-auto rounded-[14px] border border-app-border bg-app-sidebar p-4 font-mono text-[12.5px] leading-relaxed text-app-text-soft">
+        <pre className="max-h-60 overflow-auto rounded-[calc(14px*var(--radius-scale))] border border-app-border bg-app-sidebar p-4 font-mono text-[12.5px] leading-relaxed text-app-text-soft">
           {json}
         </pre>
       </section>

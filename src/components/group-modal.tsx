@@ -44,7 +44,7 @@ export function GroupModal({
   return (
     <Modal title={t("group.title")} onClose={onClose}>
       <div className="flex items-center gap-3.5">
-        <GroupAvatar size={64} className="rounded-[18px]" />
+        <GroupAvatar size={64} className="rounded-[calc(18px*var(--radius-scale))]" />
         <div className="flex flex-1 flex-col gap-1.5">
           <label htmlFor="gname" className="text-[13px] font-bold text-app-text-soft">
             {t("group.nameLabel")}
@@ -74,7 +74,7 @@ export function GroupModal({
             <label
               key={f.profile._id}
               className={cn(
-                "flex cursor-pointer items-center gap-3 rounded-[14px] border px-3 py-2.5",
+                "flex cursor-pointer items-center gap-3 rounded-[calc(14px*var(--radius-scale))] border px-3 py-2.5",
                 checked ? "border-app-accent-soft-border bg-app-accent-soft" : "border-app-border bg-app-bg",
               )}
             >

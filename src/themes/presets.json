@@ -481,6 +481,46 @@
   },
   {
     "version": 1,
+    "id": "steam",
+    "name": "Steam",
+    "description": "Blu-grigio scuro con azzurro Steam: ispirato alla chat di Steam.",
+    "mode": "dark",
+    "colors": {
+      "bg": "#171a21",
+      "sidebar": "#1b2838",
+      "panel": "#1e1f24",
+      "field": "#16171b",
+      "raised": "#2a475e",
+      "border": "#2a2d35",
+      "borderStrong": "#3d4450",
+      "text": "#c7cdd4",
+      "textStrong": "#ffffff",
+      "textSoft": "#a9b1ba",
+      "textMuted": "#8f98a0",
+      "textDim": "#79828b",
+      "accent": "#1a9fff",
+      "accentFg": "#ffffff",
+      "online": "#57cbde",
+      "offline": "#6d7378",
+      "ai": "#9aa5ff",
+      "upload": "#e6a23c",
+      "avatars": [
+        "#3c6e8f",
+        "#8a6a2e",
+        "#4f7a3a"
+      ],
+      "art": [
+        "#0e1a2b",
+        "#1b3a5c",
+        "#2a6ea6",
+        "#17304d",
+        "#0c1726",
+        "#08101a"
+      ]
+    }
+  },
+  {
+    "version": 1,
     "id": "atelier",
     "name": "Atelier",
     "description": "Crema, nero, blu e oro: ispirato a una stampa astratta.",

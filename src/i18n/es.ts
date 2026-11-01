@@ -283,4 +283,10 @@ export const es: Messages = {
   "notif.spoiler": "Spoiler",
   "settings.appearance.standbyDark": "Se usa cuando el sistema está en modo oscuro",
   "settings.appearance.standbyLight": "Se usa cuando el sistema está en modo claro",
+  "settings.appearance.radius": "Redondeo de esquinas",
+  "settings.appearance.radiusDescription": "Cuán redondeados son los botones, tarjetas, mensajes y fotos.",
+  "settings.appearance.radiusNone": "Ninguno",
+  "settings.appearance.radiusLow": "Poco",
+  "settings.appearance.radiusNormal": "Normal",
+  "settings.appearance.radiusHigh": "Mucho",
 };

@@ -27,7 +27,7 @@ export function Avatar({
         aria-hidden
         draggable={false}
         className={cn("shrink-0 object-cover select-none", className)}
-        style={{ width: size, height: size, borderRadius: Math.round(size * 0.3) }}
+        style={{ width: size, height: size, borderRadius: `calc(${Math.round(size * 0.3)}px * var(--radius-scale, 1))` }}
       />
     );
   }
@@ -43,7 +43,7 @@ export function Avatar({
       style={{
         width: size,
         height: size,
-        borderRadius: Math.round(size * 0.3),
+        borderRadius: `calc(${Math.round(size * 0.3)}px * var(--radius-scale, 1))`,
         fontSize: Math.round(size * 0.38),
         background: accent ? "var(--app-accent)" : `var(--app-av-${index + 1}, var(--app-accent))`,
       }}
@@ -59,7 +59,7 @@ export function GroupAvatar({ size = 40, className }: { size?: number; className
     <span
       aria-hidden
       className={cn("inline-flex shrink-0 items-center justify-center bg-app-raised text-app-text-soft", className)}
-      style={{ width: size, height: size, borderRadius: Math.round(size * 0.3) }}
+      style={{ width: size, height: size, borderRadius: `calc(${Math.round(size * 0.3)}px * var(--radius-scale, 1))` }}
     >
       <Users style={{ width: size * 0.5, height: size * 0.5 }} strokeWidth={1.8} />
     </span>

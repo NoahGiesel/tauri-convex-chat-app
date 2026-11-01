@@ -51,7 +51,7 @@ export function SettingsPage({
                 aria-current={current ? "page" : undefined}
                 onClick={() => onSectionChange(item.id)}
                 className={cn(
-                  "flex items-center gap-2 rounded-[10px] px-3 py-[11px] text-left text-[15px]",
+                  "flex items-center gap-2 rounded-[calc(10px*var(--radius-scale))] px-3 py-[11px] text-left text-[15px]",
                   current ? "bg-app-accent-soft font-bold text-app-text-strong" : "font-semibold text-app-text-soft hover:bg-app-field",
                 )}
               >

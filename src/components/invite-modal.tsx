@@ -209,7 +209,7 @@ export function InviteModal({
             </div>
 
             {incoming.map((r) => (
-              <div key={r.friendshipId} className="flex items-center gap-3 rounded-[14px] border border-app-border bg-app-bg p-2.5">
+              <div key={r.friendshipId} className="flex items-center gap-3 rounded-[calc(14px*var(--radius-scale))] border border-app-border bg-app-bg p-2.5">
                 <Avatar name={r.profile.name} index={r.profile.avatarIndex} src={r.profile.avatarUrl} size={42} />
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[15px] font-bold text-app-text-strong">{r.profile.name}</div>
@@ -238,7 +238,7 @@ export function InviteModal({
             ))}
 
             {outgoing.map((r) => (
-              <div key={r.friendshipId} className="flex items-center gap-3 rounded-[14px] border border-app-border bg-app-bg p-2.5">
+              <div key={r.friendshipId} className="flex items-center gap-3 rounded-[calc(14px*var(--radius-scale))] border border-app-border bg-app-bg p-2.5">
                 <Avatar name={r.profile.name} index={r.profile.avatarIndex} src={r.profile.avatarUrl} size={42} />
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[15px] font-bold text-app-text-strong">{r.profile.name}</div>

@@ -283,4 +283,10 @@ export const de: Messages = {
   "notif.spoiler": "Spoiler",
   "settings.appearance.standbyDark": "Wird verwendet, wenn dein System im Dunkelmodus ist",
   "settings.appearance.standbyLight": "Wird verwendet, wenn dein System im Hellmodus ist",
+  "settings.appearance.radius": "Eckenrundung",
+  "settings.appearance.radiusDescription": "Wie rund Schaltflächen, Karten, Nachrichten und Fotos sind.",
+  "settings.appearance.radiusNone": "Eckig",
+  "settings.appearance.radiusLow": "Leicht",
+  "settings.appearance.radiusNormal": "Normal",
+  "settings.appearance.radiusHigh": "Rund",
 };

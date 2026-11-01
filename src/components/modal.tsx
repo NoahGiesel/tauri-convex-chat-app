@@ -25,7 +25,7 @@ export function Modal({ title, onClose, children }: { title: string; onClose: ()
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="flex max-h-full w-full max-w-lg flex-col gap-5 overflow-y-auto rounded-[20px] border border-app-border bg-app-panel p-6 text-app-text"
+        className="flex max-h-full w-full max-w-lg flex-col gap-5 overflow-y-auto rounded-[calc(20px*var(--radius-scale))] border border-app-border bg-app-panel p-6 text-app-text"
       >
         <div className="flex items-center">
           <h2 className="flex-1 text-2xl font-extrabold tracking-tight text-app-text-strong">{title}</h2>
@@ -33,7 +33,7 @@ export function Modal({ title, onClose, children }: { title: string; onClose: ()
             type="button"
             aria-label={t("invite.close")}
             onClick={onClose}
-            className="flex size-10 items-center justify-center rounded-[10px] text-app-text-muted hover:bg-app-field"
+            className="flex size-10 items-center justify-center rounded-[calc(10px*var(--radius-scale))] text-app-text-muted hover:bg-app-field"
           >
             <X className="size-5" strokeWidth={2.2} />
           </button>

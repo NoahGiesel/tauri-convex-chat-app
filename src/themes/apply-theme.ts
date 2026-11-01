@@ -8,6 +8,13 @@ const kebab = (s: string) => s.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase()).r
  *  - un set `--app-*` per i colori specifici della chat (online, ai, upload, avatar…).
  * Le variabili inline vincono su quelle di `:root` / `.dark` nel CSS, quindi basta questo.
  */
+/** Stondatura degli angoli: 0 = tutto squadrato, 1 = normale, oltre 1 = più arrotondato. */
+export function applyRadius(scale: number): void {
+  const root = document.documentElement;
+  root.style.setProperty("--radius-scale", String(scale));
+  root.style.setProperty("--radius", `${0.625 * scale}rem`); // base di rounded-sm … rounded-4xl (shadcn)
+}
+
 export function applyTheme(t: ResolvedTheme, mode: "dark" | "light" = "dark"): void {
   const root = document.documentElement;
   const set = (name: string, value: string) => root.style.setProperty(name, value);

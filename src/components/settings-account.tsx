@@ -19,7 +19,7 @@ export function SettingsAccount() {
         <p className="mt-2 text-[15px] text-app-text-muted">{t("settings.account.subtitle")}</p>
       </div>
 
-      <section className="flex items-center gap-4 rounded-[18px] border border-app-border bg-app-panel p-6">
+      <section className="flex items-center gap-4 rounded-[calc(18px*var(--radius-scale))] border border-app-border bg-app-panel p-6">
         <Avatar name={me?.name ?? ""} index={0} src={me?.avatarUrl} size={52} accent />
         <div className="min-w-0 flex-1">
           <div className="truncate text-lg font-extrabold text-app-text-strong">{me?.name ?? "…"}</div>

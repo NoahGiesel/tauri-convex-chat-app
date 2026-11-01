@@ -645,7 +645,7 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
                 )}
                 {row.head &&
                   (isAi ? (
-                    <span className="flex size-[38px] items-center justify-center rounded-[11px] bg-app-ai-bg text-app-ai">
+                    <span className="flex size-[38px] items-center justify-center rounded-[calc(11px*var(--radius-scale))] bg-app-ai-bg text-app-ai">
                       <Sparkles className="size-5" strokeWidth={1.8} />
                     </span>
                   ) : (
@@ -670,7 +670,7 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
                   </div>
                 )}
                 {isAi ? (
-                  <div className="mt-2 max-w-[560px] rounded-[14px] border border-app-ai-border bg-app-ai-bg px-3.5 py-3 text-[15px] leading-relaxed break-words whitespace-pre-wrap text-app-text">
+                  <div className="mt-2 max-w-[560px] rounded-[calc(14px*var(--radius-scale))] border border-app-ai-border bg-app-ai-bg px-3.5 py-3 text-[15px] leading-relaxed break-words whitespace-pre-wrap text-app-text">
                     <Linkified text={m.body} />
                   </div>
                 ) : m.kind === "media" && m.attachments.length > 0 ? (

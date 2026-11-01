@@ -64,4 +64,6 @@ export interface ThemePreference {
   followSystem: boolean;
   darkThemeId: string;
   lightThemeId: string;
+  /** Moltiplicatore della stondatura degli angoli: 0 (squadrato) … 1.5; 1 è il valore normale. */
+  radius: number;
 }

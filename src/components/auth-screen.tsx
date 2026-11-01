@@ -40,7 +40,7 @@ export function AuthScreen() {
 
   return (
     <div className="flex h-full min-h-screen flex-wrap gap-4 overflow-y-auto bg-app-bg p-4 text-app-text">
-      <div className="relative min-h-[480px] flex-[1_1_380px] overflow-hidden rounded-[22px] bg-[#e9e4d8]">
+      <div className="relative min-h-[480px] flex-[1_1_380px] overflow-hidden rounded-[calc(22px*var(--radius-scale))] bg-[#e9e4d8]">
         <img src={authArt} alt="" draggable={false} className="absolute inset-0 size-full object-cover select-none" />
       </div>
 
@@ -126,7 +126,7 @@ export function AuthScreen() {
                   type="button"
                   aria-label={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute top-[5px] right-1.5 flex size-10 items-center justify-center rounded-[10px] text-app-text-muted hover:bg-app-raised"
+                  className="absolute top-[5px] right-1.5 flex size-10 items-center justify-center rounded-[calc(10px*var(--radius-scale))] text-app-text-muted hover:bg-app-raised"
                 >
                   {showPassword ? <EyeOff className="size-5" strokeWidth={1.8} /> : <Eye className="size-5" strokeWidth={1.8} />}
                 </button>

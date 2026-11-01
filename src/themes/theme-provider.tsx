@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import presetsJson from "./presets.json";
-import { applyTheme } from "./apply-theme";
+import { applyRadius, applyTheme } from "./apply-theme";
 import { buildTheme, isHex, isThemeDefinition } from "./build-theme";
 import type { ResolvedTheme, ThemeDefinition, ThemePreference } from "./types";
 
@@ -23,6 +23,8 @@ interface ThemeContextValue {
   /** Seleziona un tema; ricorda anche quale usare per il suo modo (chiaro/scuro) quando si segue il sistema. */
   setTheme: (id: string) => void;
   setCustomAccent: (hex: string | null) => void;
+  /** Stondatura degli angoli (0 = squadrato, 1 = normale, 1.5 = molto arrotondato). */
+  setRadius: (scale: number) => void;
   /** JSON del tema in uso (con l'accento personalizzato, se c'è), pronto da salvare/condividere. */
   exportTheme: () => string;
   /** Aggiunge un tema da JSON e lo seleziona. Restituisce "invalid_json" | "invalid_format", o null se ok. */
@@ -39,6 +41,7 @@ const defaultPreference = (): ThemePreference => ({
   followSystem: false,
   darkThemeId: DEFAULT_DARK_ID,
   lightThemeId: DEFAULT_LIGHT_ID,
+  radius: 1,
 });
 
 function load(): ThemePreference {
@@ -54,6 +57,7 @@ function load(): ThemePreference {
       followSystem: p.followSystem === true,
       darkThemeId: typeof p.darkThemeId === "string" ? p.darkThemeId : fallback.darkThemeId,
       lightThemeId: typeof p.lightThemeId === "string" ? p.lightThemeId : fallback.lightThemeId,
+      radius: typeof p.radius === "number" ? Math.min(1.5, Math.max(0, p.radius)) : fallback.radius,
     };
   } catch {
     return fallback;
@@ -95,6 +99,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [themes, activeId, preference.followSystem, systemDark]);
 
   const theme = useMemo(() => buildTheme(definition, preference.customAccent), [definition, preference.customAccent]);
+
+  useEffect(() => {
+    applyRadius(preference.radius);
+  }, [preference.radius]);
 
   useEffect(() => {
     applyTheme(theme, definition.mode);
@@ -139,6 +147,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const setRadius = useCallback((scale: number) => setPreference((p) => ({ ...p, radius: Math.min(1.5, Math.max(0, scale)) })), []);
   const setCustomAccent = useCallback((hex: string | null) => setPreference((p) => ({ ...p, customAccent: hex })), []);
   const reset = useCallback(() => setPreference(defaultPreference()), []);
 
@@ -183,11 +192,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       setMode,
       setTheme,
       setCustomAccent,
+      setRadius,
       exportTheme,
       importTheme,
       reset,
     }),
-    [theme, definition, themes, preference, mode, setMode, setTheme, setCustomAccent, exportTheme, importTheme, reset],
+    [theme, definition, themes, preference, mode, setMode, setTheme, setCustomAccent, setRadius, exportTheme, importTheme, reset],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

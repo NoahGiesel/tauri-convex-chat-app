@@ -282,6 +282,12 @@ export const en = {
   "notif.spoiler": "Spoiler",
   "settings.appearance.standbyDark": "Used when your system is in dark mode",
   "settings.appearance.standbyLight": "Used when your system is in light mode",
+  "settings.appearance.radius": "Corner roundness",
+  "settings.appearance.radiusDescription": "How round buttons, cards, messages and photos are.",
+  "settings.appearance.radiusNone": "Square",
+  "settings.appearance.radiusLow": "Slight",
+  "settings.appearance.radiusNormal": "Normal",
+  "settings.appearance.radiusHigh": "Round",
 } as const;
 
 export type MessageKey = keyof typeof en;

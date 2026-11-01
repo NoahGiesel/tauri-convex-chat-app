@@ -80,7 +80,7 @@ export function ProfileEditor() {
   }
 
   return (
-    <section className="flex flex-col gap-5 rounded-[18px] border border-app-border bg-app-panel p-6">
+    <section className="flex flex-col gap-5 rounded-[calc(18px*var(--radius-scale))] border border-app-border bg-app-panel p-6">
       <div>
         <h2 className="text-lg font-extrabold text-app-text-strong">{t("settings.profile.title")}</h2>
         <p className="mt-1 text-sm text-app-text-muted">{t("settings.profile.subtitle")}</p>

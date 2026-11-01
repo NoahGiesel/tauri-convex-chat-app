@@ -283,4 +283,10 @@ export const it: Messages = {
   "notif.spoiler": "Spoiler",
   "settings.appearance.standbyDark": "Si attiva quando il sistema è in tema scuro",
   "settings.appearance.standbyLight": "Si attiva quando il sistema è in tema chiaro",
+  "settings.appearance.radius": "Stondatura",
+  "settings.appearance.radiusDescription": "Quanto sono arrotondati pulsanti, schede, messaggi e foto.",
+  "settings.appearance.radiusNone": "Nessuna",
+  "settings.appearance.radiusLow": "Poca",
+  "settings.appearance.radiusNormal": "Normale",
+  "settings.appearance.radiusHigh": "Molta",
 };

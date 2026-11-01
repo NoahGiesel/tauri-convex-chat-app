@@ -129,7 +129,7 @@ export function ConversationList({
           aria-label={t("sidebar.expand")}
           title={t("sidebar.expand")}
           onClick={() => setCollapsed(false)}
-          className="flex size-10 items-center justify-center rounded-[10px] text-app-text-muted hover:bg-app-field"
+          className="flex size-10 items-center justify-center rounded-[calc(10px*var(--radius-scale))] text-app-text-muted hover:bg-app-field"
         >
           <ExpandIcon className="size-5" strokeWidth={1.8} />
         </button>
@@ -150,7 +150,7 @@ export function ConversationList({
                 title={c.title}
                 aria-label={c.title}
                 onClick={() => onSelect(c._id)}
-                className={cn("relative shrink-0 rounded-[14px] p-0.5", selected ? "ring-2 ring-app-accent" : "hover:bg-app-field")}
+                className={cn("relative shrink-0 rounded-[calc(14px*var(--radius-scale))] p-0.5", selected ? "ring-2 ring-app-accent" : "hover:bg-app-field")}
               >
                 {c.kind === "group" ? (
                   <span className="flex size-10 items-center justify-center rounded-xl bg-app-raised text-app-text-soft">
@@ -218,7 +218,7 @@ export function ConversationList({
           aria-label={t("nav.settings")}
           title={t("nav.settings")}
           onClick={onOpenSettings}
-          className="flex size-9 shrink-0 items-center justify-center rounded-[10px] text-app-text-muted hover:bg-app-field"
+          className="flex size-9 shrink-0 items-center justify-center rounded-[calc(10px*var(--radius-scale))] text-app-text-muted hover:bg-app-field"
         >
           <Settings className="size-5" strokeWidth={1.8} />
         </button>
@@ -227,7 +227,7 @@ export function ConversationList({
           aria-label={t("sidebar.collapse")}
           title={t("sidebar.collapse")}
           onClick={() => setCollapsed(true)}
-          className="flex size-9 shrink-0 items-center justify-center rounded-[10px] text-app-text-muted hover:bg-app-field"
+          className="flex size-9 shrink-0 items-center justify-center rounded-[calc(10px*var(--radius-scale))] text-app-text-muted hover:bg-app-field"
         >
           <CollapseIcon className="size-5" strokeWidth={1.8} />
         </button>

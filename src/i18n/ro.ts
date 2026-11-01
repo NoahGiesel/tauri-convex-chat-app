@@ -283,4 +283,10 @@ export const ro: Messages = {
   "notif.spoiler": "Spoiler",
   "settings.appearance.standbyDark": "Se activează când sistemul este în tema întunecată",
   "settings.appearance.standbyLight": "Se activează când sistemul este în tema luminoasă",
+  "settings.appearance.radius": "Rotunjirea colțurilor",
+  "settings.appearance.radiusDescription": "Cât de rotunjite sunt butoanele, cardurile, mesajele și fotografiile.",
+  "settings.appearance.radiusNone": "Deloc",
+  "settings.appearance.radiusLow": "Puțin",
+  "settings.appearance.radiusNormal": "Normal",
+  "settings.appearance.radiusHigh": "Mult",
 };
