@@ -5,6 +5,29 @@ import type { ConversationItem } from "@/components/chat-app";
 import { useI18n } from "@/i18n/i18n-provider";
 import { playNotificationSound } from "@/lib/notification-sound";
 
+const isWindows = typeof navigator !== "undefined" && /windows/i.test(navigator.userAgent);
+
+/** Pallino rosso col numero (9+ oltre le nove), come PNG per l'icona sovrapposta di Windows. */
+async function badgePng(count: number): Promise<Uint8Array> {
+  const size = 64;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+  ctx.fillStyle = "#e5322d";
+  ctx.beginPath();
+  ctx.arc(size / 2, size / 2, size / 2 - 1, 0, Math.PI * 2);
+  ctx.fill();
+  const label = count > 9 ? "9+" : String(count);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = `bold ${label.length > 1 ? 34 : 42}px sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(label, size / 2, size / 2 + 3);
+  const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("png"))), "image/png"));
+  return new Uint8Array(await blob.arrayBuffer());
+}
+
 const isTauri = () => typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
 type Latest = NonNullable<ConversationItem["latest"]>;
@@ -38,9 +61,19 @@ export function useMessageNotifications(conversations: ConversationItem[] | null
   const totalUnread = conversations?.reduce((sum, c) => sum + c.unreadCount, 0) ?? 0;
   useEffect(() => {
     if (!isTauri()) return;
-    getCurrentWindow()
-      .setBadgeCount(totalUnread > 0 ? totalUnread : undefined)
-      .catch(() => undefined); // non supportato su Windows
+    const win = getCurrentWindow();
+    if (isWindows) {
+      // Windows non ha il numero sull'icona: si disegna un pallino rosso da sovrapporre all'icona nella barra delle applicazioni.
+      void (async () => {
+        try {
+          await win.setOverlayIcon(totalUnread > 0 ? await badgePng(totalUnread) : undefined);
+        } catch {
+          // non supportato
+        }
+      })();
+    } else {
+      win.setBadgeCount(totalUnread > 0 ? totalUnread : undefined).catch(() => undefined);
+    }
   }, [totalUnread]);
 
   useEffect(() => {
