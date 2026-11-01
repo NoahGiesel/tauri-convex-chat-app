@@ -7,6 +7,8 @@ export const ROOT = path.resolve(E2E_DIR, '..');
 export const STAGE = path.join(E2E_DIR, '.stage');
 export const SNAPSHOTS = path.join(STAGE, 'snapshots');
 export const SESSIONS_FILE = path.join(STAGE, 'sessions.json');
+/** Written once a test has ended. The stage starts empty, so a run that leaves none matched no test. */
+export const TEST_RAN_FILE = path.join(STAGE, 'a-test-ran');
 export const PROFILES = path.join(E2E_DIR, '.profiles');
 /** Outside the stage, so that the pictures of a failed run outlive it until the next run. */
 export const FAILURES = path.join(E2E_DIR, '.failures');

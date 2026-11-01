@@ -1,8 +1,4 @@
-// What a run tells the developer: its timings, and a picture of both instances when a test fails.
-import fs from 'node:fs';
-import path from 'node:path';
-import { DRIVEN_USERS, FAILURES, INTERFACE_WAIT_MS } from './config.mjs';
-
+// What a run tells the developer: its timings, and the names of its failure pictures.
 const RUN_WARNING_MS = 10 * 60_000;
 const MAX_TITLE_CHARS = 80;
 
@@ -21,25 +17,4 @@ export function timingReport(steps) {
 export function screenshotName(title, instance) {
   const slug = title.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').slice(0, MAX_TITLE_CHARS);
   return `${slug}-${instance}.png`;
-}
-
-/** A hung app answers nothing, and only the limit ends the wait. */
-export function withinLimit(work, what) {
-  let timer;
-  const limit = new Promise((_, reject) => {
-    timer = setTimeout(() => reject(new Error(`${what} took over ${seconds(INTERFACE_WAIT_MS)}`)), INTERFACE_WAIT_MS);
-  });
-  return Promise.race([work, limit]).finally(() => clearTimeout(timer));
-}
-
-/** One dead instance must not cost the picture of the other. */
-export async function saveScreenshots(browser, title) {
-  fs.mkdirSync(FAILURES, { recursive: true });
-  await Promise.all(DRIVEN_USERS.map(async (name) => {
-    try {
-      await withinLimit(browser.getInstance(name).saveScreenshot(path.join(FAILURES, screenshotName(title, name))), `a screenshot of ${name}`);
-    } catch (err) {
-      console.error(`[e2e] no screenshot of ${name}: ${err.message}`);
-    }
-  }));
 }

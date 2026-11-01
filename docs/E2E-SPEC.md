@@ -302,9 +302,11 @@ The `Messages` type already fails the build if a language misses a key, so no ke
 
 **Why no retries:** a retry would have hidden the false timeout described above, which failed 1 time in 3. A green rerun of one test helps with diagnosis, and it does not clear the failure.
 
-**A dead instance:** ping both instances in a `beforeEach`. A throw there stops all later tests. With no handling, each later test fails alone in about 1.5 s. All spec files share one WDIO worker, because a worker per file would start new apps and carry on. WDIO also fails when it closes the dead session and loses its report, so the ping prints the instance and the last test itself.
+**A dead instance:** ping both instances in a root `afterEach`, which also covers the last test of a run. A throw there stops all later tests. With no handling, each later test fails alone in about 1.5 s. All spec files share one WDIO worker, because a worker per file would start new apps and carry on. WDIO also fails when it closes the dead session and loses its report, so the ping prints the instance and the last test itself.
 
-**A failed test** leaves one picture per instance in `e2e/.failures`. The next run clears the folder.
+**A failed test** leaves one picture per instance in `e2e/.failures`, saved in the same hook. WDIO's `afterTest` would race the next Reset after a timeout, because Mocha does not wait for it. The next run clears the folder.
+
+**A mistyped `--grep`** fails the run, because WDIO calls a run with no tests a success.
 
 The prototype's check that quiet apps do not write waits 50 s, which is over the test limit. It stays out of the suite, and the Reset's quiet step stays.
 
@@ -400,7 +402,7 @@ No macOS code is written until someone can run it. Until then the suite runs on 
 **Open behaviour:**
 
 - A Reset with a popout open, and a crashed popout.
-- An app that hangs without exiting. The ping could then wait much longer than 1.5 s.
+- An app that hangs without exiting. The ping and each request have limits, but only a killed app was tried.
 - Section and chat reordering by drag. Only moving a chat into a folder was tried.
 - The tab close button and section controls. They use `opacity-0`, not `display: none`, so `isClickable` may read them differently.
 - Accessible names on modals, friend screens and the auth screen. Only an open chat and two Settings screens were checked.

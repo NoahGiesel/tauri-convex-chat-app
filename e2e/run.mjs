@@ -3,7 +3,7 @@
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { DRIVEN_USERS, E2E_DIR, EXE, FAILURES, IDENTIFIER, PORTS, PROFILES, ROOT, SITE_URL, STAGE, STUB_URL, TEST_SECRET } from './config.mjs';
+import { DRIVEN_USERS, E2E_DIR, EXE, FAILURES, IDENTIFIER, PORTS, PROFILES, ROOT, SITE_URL, STAGE, STUB_URL, TEST_RAN_FILE, TEST_SECRET } from './config.mjs';
 import { buildEnv, commandEnv, confirmStage, findBusyPorts, parseRunArgs } from './guards.mjs';
 import { timingReport } from './report.mjs';
 import { buildSeeds } from './seeds.mjs';
@@ -125,13 +125,16 @@ async function makeProfiles() {
 
 async function runTests() {
   const wdio = path.join(ROOT, 'node_modules', '@wdio', 'cli', 'bin', 'wdio.js');
-  const filter = grep ? ['--mochaOpts.grep', grep] : [];
+  // As one argument: WDIO would read a value that starts with a dash as a flag of its own.
+  const filter = grep ? [`--mochaOpts.grep=${grep}`] : [];
   await runToEnd(process.execPath, [wdio, 'run', path.join(E2E_DIR, 'wdio.conf.mjs'), ...filter], {
     // WDIO loads the .env in its working folder, and the repo root holds the developer's.
     cwd: E2E_DIR,
     env: commandEnv(),
     stdio: 'inherit',
   });
+  // WDIO calls a run with nothing to do a success, and a mistyped test name must not look green.
+  if (!fs.existsSync(TEST_RAN_FILE)) throw new Error(grep ? `no test matches "${grep}"` : 'no test ran');
 }
 
 async function cleanUp() {
@@ -169,11 +172,11 @@ process.on('SIGINT', () => {
 });
 
 try {
+  await removeWithRetries(FAILURES);
   await timed('building the Test build', buildTestBuild);
   await timed('starting the Test backend', startTestBackend);
   await timed('building Seeds', buildSeeds);
   await makeProfiles();
-  await removeWithRetries(FAILURES);
   await timed('running tests', runTests);
 } catch (err) {
   failed = true;
@@ -189,6 +192,6 @@ try {
 }
 
 for (const line of timingReport(steps)) log(line);
-if (fs.existsSync(FAILURES)) log(`screenshots of what failed: ${FAILURES}`);
+if (fs.existsSync(FAILURES) && fs.readdirSync(FAILURES).length) log(`screenshots of what failed: ${FAILURES}`);
 
 process.exit(failed ? 1 : 0);

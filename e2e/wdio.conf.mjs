@@ -1,7 +1,6 @@
 // Evaluated in the launcher and again in each worker, so it has no side effects. `pnpm e2e` does the work.
 import { DRIVEN_USERS, FIRST_INSTANCE_PORT, INTERFACE_WAIT_MS, TEST_LIMIT_MS } from './config.mjs';
 import { confirmCleanEnv, instanceCapability } from './guards.mjs';
-import { saveScreenshots } from './report.mjs';
 
 confirmCleanEnv();
 
@@ -19,7 +18,7 @@ export const config = {
   mochaOpts: { ui: 'bdd', timeout: TEST_LIMIT_MS, retries: 0 },
   logLevel: 'warn',
   waitforTimeout: INTERFACE_WAIT_MS,
-  afterTest: async (test, _context, { passed }) => {
-    if (!passed) await saveScreenshots(browser, `${test.parent} ${test.title}`);
-  },
+  // A hung app must not hold a request or the end of the session for the default 120 s, four times over.
+  connectionRetryTimeout: TEST_LIMIT_MS,
+  connectionRetryCount: 0,
 };
