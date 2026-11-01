@@ -387,7 +387,7 @@ export function ChatSections({
                     >
                       <span className="relative flex size-6 shrink-0 items-center justify-center">
                         {c.kind === "group" ? (
-                          <Hash className="size-[18px] opacity-80" strokeWidth={2.2} />
+                          c.icon ? <span className="text-[17px] leading-none">{c.icon}</span> : <Hash className="size-[18px] opacity-80" strokeWidth={2.2} />
                         ) : (
                           <>
                             <Avatar name={c.title} index={c.avatarIndex} src={c.peerAvatarUrl} size={24} />

@@ -50,6 +50,8 @@ export default defineSchema({
   conversations: defineTable({
     kind: v.union(v.literal("direct"), v.literal("group")),
     name: v.optional(v.string()),
+    /** Solo gruppi: emoji scelta come icona (assente = icona predefinita). */
+    icon: v.optional(v.string()),
     createdBy: v.id("profiles"),
     /** Solo per le chat dirette: la `pairKey` della coppia. */
     directKey: v.optional(v.string()),

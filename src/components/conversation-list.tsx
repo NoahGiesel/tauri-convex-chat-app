@@ -185,7 +185,7 @@ export function ConversationList({
               >
                 {c.kind === "group" ? (
                   <span className="flex size-10 items-center justify-center rounded-xl bg-app-raised text-app-text-soft">
-                    <Hash className="size-5" strokeWidth={2.2} />
+                    {c.icon ? <span className="text-xl leading-none">{c.icon}</span> : <Hash className="size-5" strokeWidth={2.2} />}
                   </span>
                 ) : (
                   <Avatar name={c.title} index={c.avatarIndex} src={c.peerAvatarUrl} size={40} />

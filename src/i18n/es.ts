@@ -308,4 +308,8 @@ export const es: Messages = {
   "media.show": "Mostrar imagen",
   "sidebar.hide": "Ocultar barra lateral (Ctrl/Cmd+B)",
   "sidebar.show": "Mostrar barra lateral (Ctrl/Cmd+B)",
+  "group.edit": "Editar grupo",
+  "group.editTitle": "Editar grupo",
+  "group.iconLabel": "Icono",
+  "group.iconNone": "Icono predeterminado",
 };

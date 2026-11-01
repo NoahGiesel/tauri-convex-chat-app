@@ -86,6 +86,7 @@ export const list = query({
         return {
           _id: conversation._id,
           kind: conversation.kind,
+          icon: conversation.icon ?? null,
           title,
           avatarIndex,
           peerId,
@@ -202,5 +203,23 @@ export const get = query({
       myProfileId: me._id,
       members,
     };
+  },
+});
+
+const MAX_ICON_LENGTH = 16;
+
+/** Rinomina un gruppo e/o ne cambia l'icona (un'emoji). Può farlo qualsiasi membro. */
+export const updateGroup = mutation({
+  args: { conversationId: v.id("conversations"), name: v.string(), icon: v.union(v.string(), v.null()) },
+  handler: async (ctx, args) => {
+    const me = await requireProfile(ctx);
+    await requireMember(ctx, args.conversationId, me._id);
+    const conversation = await ctx.db.get("conversations", args.conversationId);
+    if (!conversation || conversation.kind !== "group") throw fail("not_member");
+    const name = args.name.trim();
+    if (name.length < 1 || name.length > 60) throw fail("group_name_length");
+    const icon = args.icon?.trim();
+    if (icon !== undefined && icon.length > MAX_ICON_LENGTH) throw fail("group_name_length");
+    await ctx.db.patch("conversations", args.conversationId, { name, icon: icon || undefined });
   },
 });

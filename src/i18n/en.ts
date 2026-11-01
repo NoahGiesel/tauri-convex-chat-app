@@ -307,6 +307,10 @@ export const en = {
   "media.show": "Show image",
   "sidebar.hide": "Hide sidebar (Ctrl/Cmd+B)",
   "sidebar.show": "Show sidebar (Ctrl/Cmd+B)",
+  "group.edit": "Edit group",
+  "group.editTitle": "Edit group",
+  "group.iconLabel": "Icon",
+  "group.iconNone": "Default icon",
 } as const;
 
 export type MessageKey = keyof typeof en;

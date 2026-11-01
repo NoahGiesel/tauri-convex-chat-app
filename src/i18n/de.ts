@@ -308,4 +308,8 @@ export const de: Messages = {
   "media.show": "Bild anzeigen",
   "sidebar.hide": "Seitenleiste ausblenden (Strg/Cmd+B)",
   "sidebar.show": "Seitenleiste einblenden (Strg/Cmd+B)",
+  "group.edit": "Gruppe bearbeiten",
+  "group.editTitle": "Gruppe bearbeiten",
+  "group.iconLabel": "Symbol",
+  "group.iconNone": "Standardsymbol",
 };

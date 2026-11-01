@@ -308,4 +308,8 @@ export const ro: Messages = {
   "media.show": "Arată imaginea",
   "sidebar.hide": "Ascunde bara laterală (Ctrl/Cmd+B)",
   "sidebar.show": "Arată bara laterală (Ctrl/Cmd+B)",
+  "group.edit": "Editează grupul",
+  "group.editTitle": "Editează grupul",
+  "group.iconLabel": "Pictogramă",
+  "group.iconNone": "Pictogramă implicită",
 };

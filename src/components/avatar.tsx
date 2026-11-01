@@ -54,14 +54,18 @@ export function Avatar({
 }
 
 /** Avatar dei gruppi: icona su fondo neutro. */
-export function GroupAvatar({ size = 40, className }: { size?: number; className?: string }) {
+export function GroupAvatar({ size = 40, className, icon }: { size?: number; className?: string; icon?: string | null }) {
   return (
     <span
       aria-hidden
       className={cn("inline-flex shrink-0 items-center justify-center bg-app-raised text-app-text-soft", className)}
       style={{ width: size, height: size, borderRadius: `calc(${Math.round(size * 0.3)}px * var(--radius-scale, 1))` }}
     >
-      <Users style={{ width: size * 0.5, height: size * 0.5 }} strokeWidth={1.8} />
+      {icon ? (
+        <span style={{ fontSize: size * 0.55, lineHeight: 1 }}>{icon}</span>
+      ) : (
+        <Users style={{ width: size * 0.5, height: size * 0.5 }} strokeWidth={1.8} />
+      )}
     </span>
   );
 }

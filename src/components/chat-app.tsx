@@ -2,12 +2,13 @@ import { useMessageNotifications } from "@/hooks/use-message-notifications";
 import { useEffect, useMemo, useRef, useState, type DragEvent, type PointerEvent } from "react";
 import { useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
-import { PanelLeftOpen, X } from "lucide-react";
+import { PanelLeftOpen, Pencil, X } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { Avatar, GroupAvatar } from "@/components/avatar";
 import { ConversationList } from "@/components/conversation-list";
 import { ConversationView } from "@/components/conversation-view";
+import { EditGroupModal } from "@/components/edit-group-modal";
 import { GroupModal } from "@/components/group-modal";
 import { InviteModal } from "@/components/invite-modal";
 import { useSidebar } from "@/hooks/use-sidebar";
@@ -45,6 +46,7 @@ export function ChatApp({ onOpenSettings }: { onOpenSettings: () => void }) {
   const [panes, setPanes] = useState<(ConversationId | null)[]>([null]);
   const [focus, setFocus] = useState(0);
   const [modal, setModal] = useState<"invite" | "group" | null>(null);
+  const [editGroupId, setEditGroupId] = useState<Id<"conversations"> | null>(null);
 
   // trascinamento di una scheda
   const [dragId, setDragId] = useState<ConversationId | null>(null);
@@ -192,7 +194,7 @@ export function ChatApp({ onOpenSettings }: { onOpenSettings: () => void }) {
 
       <section className="flex min-w-0 flex-1 flex-col bg-app-panel">
         {/* Schede delle chat aperte, con lo stato di chi c'è dentro: trascinale su un pannello per dividere la vista */}
-        <div className="flex h-[58px] shrink-0 items-end gap-1 overflow-x-auto bg-app-bg px-2.5 pt-2.5">
+        <div className="flex h-[58px] shrink-0 items-end gap-1 overflow-x-auto bg-app-bg px-2.5 pt-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {sidebar.hidden && (
             <button
               type="button"
@@ -221,14 +223,14 @@ export function ChatApp({ onOpenSettings }: { onOpenSettings: () => void }) {
                 }}
                 onDragEnd={(e) => onTabDragEnd(e, id)}
                 className={cn(
-                  "group/tab flex h-12 max-w-[250px] min-w-[150px] shrink-0 cursor-grab items-center rounded-t-xl pr-1 pl-1 active:cursor-grabbing",
+                  "group/tab flex h-12 max-w-[250px] min-w-[96px] shrink cursor-grab items-center rounded-t-xl pr-1 pl-1 active:cursor-grabbing",
                   focused ? "bg-app-panel" : shown ? "bg-app-panel/50 hover:bg-app-panel/70" : "hover:bg-app-panel/30",
                   dragId === id && "opacity-40",
                 )}
               >
                 <button type="button" onClick={() => openChat(id)} className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg py-1 pr-1 pl-2 text-left">
                   <span className="relative shrink-0">
-                    {c.kind === "group" ? <GroupAvatar size={30} /> : <Avatar name={c.title} index={c.avatarIndex} src={c.peerAvatarUrl} size={30} />}
+                    {c.kind === "group" ? <GroupAvatar size={30} icon={c.icon} /> : <Avatar name={c.title} index={c.avatarIndex} src={c.peerAvatarUrl} size={30} />}
                     {status.online && c.kind === "direct" && (
                       <span className="absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full border-2 border-app-panel bg-app-online" />
                     )}
@@ -242,6 +244,17 @@ export function ChatApp({ onOpenSettings }: { onOpenSettings: () => void }) {
                     </span>
                   </span>
                 </button>
+                {c.kind === "group" && (
+                  <button
+                    type="button"
+                    aria-label={t("group.edit")}
+                    title={t("group.edit")}
+                    onClick={() => setEditGroupId(id)}
+                    className="flex size-6 shrink-0 items-center justify-center rounded-md text-app-text-dim opacity-0 group-hover/tab:opacity-100 hover:bg-app-field hover:text-app-text focus-visible:opacity-100"
+                  >
+                    <Pencil className="size-3.5" strokeWidth={2.2} />
+                  </button>
+                )}
                 <button
                   type="button"
                   aria-label={t("tabs.close", { name: c.title })}
@@ -326,6 +339,14 @@ export function ChatApp({ onOpenSettings }: { onOpenSettings: () => void }) {
       </section>
 
       {modal === "invite" && <InviteModal onClose={() => setModal(null)} onOpenChat={openChat} />}
+      {editGroupId && byId.get(editGroupId) && (
+        <EditGroupModal
+          conversationId={editGroupId}
+          name={byId.get(editGroupId)!.title}
+          icon={byId.get(editGroupId)!.icon}
+          onClose={() => setEditGroupId(null)}
+        />
+      )}
       {modal === "group" && <GroupModal onClose={() => setModal(null)} onOpenChat={openChat} />}
     </div>
   );
