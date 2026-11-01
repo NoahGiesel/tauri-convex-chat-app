@@ -244,7 +244,7 @@ export function ConversationList({
     <aside ref={asideRef} className={asideClass} style={{ width }}>
       {handle}
 
-      <div className="flex items-center gap-2 p-4">
+      <div className="flex items-center gap-2 pt-2 pr-2 pb-3 pl-4">
         <button
           type="button"
           aria-label={t("nav.settings")}
@@ -259,12 +259,13 @@ export function ConversationList({
           <div className="truncate text-base font-bold text-app-text-strong">{me?.name ?? "…"}</div>
           <StatusMenu />
         </div>
+        <div className="-mr-1 flex shrink-0 flex-col-reverse items-center">
         <button
           type="button"
           aria-label={t("nav.settings")}
           title={t("nav.settings")}
           onClick={onOpenSettings}
-          className="flex size-9 shrink-0 items-center justify-center rounded-[calc(10px*var(--radius-scale))] text-app-text-muted hover:bg-app-field"
+          className="flex size-8 shrink-0 items-center justify-center rounded-[calc(10px*var(--radius-scale))] text-app-text-muted hover:bg-app-field"
         >
           <Settings className="size-5" strokeWidth={1.8} />
         </button>
@@ -273,10 +274,11 @@ export function ConversationList({
           aria-label={t("sidebar.collapse")}
           title={t("sidebar.collapse")}
           onClick={() => setCollapsed(true)}
-          className="flex size-9 shrink-0 items-center justify-center rounded-[calc(10px*var(--radius-scale))] text-app-text-muted hover:bg-app-field"
+          className="flex size-8 shrink-0 items-center justify-center rounded-[calc(10px*var(--radius-scale))] text-app-text-muted hover:bg-app-field"
         >
           <CollapseIcon className="size-5" strokeWidth={1.8} />
         </button>
+        </div>
       </div>
 
       <div className="px-4 pb-2">
