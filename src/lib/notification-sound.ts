@@ -1,11 +1,12 @@
 /**
  * Suono delle notifiche, scelto in Impostazioni › Notifiche e salvato su questo computer.
- * I file stanno in `public/sounds/<id>.mp4` (vedi `public/sounds/README.md`).
+ * I file stanno in `public/sounds/<id>.mp3` (vedi `public/sounds/README.md`).
  */
 export const NOTIFICATION_SOUNDS = [
   { id: "teams", label: "Teams" },
   { id: "slack", label: "Slack" },
   { id: "steam", label: "Steam" },
+  { id: "oneplus", label: "OnePlus" },
 ] as const;
 
 export type NotificationSoundId = (typeof NOTIFICATION_SOUNDS)[number]["id"];
@@ -76,7 +77,7 @@ export function playNotificationSound(id: NotificationSoundId = getNotificationS
   if (!force && !isNotificationSoundEnabled()) return;
   try {
     current?.pause();
-    current = new Audio(`/sounds/${id}.mp4`);
+    current = new Audio(`/sounds/${id}.mp3`);
     current.volume = getNotificationVolume() / 100;
     if (current.volume === 0) return;
     void current.play().catch(() => undefined);
