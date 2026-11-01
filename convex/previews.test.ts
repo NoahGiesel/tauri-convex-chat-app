@@ -60,15 +60,20 @@ describe("fetchPreview", () => {
   const page = (html: string, init?: ResponseInit) => new Response(html, { headers: { "content-type": "text/html; charset=utf-8" }, ...init });
   const titled = () => page(`<meta property="og:title" content="A title">`);
   let requests: string[];
+  let unexpected: string[];
 
-  /** Niente esce dalla macchina: un indirizzo senza risposta qui fa fallire il test. */
+  /**
+   * Niente esce dalla macchina. `fetchPreview` inghiotte gli errori, quindi un indirizzo senza
+   * risposta non può fallire da solo: finisce in `unexpected`, che `afterEach` controlla.
+   */
   function stubFetch(routes: Record<string, () => Response>) {
     vi.stubGlobal("fetch", async (input: URL | string) => {
       const url = String(input);
       requests.push(url);
       const route = routes[url];
-      if (!route) throw new Error(`a test asked for ${url}`);
-      return route();
+      if (route) return route();
+      unexpected.push(url);
+      throw new Error(`a test asked for ${url}`);
     });
   }
 
@@ -84,9 +89,12 @@ describe("fetchPreview", () => {
 
   beforeEach(() => {
     requests = [];
+    unexpected = [];
+    stubFetch({});
   });
   afterEach(() => {
     vi.unstubAllGlobals();
+    expect(unexpected).toEqual([]);
   });
 
   it("saves what the page says", async () => {
@@ -149,6 +157,21 @@ describe("fetchPreview", () => {
     expect(await alice.query(api.previews.get, { url })).toMatchObject({ ok: true, title: "A title" });
   });
 
+  it("falls back on the page when YouTube's lookup cannot be reached", async () => {
+    const { alice } = await signedIn();
+    const url = "https://www.youtube.com/watch?v=abc";
+    stubFetch({
+      [oembed(url)]: () => {
+        throw new Error("offline");
+      },
+      [url]: titled,
+    });
+
+    await alice.action(api.previews.fetchPreview, { url });
+
+    expect(await alice.query(api.previews.get, { url })).toMatchObject({ ok: true, title: "A title" });
+  });
+
   it("follows a redirect to a public site", async () => {
     const { alice } = await signedIn();
     const url = "https://example.com/old";
@@ -203,9 +226,11 @@ describe("fetchPreview", () => {
     });
   }
 
+  // Ognuna di queste pagine ha un titolo: si deve fermare il controllo in esame, non la mancanza del titolo.
+  const TITLE = `<meta property="og:title" content="A title">`;
   for (const [what, response] of [
-    ["is not HTML", () => new Response("{}", { headers: { "content-type": "application/json" } })],
-    ["answers with an error", () => page("Gone", { status: 410 })],
+    ["is not HTML", () => new Response(TITLE, { headers: { "content-type": "application/json" } })],
+    ["answers with an error", () => page(TITLE, { status: 410 })],
     ["has neither title nor image", () => page("<p>Hello</p>")],
     ["cannot be reached", () => { throw new Error("offline"); }],
   ] as const) {
@@ -216,16 +241,38 @@ describe("fetchPreview", () => {
 
       await alice.action(api.previews.fetchPreview, { url });
 
+      expect(requests).toEqual([url]);
       expect(await alice.query(api.previews.get, { url })).toMatchObject({ ok: false, title: null });
     });
   }
 
-  it("does not fetch a saved preview again", async () => {
+  it("stops reading a page after 300 KB", async () => {
     const { alice } = await signedIn();
+    const url = "https://example.com/huge";
+    const bytes = new TextEncoder();
+    const parts = [bytes.encode(" ".repeat(300_000)), bytes.encode(TITLE)];
+    stubFetch({
+      [url]: () =>
+        new Response(new ReadableStream({ pull: (reader) => void (parts.length ? reader.enqueue(parts.shift()) : reader.close()) }), {
+          headers: { "content-type": "text/html" },
+        }),
+    });
+
+    await alice.action(api.previews.fetchPreview, { url });
+
+    expect(await alice.query(api.previews.get, { url })).toMatchObject({ ok: false, title: null });
+  });
+
+  it("never fetches a saved preview again, however old it is", async () => {
+    const { t, alice } = await signedIn();
     const url = "https://example.com/a";
     stubFetch({ [url]: titled });
 
     await alice.action(api.previews.fetchPreview, { url });
+    await t.run(async (ctx) => {
+      const saved = await ctx.db.query("linkPreviews").first();
+      await ctx.db.patch("linkPreviews", saved!._id, { fetchedAt: Date.now() - HOUR - 1 });
+    });
     await alice.action(api.previews.fetchPreview, { url });
 
     expect(requests).toEqual([url]);
