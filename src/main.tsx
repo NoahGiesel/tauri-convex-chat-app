@@ -11,6 +11,11 @@ import { ThemeProvider } from "@/themes/theme-provider";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 
+// PROTOTYPE: la suite legge da qui l'URL della build. In release il blocco sparisce.
+if (import.meta.env.VITE_E2E) {
+  (window as unknown as { __E2E__: unknown }).__E2E__ = { convexUrl: import.meta.env.VITE_CONVEX_URL };
+}
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ThemeProvider>

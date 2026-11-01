@@ -8,3 +8,5 @@ dist
 src-tauri/target
 src-tauri/gen
 .convex
+e2e-prototype/.stage
+e2e-prototype/.profiles
