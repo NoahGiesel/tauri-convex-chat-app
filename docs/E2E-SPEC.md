@@ -408,15 +408,25 @@ No macOS code is written until someone can run it. Until then the suite runs on 
 
 ## Implementation order
 
-Each step keeps the suite green.
+The work is split into vertical tickets. Each one is verifiable alone, and GitHub holds the blocking edges. Tickets 18, 19 and 20 need a person.
 
-1. **App seams and guards:** the Cargo feature, `VITE_E2E`, both overrides, `pnpm-workspace.yaml` and the release guard.
-2. **Harness and first test:** `pnpm e2e` with every rule above, the `base` and `friends` Seeds, Reset, reliability hooks, and messages both ways.
-3. **Unit tests:** Vitest, `convex-test`, `dayLabel`, `parseHtml` and `fetchPreview`.
-4. **Sign-in and friendships:** `signedOut`, `strangers` and `expiredInviteLink`.
-5. **Realtime messaging:** `twoFriends`, `twoFriendsWithChatOpen` and `longChat`.
-6. **Groups and the sidebar:** `groupChatOpen`, `soloWithChats`, the Scripted user and synthetic drag.
-7. **Media:** the stub in full, the `media` Seed, and `mediaChatOpen`.
-8. **Settings:** `settingsOpen`.
-9. **Release process:** `docs/DEPLOY.md` and `releaseDraft: true`. This can follow step 2, with the transition rule keeping manual QA in place.
-10. **macOS:** waits for a Mac.
+1. [Two friends exchange a message in the real app](https://github.com/NoahGiesel/tauri-convex-chat-app/issues/30)
+2. [A release cannot contain the Test build](https://github.com/NoahGiesel/tauri-convex-chat-app/issues/31)
+3. [A failed run explains itself](https://github.com/NoahGiesel/tauri-convex-chat-app/issues/32)
+4. [Day labels and link previews have unit tests](https://github.com/NoahGiesel/tauri-convex-chat-app/issues/33)
+5. [Sign-up, sign-in and sign-out are covered](https://github.com/NoahGiesel/tauri-convex-chat-app/issues/34)
+6. [Friendships and invites are covered](https://github.com/NoahGiesel/tauri-convex-chat-app/issues/35)
+7. [Message actions are covered](https://github.com/NoahGiesel/tauri-convex-chat-app/issues/36)
+8. [Unread, presence and long chats are covered](https://github.com/NoahGiesel/tauri-convex-chat-app/issues/37)
+9. [Group chats are covered](https://github.com/NoahGiesel/tauri-convex-chat-app/issues/38)
+10. [The sidebar is covered](https://github.com/NoahGiesel/tauri-convex-chat-app/issues/39)
+11. [Tabs, split view and popouts are covered](https://github.com/NoahGiesel/tauri-convex-chat-app/issues/40)
+12. [Sending photos is covered](https://github.com/NoahGiesel/tauri-convex-chat-app/issues/41)
+13. [Sending a video is covered](https://github.com/NoahGiesel/tauri-convex-chat-app/issues/42)
+14. [GIFs are covered](https://github.com/NoahGiesel/tauri-convex-chat-app/issues/43)
+15. [Seeded media and link previews are covered](https://github.com/NoahGiesel/tauri-convex-chat-app/issues/44)
+16. [Profile settings are covered](https://github.com/NoahGiesel/tauri-convex-chat-app/issues/45)
+17. [Appearance and language settings are covered](https://github.com/NoahGiesel/tauri-convex-chat-app/issues/46)
+18. [Releases go out through a draft](https://github.com/NoahGiesel/tauri-convex-chat-app/issues/47)
+19. [The suite earns trust](https://github.com/NoahGiesel/tauri-convex-chat-app/issues/48)
+20. [The suite runs on macOS](https://github.com/NoahGiesel/tauri-convex-chat-app/issues/49)
