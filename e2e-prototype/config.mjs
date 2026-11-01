@@ -16,7 +16,9 @@ export const CLOUD = 'http://127.0.0.1:3310';
 export const SITE = 'http://127.0.0.1:3311';
 export const APP_ORIGIN = 'http://tauri.localhost';
 export const APP_URL = `${APP_ORIGIN}/`;
-export const PORTS = [3310, 3311, 4540, 4541];
+export const PORTS = [3310, 3311, 3312, 4540, 4541];
+export const STUB_LOG = path.join(STAGE, 'stub.log');
+export const FIXTURE_PNG = path.join(STAGE, 'pixel.png');
 
 export const BACKEND_VERSION = 'precompiled-2026-10-22-1447815';
 // Test-only and committed on purpose. It must never be set on a real deployment.

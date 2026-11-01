@@ -3,9 +3,9 @@
 import fs from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import {
-  CLOUD, EXE, HERE, IDENTIFIER, PORTS, PROFILES, ROOT, SECRET, SITE, SNAPSHOTS, STAGE, TIMINGS_FILE,
+  CLOUD, EXE, FIXTURE_PNG, HERE, IDENTIFIER, PORTS, PROFILES, ROOT, SECRET, SITE, SNAPSHOTS, STAGE, STUB_LOG, TIMINGS_FILE,
   cleanEnv, convexDevProcess, convexSync,
 } from './config.mjs';
 import { buildSeeds } from './seeds.mjs';
@@ -49,6 +49,8 @@ function buildApp() {
     VITE_CONVEX_URL: CLOUD,
     VITE_CONVEX_SITE_URL: SITE,
     VITE_E2E: '1',
+    VITE_GIPHY_API_URL: 'http://127.0.0.1:3312/v1/gifs',
+    VITE_GIPHY_API_KEY: 'e2e-fake-key',
   });
   const tauri = path.join(ROOT, 'node_modules', '@tauri-apps', 'cli', 'tauri.js');
   const res = spawnSync(
@@ -79,6 +81,7 @@ function assertStageIsLocal() {
 }
 
 let dev;
+let stub;
 let failed = false;
 try {
   await time('ports free', async () => {
@@ -98,6 +101,14 @@ try {
     await waitFor('.env.local in stage', async () => fs.existsSync(path.join(STAGE, '.env.local')));
     assertStageIsLocal();
     convexSync(['env', 'set', 'BETTER_AUTH_SECRET', SECRET]);
+    fs.writeFileSync(path.join(STAGE, 'e2e.env'), [
+      'R2_ACCOUNT_ID=e2e', 'R2_ACCESS_KEY_ID=e2e', 'R2_SECRET_ACCESS_KEY=e2e', 'R2_BUCKET=e2e',
+      'R2_ENDPOINT=http://127.0.0.1:3312',
+    ].join('\n'));
+    await time('backend: fake R2 env', async () => convexSync(['env', 'set', '--from-file', 'e2e.env']));
+    fs.writeFileSync(FIXTURE_PNG, Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64'));
+    stub = spawn(process.execPath, [path.join(HERE, 'stub.mjs'), path.join(STAGE, 'stub'), STUB_LOG], { stdio: 'inherit' });
+    await waitFor('stub', async () => portBusy(3312));
     await waitFor('auth routes', async () => (await fetch(`${SITE}/api/auth/ok`)).ok);
   });
 
@@ -120,6 +131,7 @@ try {
   console.error('[harness] FAILED:', err);
 } finally {
   if (dev) dev.kill();
+  if (stub) stub.kill();
   await waitFor('backend to stop', async () => !(await portBusy(3310)), 15_000).catch((e) => console.warn(e.message));
   console.log('\n[harness] timings');
   for (const t of timings) console.log(`  ${String(t.ms).padStart(8)} ms  ${t.label}`);

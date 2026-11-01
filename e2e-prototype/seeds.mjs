@@ -4,8 +4,16 @@ import path from 'node:path';
 import { ConvexHttpClient } from 'convex/browser';
 import { anyApi as api } from 'convex/server';
 import { getSetCookie } from '@convex-dev/better-auth/client/plugins';
-import { APP_ORIGIN, CLOUD, FRIENDS_ROWS, PASSWORD, SESSIONS_FILE, SITE, SNAPSHOTS, USERS, convexSync } from './config.mjs';
+import { APP_ORIGIN, CLOUD, FIXTURE_PNG, FRIENDS_ROWS, PASSWORD, SESSIONS_FILE, SITE, SNAPSHOTS, USERS, convexSync } from './config.mjs';
 import { readRows } from './fixtures.mjs';
+
+/** Real-path helpers for the media Seed. */
+export async function uploadToR2(client, conversationId, bytes, name, mime) {
+  const { key, uploadUrl } = await client.action(api.media.createUpload, { conversationId, mime, size: bytes.length });
+  const put = await fetch(uploadUrl, { method: 'PUT', headers: { 'content-type': mime }, body: bytes });
+  if (!put.ok) throw new Error(`stub PUT ${put.status}`);
+  return { key, mime, size: bytes.length, name };
+}
 
 /** The package's own helper writes the format crossDomainClient keeps in localStorage. */
 const toCookieStore = (header) => JSON.parse(getSetCookie(header));
@@ -75,6 +83,24 @@ export async function buildSeeds(time) {
     await users.carol.client.mutation(api.messages.send, { conversationId, body: 'Seeded group hello' });
   });
   await time('seed: export groups', async () => snapshot('groups'));
+
+  // media: friends, with one attachment and a Seeded link preview. Branches from friends.
+  await time('seed: media', async () => {
+    convexSync(['import', '--replace-all', '--yes', path.join(SNAPSHOTS, 'friends.zip')]);
+    const conversationId = (await users.alice.client.query(api.conversations.list, {}))[0]._id;
+    const png = fs.readFileSync(FIXTURE_PNG);
+    const file = await uploadToR2(users.alice.client, conversationId, png, 'seeded.png', 'image/png');
+    await users.alice.client.mutation(api.messages.sendAttachments, { conversationId, body: 'Seeded photo', files: [file] });
+    convexSync(['run', 'previews:save', JSON.stringify({ url: 'https://example.invalid/page', ok: true, title: 'Seeded preview title', siteName: 'Example' })]);
+    const uploadUrl = await users.alice.client.mutation(api.users.generateAvatarUploadUrl, {});
+    const posted = await fetch(uploadUrl, { method: 'POST', headers: { 'content-type': 'image/png' }, body: png });
+    const { storageId } = await posted.json();
+    await users.alice.client.mutation(api.users.setAvatar, { storageId });
+  });
+  await time('seed: export media with files', async () => {
+    fs.mkdirSync(SNAPSHOTS, { recursive: true });
+    convexSync(['export', '--include-file-storage', '--path', path.join(SNAPSHOTS, 'media.zip')]);
+  });
 
   const sessions = Object.fromEntries(Object.entries(users).map(([k, u]) => [k, JSON.stringify(u.store)]));
   fs.writeFileSync(SESSIONS_FILE, JSON.stringify(sessions, null, 2));

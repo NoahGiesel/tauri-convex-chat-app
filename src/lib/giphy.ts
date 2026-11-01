@@ -1,4 +1,4 @@
-const API = "https://api.giphy.com/v1/gifs";
+const API = import.meta.env.VITE_GIPHY_API_URL ?? "https://api.giphy.com/v1/gifs";
 const LIMIT = 24;
 
 /** Chiave pubblica di GIPHY (va nel client: GIPHY richiede che le ricerche partano dall'app). */
