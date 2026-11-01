@@ -312,4 +312,12 @@ export const ro: Messages = {
   "group.editTitle": "Editează grupul",
   "group.iconLabel": "Pictogramă",
   "group.iconNone": "Pictogramă implicită",
+  "settings.nav.notifications": "Notificări",
+  "settings.notifications.subtitle": "Cum te anunță aplicația despre mesajele noi.",
+  "settings.notifications.sound": "Sunet de notificare",
+  "settings.notifications.soundDescription": "Se aude când sosește un mesaj nou cât timp aplicația este în fundal.",
+  "settings.notifications.preview": "Redă {name}",
+  "settings.notifications.volume": "Volum",
+  "status.appearOffline": "Apari offline",
+  "status.notificationSound": "Sunet de notificare",
 };

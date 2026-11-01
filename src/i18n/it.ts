@@ -312,4 +312,12 @@ export const it: Messages = {
   "group.editTitle": "Modifica gruppo",
   "group.iconLabel": "Icona",
   "group.iconNone": "Icona predefinita",
+  "settings.nav.notifications": "Notifiche",
+  "settings.notifications.subtitle": "Come l'app ti avvisa dei nuovi messaggi.",
+  "settings.notifications.sound": "Suono delle notifiche",
+  "settings.notifications.soundDescription": "Si sente quando arriva un nuovo messaggio mentre l'app è in secondo piano.",
+  "settings.notifications.preview": "Riproduci {name}",
+  "settings.notifications.volume": "Volume",
+  "status.appearOffline": "Appari offline",
+  "status.notificationSound": "Suono delle notifiche",
 };

@@ -11,6 +11,8 @@ export default defineSchema({
     /** Indice nella palette avatar del tema (art. `avatars` in presets.json). */
     avatarIndex: v.number(),
     lastSeenAt: v.optional(v.number()),
+    /** Si mostra offline agli altri: il segnale di presenza non si aggiorna. */
+    invisible: v.optional(v.boolean()),
     /** Breve descrizione scritta dall'utente. */
     bio: v.optional(v.string()),
     /** Cartelle personali della barra laterale, con le chat che contengono (nell'ordine scelto). */

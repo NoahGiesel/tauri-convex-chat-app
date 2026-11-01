@@ -3,6 +3,7 @@ import { getCurrentWindow, UserAttentionType } from "@tauri-apps/api/window";
 import { isPermissionGranted, requestPermission, sendNotification } from "@tauri-apps/plugin-notification";
 import type { ConversationItem } from "@/components/chat-app";
 import { useI18n } from "@/i18n/i18n-provider";
+import { playNotificationSound } from "@/lib/notification-sound";
 
 const isTauri = () => typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
@@ -77,8 +78,9 @@ export function useMessageNotifications(conversations: ConversationItem[] | null
         const text = preview(latest);
         // In un gruppo si legge chi scrive; in una chat diretta il titolo è già il suo nome.
         const isGroup = author !== title;
-        sendNotification({ title: isGroup ? title : author, body: isGroup ? `${author}: ${text}` : text, sound: "default" });
+        sendNotification({ title: isGroup ? title : author, body: isGroup ? `${author}: ${text}` : text });
       }
+      playNotificationSound(); // un solo suono per tutte le notifiche del gruppo
       void getCurrentWindow().requestUserAttention(UserAttentionType.Informational).catch(() => undefined);
     })();
   }, [conversations, t]);

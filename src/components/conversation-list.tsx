@@ -11,8 +11,11 @@ import {
   UserPlus,
   UsersRound,
 } from "lucide-react";
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { Avatar } from "@/components/avatar";
+import { StatusMenu } from "@/components/status-menu";
 import { ChatSections, UnreadBadge } from "@/components/chat-sections";
 import type { ConversationItem } from "@/components/chat-app";
 import { SIDEBAR_MAX, SIDEBAR_MIN, SIDEBAR_RAIL, useSidebar } from "@/hooks/use-sidebar";
@@ -47,6 +50,7 @@ export function ConversationList({
   const [query, setQuery] = useState("");
   const [dragging, setDragging] = useState(false);
   const asideRef = useRef<HTMLElement>(null);
+  const invisible = useQuery(api.users.me)?.invisible === true;
 
   // Ctrl/Cmd+B nasconde o mostra la barra.
   useEffect(() => {
@@ -167,7 +171,7 @@ export function ConversationList({
           className="relative size-11 cursor-pointer rounded-[calc(11px*var(--radius-scale))]"
         >
           <Avatar name={me?.name ?? ""} index={0} src={me?.avatarUrl} size={44} accent />
-          <span className="absolute -right-[3px] -bottom-[3px] size-3.5 rounded-full border-[3px] border-app-sidebar bg-app-online" />
+          <span className={cn("absolute -right-[3px] -bottom-[3px] size-3.5 rounded-full border-[3px] border-app-sidebar", invisible ? "bg-app-text-dim" : "bg-app-online")} />
         </button>
         <div className="h-px w-8 bg-app-border" />
 
@@ -249,11 +253,11 @@ export function ConversationList({
           className="relative size-[46px] shrink-0 cursor-pointer rounded-[calc(11px*var(--radius-scale))]"
         >
           <Avatar name={me?.name ?? ""} index={0} src={me?.avatarUrl} size={46} accent />
-          <span className="absolute -right-[3px] -bottom-[3px] size-3.5 rounded-full border-[3px] border-app-sidebar bg-app-online" />
+          <span className={cn("absolute -right-[3px] -bottom-[3px] size-3.5 rounded-full border-[3px] border-app-sidebar", invisible ? "bg-app-text-dim" : "bg-app-online")} />
         </button>
         <div className="mr-1 ml-1 min-w-0 flex-1">
           <div className="truncate text-base font-bold text-app-text-strong">{me?.name ?? "…"}</div>
-          <div className="text-[13px] font-semibold text-app-online">{t("side.online")}</div>
+          <StatusMenu />
         </div>
         <button
           type="button"

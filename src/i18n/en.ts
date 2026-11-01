@@ -311,6 +311,14 @@ export const en = {
   "group.editTitle": "Edit group",
   "group.iconLabel": "Icon",
   "group.iconNone": "Default icon",
+  "settings.nav.notifications": "Notifications",
+  "settings.notifications.subtitle": "How the app tells you about new messages.",
+  "settings.notifications.sound": "Notification sound",
+  "settings.notifications.soundDescription": "Played when a new message arrives while the app is in the background.",
+  "settings.notifications.preview": "Play {name}",
+  "settings.notifications.volume": "Volume",
+  "status.appearOffline": "Appear offline",
+  "status.notificationSound": "Notification sound",
 } as const;
 
 export type MessageKey = keyof typeof en;

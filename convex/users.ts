@@ -33,10 +33,25 @@ export const heartbeat = mutation({
   args: {},
   handler: async (ctx) => {
     const me = await getProfile(ctx);
-    if (!me) return;
+    if (!me || me.invisible) return;
     const now = Date.now();
     if (me.lastSeenAt !== undefined && now - me.lastSeenAt < 30_000) return;
     await ctx.db.patch("profiles", me._id, { lastSeenAt: now });
+  },
+});
+
+const ONLINE_WINDOW_MS = 2 * 60_000; // come nel client (lib/presence.ts)
+
+/** Mi mostro offline (o di nuovo online) agli altri. Da offline il segnale di presenza smette di aggiornarsi. */
+export const setInvisible = mutation({
+  args: { invisible: v.boolean() },
+  handler: async (ctx, args) => {
+    const me = await requireProfile(ctx);
+    await ctx.db.patch("profiles", me._id, {
+      invisible: args.invisible || undefined,
+      // Subito offline per gli altri, senza aspettare che scada la finestra "online".
+      ...(args.invisible ? { lastSeenAt: Date.now() - ONLINE_WINDOW_MS - 1000 } : { lastSeenAt: Date.now() }),
+    });
   },
 });
 
@@ -53,6 +68,7 @@ export const me = query({
       avatarIndex: profile.avatarIndex,
       avatarUrl: await avatarUrl(ctx, profile),
       bio: profile.bio ?? "",
+      invisible: profile.invisible === true,
     };
   },
 });

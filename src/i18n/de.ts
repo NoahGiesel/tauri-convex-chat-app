@@ -312,4 +312,12 @@ export const de: Messages = {
   "group.editTitle": "Gruppe bearbeiten",
   "group.iconLabel": "Symbol",
   "group.iconNone": "Standardsymbol",
+  "settings.nav.notifications": "Benachrichtigungen",
+  "settings.notifications.subtitle": "Wie dich die App über neue Nachrichten informiert.",
+  "settings.notifications.sound": "Benachrichtigungston",
+  "settings.notifications.soundDescription": "Wird abgespielt, wenn eine neue Nachricht eintrifft, während die App im Hintergrund ist.",
+  "settings.notifications.preview": "{name} abspielen",
+  "settings.notifications.volume": "Lautstärke",
+  "status.appearOffline": "Als offline anzeigen",
+  "status.notificationSound": "Benachrichtigungston",
 };
