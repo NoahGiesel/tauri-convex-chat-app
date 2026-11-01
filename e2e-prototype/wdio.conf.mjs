@@ -12,7 +12,7 @@ const cap = (name) => ({
 
 export const config = {
   runner: 'local',
-  specs: [path.join(HERE, 'two-users.spec.mjs')],
+  specs: [path.join(HERE, process.env.E2E_SPEC ?? 'two-users.spec.mjs')],
   maxInstances: 1,
   services: [['@wdio/tauri-service', { driverProvider: 'embedded', embeddedPort: 4540 }]],
   capabilities: { alice: cap('alice'), bob: cap('bob') },

@@ -108,3 +108,24 @@ export function user(name) {
     },
   };
 }
+
+/** A Scripted user: no app instance, acts through public functions with a token from their session. */
+export async function scripted(name) {
+  const { ConvexHttpClient } = await import('convex/browser');
+  const { anyApi: api } = await import('convex/server');
+  const { APP_ORIGIN, CLOUD, SITE } = await import('./config.mjs');
+  const store = JSON.parse(sessions()[name]);
+  const cookie = Object.entries(store).map(([k, v]) => `${k}=${v.value}`).join('; ');
+  const res = await fetch(`${SITE}/api/auth/convex/token`, { headers: { origin: APP_ORIGIN, 'better-auth-cookie': cookie } });
+  if (!res.ok) throw new Error(`token for ${name}: ${res.status}`);
+  const client = new ConvexHttpClient(CLOUD);
+  client.setAuth((await res.json()).token);
+  const chat = async (title) => (await client.query(api.conversations.list, {})).find((c) => c.title === title)._id;
+  return {
+    client,
+    api,
+    chat,
+    send: async (title, body) => client.mutation(api.messages.send, { conversationId: await chat(title), body }),
+    layout: () => client.query(api.sidebar.layout, {}),
+  };
+}

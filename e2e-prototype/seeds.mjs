@@ -61,6 +61,21 @@ export async function buildSeeds(time) {
   // Baseline for the write probe: nothing but the harness has touched the data yet.
   fs.writeFileSync(FRIENDS_ROWS, JSON.stringify(readRows()));
 
+  // groups: everyone is friends, with a group chat. Extends friends.
+  await time('seed: groups through public functions', async () => {
+    await users.carol.client.mutation(api.friends.request, { profileId: users.alice.profileId });
+    await users.carol.client.mutation(api.friends.request, { profileId: users.bob.profileId });
+    for (const u of [users.alice, users.bob]) {
+      const { incoming } = await u.client.query(api.friends.list, {});
+      await u.client.mutation(api.friends.accept, { friendshipId: incoming[0].friendshipId });
+    }
+    const conversationId = await users.alice.client.mutation(api.conversations.createGroup, {
+      name: 'Weekend', memberIds: [users.bob.profileId, users.carol.profileId],
+    });
+    await users.carol.client.mutation(api.messages.send, { conversationId, body: 'Seeded group hello' });
+  });
+  await time('seed: export groups', async () => snapshot('groups'));
+
   const sessions = Object.fromEntries(Object.entries(users).map(([k, u]) => [k, JSON.stringify(u.store)]));
   fs.writeFileSync(SESSIONS_FILE, JSON.stringify(sessions, null, 2));
 }
