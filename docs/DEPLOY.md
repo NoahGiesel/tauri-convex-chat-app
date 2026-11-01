@@ -115,6 +115,7 @@ The repository must stay **public** so the updater can download `latest.json` wi
 | App shows another environment's data | Release built with dev `VITE_CONVEX_URL` — fix the GitHub secrets and re-release |
 | CI: `ERR_PNPM_OUTDATED_LOCKFILE` | `pnpm-lock.yaml` not committed after a dependency change |
 | CI: `tsc` errors | Run both `tsc` commands from step 0 locally; they are the same checks CI runs via `pnpm build` |
+| CI: `Release guard: …` | The build would ship the Test build's WebDriver server or its variables. Remove what it names. Run `node e2e/release-guard.mjs` locally to check, with no tag |
 | Notifications missing on macOS | System Settings → Notifications → allow the app (the permission prompt appears only once) |
 | Convex types missing (`api.xxx does not exist`) | `npx convex dev` regenerates `convex/_generated/`; run it once after adding backend files |
 
