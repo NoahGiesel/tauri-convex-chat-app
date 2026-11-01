@@ -4,8 +4,8 @@ import path from 'node:path';
 import { getCookie, getSetCookie } from '@convex-dev/better-auth/client/plugins';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../convex/_generated/api.js';
-import { APP_ORIGIN, CONVEX_URL, PASSWORD, SESSIONS_FILE, SITE_URL, SNAPSHOTS, USERS } from './config.mjs';
-import { convexInStage } from './stage.mjs';
+import { APP_ORIGIN, CONVEX_URL, EXPIRED_INVITE_TOKEN, PASSWORD, SESSIONS_FILE, SITE_URL, SNAPSHOTS, USERS } from './config.mjs';
+import { convexInStage, importSeed } from './stage.mjs';
 
 async function signUp({ name, email }) {
   const res = await fetch(`${SITE_URL}/api/auth/sign-up/email`, {
@@ -48,10 +48,19 @@ async function buildFriends({ alice, bob }) {
   snapshot('friends');
 }
 
+/** Branches from `base`, so that Seed goes back in first. No public function can make an invite that has expired. */
+function buildExpiredInvite() {
+  importSeed('base');
+  const invite = { token: EXPIRED_INVITE_TOKEN, createdByEmail: USERS.alice.email };
+  convexInStage(['run', 'e2eSeed:expiredInvite', JSON.stringify(invite)]);
+  snapshot('expired-invite');
+}
+
 export async function buildSeeds() {
   fs.mkdirSync(SNAPSHOTS, { recursive: true });
   const users = await buildBase();
   await buildFriends(users);
+  buildExpiredInvite();
 
   const sessions = Object.fromEntries(Object.entries(users).map(([key, { session }]) => [key, session]));
   fs.writeFileSync(SESSIONS_FILE, JSON.stringify(sessions));

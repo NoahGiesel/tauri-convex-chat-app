@@ -64,6 +64,7 @@ These are the only production files the harness needs. The prototype made all of
 | `pnpm-workspace.yaml` | New file, `allowBuilds` set to `false` for `esbuild`, `edgedriver` and `geckodriver` |
 | `src/components/conversation-view.tsx` | Move `dayLabel` out into a pure function that takes the current time |
 | Components | Add `data-testid` where no accessible name exists |
+| `src/components/invite-modal.tsx` | Name each row's button after the person, in every language |
 | `.github/workflows/release.yml` | Add the release guard, and set `releaseDraft: true` |
 | `docs/DEPLOY.md` | The new release checklist |
 | `package.json` | `e2e` script and dev dependencies |
@@ -395,7 +396,7 @@ No macOS code is written until someone can run it. Until then the suite runs on 
 - The release guard and `releaseDraft: true` with two platforms. Tags must not be pushed to test it, so the first real release is the test.
 - `pressHoverOnly()` and the five-language test.
 - `data-testid` itself.
-- The `history` and `expired-invite` Seeds, Carol's old `lastSeenAt`, and sending 70 messages in a Seed.
+- The `history` Seed, Carol's old `lastSeenAt`, and sending 70 messages in a Seed.
 - A `media` Seed with a video and a link message. The prototype's had neither.
 - Anything with a real video.
 - Most scenarios. The probes covered a group chat, the unread badge, presence, the three drag cases, one photo upload, one deletion, the GIF picker, `/giphy` and one preview card. Settings ran nothing.
@@ -406,7 +407,7 @@ No macOS code is written until someone can run it. Until then the suite runs on 
 - An app that hangs without exiting. The ping and each request have limits, but only a killed app was tried.
 - Section and chat reordering by drag. Only moving a chat into a folder was tried.
 - The tab close button and section controls. They use `opacity-0`, not `display: none`, so `isClickable` may read them differently.
-- Accessible names on modals and friend screens. Only an open chat, two Settings screens and the auth screen were checked.
+- Accessible names on the other modals. Only an open chat, two Settings screens, the auth screen and the friend screens were checked.
 - Whether a theme import accepts a synthetic `change` event.
 - A large Seed. Reset time was measured on very little data.
 - Timings for uploads, popouts and `history`, so 5 s per test is a guess.
