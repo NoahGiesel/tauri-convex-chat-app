@@ -74,12 +74,12 @@ async function closePopouts(b) {
 }
 
 /** This must come first of the page steps, because about:blank has no localStorage. */
-const restoreSession = (b, name) => {
+const restoreSession = (b, name, signedIn) => {
   const sessions = JSON.parse(fs.readFileSync(SESSIONS_FILE, 'utf8'));
   return b.execute((cookie) => {
     localStorage.clear();
-    localStorage.setItem('better-auth_cookie', cookie);
-  }, sessions[name]);
+    if (cookie) localStorage.setItem('better-auth_cookie', cookie);
+  }, signedIn ? sessions[name] : null);
 };
 
 /** Live apps write into fresh data through `heartbeat` and `markRead`. `url()` returns before the navigation ends. */
@@ -96,9 +96,9 @@ async function loadApp(b, name) {
   await confirmLoadedApp(b, name);
 }
 
-export async function reset(seed) {
+export async function reset(seed, { signedIn = true } = {}) {
   await forEachInstance(closePopouts);
-  await forEachInstance(restoreSession);
+  await forEachInstance((b, name) => restoreSession(b, name, signedIn));
   await forEachInstance(leaveApp);
   convexInStage(['import', '--replace-all', '--yes', path.join(SNAPSHOTS, `${seed}.zip`)]);
   await forEachInstance(loadApp);
