@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { check, type Update } from "@tauri-apps/plugin-updater";
-import { relaunch } from "@tauri-apps/plugin-process";
+import { invoke } from "@tauri-apps/api/core";
 import {
   isPermissionGranted,
   requestPermission,
@@ -170,7 +170,7 @@ export function UpdaterProvider({ children }: { children: ReactNode }) {
           setProgress(1);
         }
       });
-      await relaunch(); // su Windows l'installer chiude già l'app da solo
+      await invoke("relaunch_app"); // su Windows l'installer chiude già l'app da solo
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setStatus("error");

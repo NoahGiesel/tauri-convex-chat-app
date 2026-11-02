@@ -15,6 +15,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
         "New game: /stone-paper-scissors challenges the other person in a direct chat to a best-of-3 with a countdown every round",
         "New game: /quiz3 and /quiz5 — each player picks 3 or 5 topics (or “Random”), the AI writes one question per topic, and you both answer against a countdown; the right answer turns green and the score updates",
         "New “Games” tab in the chat's media with results and statistics",
+        "On macOS, after an update the app reopens from the same place, so the Dock keeps a single icon",
         "Ping indicator next to your status, under your avatar, next to the paperclip or at the bottom left or right of the sidebar (green under 100 ms, orange up to 350 ms, red above); choose where to show it, or hide it, in Preferences",
       ],
       it: [
@@ -23,6 +24,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
         "Nuovo gioco: /stone-paper-scissors sfida l'altra persona in una chat diretta a una partita al meglio di 3, con un conto alla rovescia a ogni round",
         "Nuovo gioco: /quiz3 e /quiz5 — ognuno sceglie 3 o 5 argomenti (o «Casuale»), l'AI scrive una domanda per argomento e rispondete a tempo; la risposta giusta diventa verde e il punteggio si aggiorna",
         "Nuova scheda «Giochi» nei media della chat con risultati e statistiche",
+        "Su macOS, dopo un aggiornamento l'app si riapre dallo stesso posto, così nel Dock resta una sola icona",
         "Indicatore del ping accanto allo stato, sotto l'avatar, accanto alla graffetta o in fondo alla sidebar a sinistra o a destra (verde sotto 100 ms, arancione fino a 350 ms, rosso oltre); dalle Preferenze scegli dove mostrarlo o nasconderlo",
       ],
     },
