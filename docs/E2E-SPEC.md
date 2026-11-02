@@ -394,8 +394,7 @@ No macOS code is written until someone can run it. Until then the suite runs on 
 **Not built or not run anywhere:**
 
 - The release guard and `releaseDraft: true` with two platforms. Tags must not be pushed to test it, so the first real release is the test.
-- `pressHoverOnly()` and the five-language test.
-- `data-testid` itself.
+- The five-language test.
 - The `history` Seed, Carol's old `lastSeenAt`, and sending 70 messages in a Seed.
 - A `media` Seed with a video and a link message. The prototype's had neither.
 - Anything with a real video.

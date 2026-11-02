@@ -6,11 +6,25 @@ import { reset } from './reset.mjs';
 const WAIT = { timeout: INTERFACE_WAIT_MS, interval: 100 };
 const COMPOSER = `aria/${en['chat.composer']}`;
 const SETTINGS = `aria/${en['nav.settings']}`;
+/** The field, because `aria/` also matches the Edit button, which has the same name. */
+const EDITOR = `//textarea[@aria-label="${en['chat.editMessage']}"]`;
+const MONOSPACE = /mono|consolas|courier|menlo/i;
 /** The form's button, because `aria/` also matches a row's button by its visible text. */
 const REDEEM_BUTTON = `//form//button[normalize-space(.)="${en['invite.add']}"]`;
 const textSelector = (text) => `//*[contains(normalize-space(.), "${text}") and not(*)]`;
 const roleSelector = (role, text) => `//*[@role="${role}"][contains(normalize-space(.), "${text}")]`;
 const named = (key, name) => en[key].replace('{name}', name);
+const messageRow = (text) => `//*[@data-testid="message"][contains(normalize-space(.), "${text}")]`;
+const messageButton = (text, label) => `${messageRow(text)}//button[@aria-label="${label}"]`;
+/** The raw text, not `messageRow()`: `normalize-space` would hide the spaces that `/pre` keeps. */
+const messageWords = (text) => `//*[@data-testid="message"]//*[text()[contains(., "${text}")]]`;
+const reactionChip = (text, emoji) => `${messageRow(text)}//button[@aria-pressed][contains(normalize-space(.), "${emoji}")]`;
+
+/** Runs in the page. What a person can see of how some words are set. */
+function lookOf(element) {
+  const { color, fontFamily, fontStyle, whiteSpace } = getComputedStyle(element);
+  return { color, fontFamily, fontStyle, tag: element.tagName, whiteSpace };
+}
 
 /** Runs in the page. What a screen reader would have nothing to say for, among the controls a person can reach. */
 function unnamedControls() {
@@ -37,6 +51,24 @@ function drivenUser(name) {
     await b.$(selector).click();
   };
 
+  /** For actions shown only on hover, which cannot be driven. If this one stops being hidden, it moves to `press()`. */
+  const pressHoverOnly = async (selector) => {
+    await b.waitUntil(async () => b.$(selector).isExisting(), { ...WAIT, timeoutMsg: `${name} has no ${selector}` });
+    if (await b.$(selector).isDisplayed()) throw new Error(`${selector} is not hover-only any more, so use press()`);
+    await b.$(selector).click();
+  };
+
+  const waitUntilGone = (selector, timeoutMsg) => b.waitUntil(async () => !(await b.$(selector).isExisting()), { ...WAIT, timeoutMsg });
+
+  const waitUntilLooks = (text, looksRight, description) =>
+    b.waitUntil(
+      async () => {
+        const words = await b.$(messageWords(text));
+        return (await words.isExisting()) && looksRight(await b.execute(lookOf, words));
+      },
+      { ...WAIT, timeoutMsg: `${name} did not see "${text}" as ${description}` },
+    );
+
   const fill = async (label, value) => {
     await waitUntilShown(`aria/${label}`, `${name} has no field called ${label}`);
     await b.$(`aria/${label}`).setValue(value);
@@ -51,10 +83,82 @@ function drivenUser(name) {
       await b.$(COMPOSER).setValue(text);
       await b.keys('Enter');
     },
+    /** Presses Enter twice: a bare command is first completed, and only then sent. */
+    async sendCompleted(command) {
+      await b.$(COMPOSER).setValue(command);
+      await b.keys('Enter');
+      await b.waitUntil(async () => (await b.$(COMPOSER).getValue()) === `${command} `, {
+        ...WAIT,
+        timeoutMsg: `${name} could not complete ${command}`,
+      });
+      await b.keys('Enter');
+    },
     sees: (text) => waitUntilShown(textSelector(text), `${name} did not see "${text}"`),
     async doesNotSee(text) {
       if (await b.$(textSelector(text)).isExisting()) throw new Error(`${name} still sees "${text}"`);
     },
+
+    seesMessage: (text) => waitUntilShown(messageRow(text), `${name} did not see the message "${text}"`),
+    async doesNotSeeMessage(text) {
+      if (await b.$(messageRow(text)).isExisting()) throw new Error(`${name} still sees the message "${text}"`);
+    },
+    stopsSeeingMessage: (text) => waitUntilGone(messageRow(text), `${name} still sees the message "${text}"`),
+    seesEditedMessage: (text) =>
+      waitUntilShown(`${messageRow(text)}[contains(., "${en['chat.edited']}")]`, `${name} did not see "${text}" marked as edited`),
+    async editMessage(text, edited) {
+      await pressHoverOnly(messageButton(text, en['chat.editMessage']));
+      await waitUntilShown(EDITOR, `${name} has no editor for "${text}"`);
+      await b.$(EDITOR).setValue(edited);
+      await b.keys('Enter');
+    },
+    async deleteMessage(text) {
+      await pressHoverOnly(messageButton(text, en['chat.deleteMessage']));
+      await press(`${messageRow(text)}//button[normalize-space(.)="${en['chat.deleteConfirm']}"]`);
+    },
+    async canChangeMessage(text) {
+      for (const label of [en['chat.editMessage'], en['chat.deleteMessage']]) {
+        await b.waitUntil(async () => b.$(messageButton(text, label)).isExisting(), { ...WAIT, timeoutMsg: `${name} has no ${label} on "${text}"` });
+      }
+    },
+    async cannotChangeMessage(text) {
+      await user.seesMessage(text);
+      for (const label of [en['chat.editMessage'], en['chat.deleteMessage']]) {
+        if (await b.$(messageButton(text, label)).isExisting()) throw new Error(`${name} has ${label} on "${text}"`);
+      }
+    },
+
+    reactTo: (text, emoji) => pressHoverOnly(messageButton(text, emoji)),
+    toggleReaction: (text, emoji) => press(reactionChip(text, emoji)),
+    seesReaction: (text, emoji, count) =>
+      waitUntilShown(`${reactionChip(text, emoji)}[normalize-space(.)="${emoji}${count}"]`, `${name} did not see ${count} ${emoji} on "${text}"`),
+    seesNoReaction: (text, emoji) => waitUntilGone(reactionChip(text, emoji), `${name} still sees ${emoji} on "${text}"`),
+
+    async seesAction(author, text) {
+      await waitUntilShown(messageRow(`✱ ${author} ${text}`), `${name} did not see ${author}'s action "${text}"`);
+      await waitUntilLooks(text, ({ fontStyle }) => fontStyle === 'italic', 'an action');
+    },
+    seesCode: (text) => waitUntilLooks(text, ({ fontFamily }) => MONOSPACE.test(fontFamily), 'code'),
+    seesPreformatted: (text) =>
+      waitUntilLooks(text, ({ fontFamily, whiteSpace }) => MONOSPACE.test(fontFamily) && whiteSpace === 'pre', 'preformatted text'),
+    seesSpoiler: (text) => waitUntilLooks(text, ({ color }) => color === 'rgba(0, 0, 0, 0)', 'a hidden spoiler'),
+    seesQuote: (text) => waitUntilLooks(text, ({ tag }) => tag === 'BLOCKQUOTE', 'a quotation'),
+    async seesRollWithin(min, max) {
+      const roll = messageRow(`(${min}–${max})`);
+      await waitUntilShown(roll, `${name} did not see a roll from ${min} to ${max}`);
+      const rolled = Number(/🎲\s*(-?\d+)/.exec(await b.$(roll).getText())?.[1]);
+      if (!(Number.isInteger(rolled) && rolled >= min && rolled <= max)) throw new Error(`${name} saw ${rolled} for a roll from ${min} to ${max}`);
+      return rolled;
+    },
+    seesRoll: (rolled, min, max) => waitUntilShown(messageRow(`🎲 ${rolled}(${min}–${max})`), `${name} did not see the roll ${rolled}`),
+    async seesFlip() {
+      const coin = messageRow('🪙');
+      await waitUntilShown(coin, `${name} did not see a coin`);
+      const text = await b.$(coin).getText();
+      const landed = [en['chat.flipHeads'], en['chat.flipTails']].find((word) => text.includes(word));
+      if (!landed) throw new Error(`${name} saw a coin on neither side: "${text}"`);
+      return landed;
+    },
+    seesCoinOn: (side) => waitUntilShown(messageRow(`🪙 ${side}`), `${name} did not see the coin on ${side}`),
 
     seesAuthScreen: () => waitUntilShown(textSelector(en['auth.welcomeBack']), `${name} is not on the auth screen`),
     seesChats: () => waitUntilShown(SETTINGS, `${name} did not reach their chats`),

@@ -707,6 +707,7 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
           return (
             <div
               key={m._id}
+              data-testid="message"
               className={cn("group relative flex gap-3", row.head ? "mt-[18px]" : "mt-0.5")}
             >
               <div className="relative w-[38px] shrink-0">
