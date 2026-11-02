@@ -66,7 +66,7 @@ async function buildHistory({ alice, bob }, conversationId) {
     await author.client.mutation(api.messages.send, { conversationId, body: `History ${String(i).padStart(2, '0')}` });
   }
   snapshot('history');
-  // The spec records this time. A Seed this big was never measured before.
+  // Seed work grows with this one, so each run shows its share. "Measured on Windows" in the spec holds the figure.
   console.log(`[e2e] the history Seed took ${((Date.now() - start) / 1000).toFixed(1)} s`);
 }
 

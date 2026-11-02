@@ -19,6 +19,7 @@ describe('a long chat', () => {
 
   it('jump to latest brings back the newest message', async () => {
     const { alice } = await longChat();
+    // Pressing it scrolls up to it, as a person would, and the view then stays on the older messages.
     await alice.loadOlderMessages();
     await alice.seesMessage('History 11');
     await alice.doesNotSeeMessageInView('History 70');
