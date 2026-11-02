@@ -23,7 +23,7 @@ afterEach(async () => {
 
 const put = (key, body, type) => fetch(`${base}/e2e/${key}?X-Amz-Signature=any`, { method: 'PUT', headers: { 'content-type': type, origin: APP }, body });
 
-describe('the R2 stub', () => {
+describe('the stub', () => {
   it('serves what was put, with its type, and ignores the signature', async () => {
     assert.equal((await put('chat/a.jpg', 'photo bytes', 'image/jpeg')).status, 200);
 
@@ -58,6 +58,25 @@ describe('the R2 stub', () => {
       readStubLog(path.join(dir, 'log.jsonl')).filter(({ method }) => method === 'DELETE'),
       [{ method: 'DELETE', path: '/e2e/chat/a.jpg' }],
     );
+  });
+
+  it('returns canned trending GIFs, whose thumbnails it serves', async () => {
+    const res = await fetch(`${base}/v1/gifs/trending?api_key=any&limit=24`, { headers: { origin: APP } });
+    assert.equal(res.headers.get('access-control-allow-origin'), '*');
+    const { data } = await res.json();
+
+    assert.deepEqual(data.map(({ title }) => title), ['Trending 1', 'Trending 2', 'Trending 3']);
+    assert.equal(data[0].images.fixed_height.url, 'https://media.giphy.com/media/trending-1/giphy.gif');
+    const thumb = await fetch(data[0].images.fixed_width_small.url);
+    assert.equal(thumb.headers.get('content-type'), 'image/gif');
+    assert.equal(Buffer.from(await thumb.arrayBuffer()).subarray(0, 6).toString(), 'GIF89a');
+  });
+
+  it('returns canned search results named after the search', async () => {
+    const { data } = await (await fetch(`${base}/v1/gifs/search?api_key=any&q=Happy%20cats&lang=en`)).json();
+
+    assert.deepEqual(data.map(({ title }) => title), ['Happy cats 1', 'Happy cats 2', 'Happy cats 3']);
+    assert.equal(data[1].images.fixed_height.url, 'https://media.giphy.com/media/happy-cats-2/giphy.gif');
   });
 
   it('refuses to start on a busy port', async () => {

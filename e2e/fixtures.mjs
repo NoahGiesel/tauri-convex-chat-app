@@ -5,6 +5,7 @@ import { en } from '../src/i18n/en.ts';
 import { E2E_DIR, EXPIRED_INVITE_TOKEN, INTERFACE_WAIT_MS, MAIN_WINDOW, PASSWORD, POLL_MS, USERS } from './config.mjs';
 import { reset } from './reset.mjs';
 import { scriptedUser } from './scripted-user.mjs';
+import { gifAddress, gifTitles } from './stub.mjs';
 
 const WAIT = { timeout: INTERFACE_WAIT_MS, interval: POLL_MS };
 const COMPOSER = `aria/${en['chat.composer']}`;
@@ -63,6 +64,14 @@ const ATTACH_INPUT = '//input[@data-testid="attach-input"]';
 const REMOVE_STAGED = `//button[@aria-label="${en['composer.removeAttachment']}"]`;
 /** A file waiting in the composer, by its name: a photo's description, or the text under a video. */
 const staged = (file) => `//div[button[@aria-label="${en['composer.removeAttachment']}"]][img[@alt="${file}"] or .//span[normalize-space(.)="${file}"]]`;
+/** The composer's GIF button has no translated name, so it is found by "GIF" and by opening a picker. */
+const GIF_BUTTON = '//button[@aria-label="GIF"][@aria-expanded]';
+const GIF_SEARCH = `//input[@placeholder="${en['composer.gifSearch']}"]`;
+/** A result in the picker is a button titled like the GIF. */
+const gifResult = (title) => `//button[@title="${title}"]`;
+/** A GIF in a message, at any of these addresses. */
+const gifAt = (addresses) => `//img[@alt="${en['chat.gifAlt']}"][${addresses.map((address) => `@src="${address}"`).join(' or ')}]`;
+
 /** By the name before the extension: a photo is sent re-encoded, and may come back as a .webp. */
 const photo = (name) => `//img[starts-with(@alt, "${name}.")]`;
 const sentPhoto = (name) => `//*[@data-testid="message"]${photo(name)}`;
@@ -389,6 +398,22 @@ function drivenUser(name) {
       const together = `//*[@data-testid="message"][.${photo(first)}][.${photo(second)}]`;
       for (const one of [first, second]) await waitUntilLoaded(`${together}${photo(one)}`, `${name} did not see ${one} load beside the other in one message`);
     },
+    async openGifPicker() {
+      await press(GIF_BUTTON);
+      await waitUntilShown(GIF_SEARCH, `${name} has no GIF picker`);
+    },
+    searchGifs: (text) => b.$(GIF_SEARCH).setValue(text),
+    /** Its thumbnail loaded from the stub. */
+    seesGifInPicker: (title) => waitUntilLoaded(`${gifResult(title)}/img`, `${name} did not see the GIF "${title}" in the picker`),
+    pickGif: (title) => press(gifResult(title)),
+    /** By its address, because a sent GIF's image comes from giphy.com and does not load in tests. */
+    seesGif: (title) => waitUntilExists(`//*[@data-testid="message"]${gifAt([gifAddress(title)])}`, `${name} did not see the GIF "${title}" in the chat`),
+    /** `/giphy` picks one of the results at random, so any of them will do, under the search it came from. */
+    seesGifFoundBy: (search) =>
+      waitUntilExists(
+        `${messageRow(`/giphy ${search}`)}${gifAt(gifTitles(search).map(gifAddress))}`,
+        `${name} did not see a GIF found by "/giphy ${search}"`,
+      ),
     seesVideoWithCaption: (caption) =>
       waitUntilLoaded(`${messageRow(caption)}//video`, `${name} has no player that read the video sent with "${caption}"`, hasMetadata),
     async doesNotSeePhoto(photoName) {

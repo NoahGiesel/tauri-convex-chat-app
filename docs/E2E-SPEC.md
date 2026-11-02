@@ -278,7 +278,7 @@ The files live in `e2e/assets`. The app re-encodes a photo before upload, and th
 
 ## External services
 
-The suite never calls a live service, so a developer needs no credentials and no account. Once its tools are installed, a run needs no internet.
+The suite never depends on a live service, so a developer needs no credentials and no account. Once its tools are installed, a run needs no internet. The one request a run sends out is for a sent GIF's image, which no test waits for (see below).
 
 | Service | Treatment | App change |
 |---|---|---|
@@ -289,9 +289,9 @@ The suite never calls a live service, so a developer needs no credentials and no
 **The stub** is one small Node server in `e2e/`, on the fixed loopback port 3312. `pnpm e2e` starts it as a process of its own, because a Seed's CLI call blocks its own process while Convex may call the stub. It keeps its files and its log in the stage, so each run starts with none. If the port is busy, the run stops.
 
 - **R2:** it stores on PUT and serves on GET, with CORS. It checks no signatures. **DELETE is only logged**, and the file stays, so a Reset cannot bring back a message whose image is gone. A test checks a deletion by reading the stub's log.
-- **GIPHY:** it returns canned `trending` and `search` results, with thumbnails from the stub.
+- **GIPHY:** it returns canned `trending` and `search` results, with thumbnails from the stub. With no search the results are "Trending 1" to "Trending 3", and a search for "Happy cats" finds "Happy cats 1" to "Happy cats 3". `stub.mjs` exports the titles and each one's giphy.com address, so the Fixtures and the stub cannot disagree. The Test build points `src/lib/giphy.ts` at the stub with `VITE_GIPHY_API_URL`. A release stops if it sets that variable.
 
-**Sent GIFs keep a giphy.com address**, because `messages.sendGif` accepts only `https` URLs on `*.giphy.com`, and that guard stays. So a sent GIF's image does not load in tests, and a test checks its address, not its pixels.
+**Sent GIFs keep a giphy.com address**, because `messages.sendGif` accepts only `https` URLs on `*.giphy.com`, and that guard stays. So a sent GIF's image does not load in tests, and a test checks its address, not its pixels. The webview still asks media.giphy.com for it, so this is the one request a run sends out. `/giphy` picks a result at random, so its test accepts any of the three, under the line showing the search. The composer's GIF button has a name only in English, "GIF", so a Fixture finds it by that and by its `aria-expanded`.
 
 **Link previews.** A test sends only Seeded URLs or reserved `.invalid` ones, so nothing leaves the machine. `isPublicHttpUrl` stays strict, with no bypass, so the real fetch runs only in the Manual smoke.
 
@@ -347,6 +347,7 @@ These come from one machine with very little data. Treat them as orders of magni
 | Seven tab, split view and popout tests, Fixtures included | 19 s |
 | Six photo tests, Fixtures included | 15 s |
 | Sending the 10 KB video, Fixture included | 2.4 s |
+| Three GIF tests, Fixtures included | 7.7 s |
 
 **A full run should take about 7 minutes.** That is an estimate: 68 scenarios at about 5 s each, plus about 40 s to start.
 
