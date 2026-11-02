@@ -80,8 +80,8 @@ describe('slash commands', () => {
 
     await alice.send('/pre one   two');
 
-    await alice.seesPreformatted('one');
-    await bob.seesPreformatted('one');
+    await alice.seesPreformatted('one   two');
+    await bob.seesPreformatted('one   two');
   });
 
   it('/spoiler hides the text', async () => {

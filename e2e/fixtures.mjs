@@ -6,16 +6,18 @@ import { reset } from './reset.mjs';
 const WAIT = { timeout: INTERFACE_WAIT_MS, interval: 100 };
 const COMPOSER = `aria/${en['chat.composer']}`;
 const SETTINGS = `aria/${en['nav.settings']}`;
-/** The form's button, because `aria/` also matches a row's button by its visible text. */
+/** The field, because `aria/` also matches the Edit button, which has the same name. */
 const EDITOR = `//textarea[@aria-label="${en['chat.editMessage']}"]`;
 const MONOSPACE = /mono|consolas|courier|menlo/i;
+/** The form's button, because `aria/` also matches a row's button by its visible text. */
 const REDEEM_BUTTON = `//form//button[normalize-space(.)="${en['invite.add']}"]`;
 const textSelector = (text) => `//*[contains(normalize-space(.), "${text}") and not(*)]`;
 const roleSelector = (role, text) => `//*[@role="${role}"][contains(normalize-space(.), "${text}")]`;
 const named = (key, name) => en[key].replace('{name}', name);
 const messageRow = (text) => `//*[@data-testid="message"][contains(normalize-space(.), "${text}")]`;
 const messageButton = (text, label) => `${messageRow(text)}//button[@aria-label="${label}"]`;
-const messageWords = (text) => `${messageRow(text)}//*[text()[contains(., "${text}")]]`;
+/** The raw text, not `messageRow()`: `normalize-space` would hide the spaces that `/pre` keeps. */
+const messageWords = (text) => `//*[@data-testid="message"]//*[text()[contains(., "${text}")]]`;
 const reactionChip = (text, emoji) => `${messageRow(text)}//button[@aria-pressed][contains(normalize-space(.), "${emoji}")]`;
 
 /** Runs in the page. What a person can see of how some words are set. */
