@@ -1,10 +1,10 @@
 // What a test works with: domain actions per user. Selectors and waits live here, never in a test.
 import { en } from '../src/i18n/en.ts';
-import { EXPIRED_INVITE_TOKEN, INTERFACE_WAIT_MS, PASSWORD, USERS } from './config.mjs';
+import { EXPIRED_INVITE_TOKEN, INTERFACE_WAIT_MS, PASSWORD, POLL_MS, USERS } from './config.mjs';
 import { reset } from './reset.mjs';
 import { scriptedUser } from './scripted-user.mjs';
 
-const WAIT = { timeout: INTERFACE_WAIT_MS, interval: 100 };
+const WAIT = { timeout: INTERFACE_WAIT_MS, interval: POLL_MS };
 const COMPOSER = `aria/${en['chat.composer']}`;
 const SETTINGS = `aria/${en['nav.settings']}`;
 /** The field, because `aria/` also matches the Edit button, which has the same name. */
@@ -27,7 +27,7 @@ const messageWords = (text) => `//*[@data-testid="message"]//*[text()[contains(.
  */
 const rowTooltip = (title, presence = '') => `${title} · ${presence}`;
 const chatRow = (title) => `//button[starts-with(@title, "${rowTooltip(title)}")]`;
-/** A friend's tick box in the new group form, by the name beside it. */
+/** A friend's tick box in the new group form, by the name beside it. Not `aria/`, which also matches the friend's chat row. */
 const memberChoice = (person) => `//label[.//span[normalize-space(.)="${person}"]]//input[@type="checkbox"]`;
 /** What a group's row says about it: how many are in it, and how many of the others are online. */
 const groupStatus = ({ members, online }) =>

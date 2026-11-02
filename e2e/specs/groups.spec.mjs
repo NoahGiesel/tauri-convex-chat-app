@@ -1,6 +1,6 @@
 import { groupChatOpen } from '../fixtures.mjs';
 
-// Weekend holds Alice, Bob and Carol. Carol is a Scripted user, last online over 2 minutes ago.
+// Weekend holds Alice, Bob and Carol. Carol is a Scripted user, last online 3 days before the run.
 describe('a group chat', () => {
   it('messages reach all three', async () => {
     const { alice, bob, carol } = await groupChatOpen();
@@ -8,6 +8,10 @@ describe('a group chat', () => {
     await alice.send('Hi all');
     await bob.seesMessage('Hi all');
     await carol.seesMessage('Weekend', 'Hi all');
+
+    await bob.send('Bob too');
+    await alice.seesMessage('Bob too');
+    await carol.seesMessage('Weekend', 'Bob too');
 
     await carol.send('Weekend', 'Carol here');
     await alice.seesMessage('Carol here');
@@ -27,7 +31,7 @@ describe('a group chat', () => {
     await carol.hasNoChat('Road trip');
   });
 
-  it('everyone sees the same three members', async () => {
+  it('Weekend has its three members', async () => {
     const { alice, bob, carol } = await groupChatOpen();
 
     await alice.seesGroup('Weekend', { members: 3, online: 1 });
