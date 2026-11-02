@@ -201,7 +201,7 @@ Every run has two Driven users, `alice` and `bob`. Single-user tests leave `bob`
 | `mediaChatOpen` | `media` | `alice`, `bob` with their chat open | Seeded attachment, lightbox, media library, link library, Seeded preview card, delete an attachment, a `.invalid` link shows no card |
 | `settingsOpen` | `friends` | `alice` in Settings, `bob` with the chat open | Name and bio seen live by Bob, set and remove an avatar, language, theme, sidebar side, accent colour, theme import, notify switch |
 
-- **Video:** a small real mp4 joins `e2e/`. A test sends it and checks that Bob's player loaded its metadata. WKWebView may need a specific codec.
+- **Video:** a small real mp4 joins `e2e/`. A test sends it and checks that Bob's player loaded its metadata. WebView2's player reads the metadata of `e2e/assets/clip.mp4`: 2 s of H.264 Constrained Baseline, 160 by 120, no sound, `faststart`, 10 KB. It was made with `ffmpeg -f lavfi -i testsrc=size=160x120:rate=15:duration=2 -c:v libx264 -profile:v baseline -pix_fmt yuv420p -movflags +faststart -an`. WKWebView may need a specific codec.
 - **Language:** one test walks through all five languages, checks one label from each dictionary, then reloads and checks that the last choice stayed.
 - **Updates:** only the notify switch is tested. "Check for updates" would call the real endpoint.
 
@@ -274,7 +274,7 @@ A drag out of the window is `dragstart` on the tab, a `dragleave` on the documen
 
 The `embedded` driver refuses files: `sending keys to a file input (file upload) is not supported`. Set `input.files` from a `DataTransfer` and fire a `change` event. The app then runs its real upload. The native file picker stays in the Manual smoke.
 
-The files live in `e2e/assets`. The app re-encodes a photo before upload, and the small PNGs came back as WebP, so a Fixture finds a sent photo by its name before the extension. A photo counts as seen only once it has loaded, with `naturalWidth` above 0.
+The files live in `e2e/assets`. The app re-encodes a photo before upload, and the small PNGs came back as WebP, so a Fixture finds a sent photo by its name before the extension. A photo counts as seen only once it has loaded, with `naturalWidth` above 0. A video counts as seen once its player has read the metadata, with `readyState` at `HAVE_METADATA` or more and a duration above 0. Playing and seeking are not checked.
 
 ## External services
 
@@ -346,6 +346,7 @@ These come from one machine with very little data. Treat them as orders of magni
 | Message reaches the other user, all cores busy | Median 104 ms, max 253 ms |
 | Seven tab, split view and popout tests, Fixtures included | 19 s |
 | Six photo tests, Fixtures included | 15 s |
+| Sending the 10 KB video, Fixture included | 2.4 s |
 
 **A full run should take about 7 minutes.** That is an estimate: 68 scenarios at about 5 s each, plus about 40 s to start.
 
@@ -415,7 +416,8 @@ No macOS code is written until someone can run it. Until then the suite runs on 
 - The release guard and `releaseDraft: true` with two platforms. Tags must not be pushed to test it, so the first real release is the test.
 - The five-language test.
 - A `media` Seed with a video and a link message. The prototype's had neither.
-- Anything with a real video.
+- A real video anywhere but WebView2.
+- A video served in parts. The stub ignores `Range` and always sends the whole file, where R2 answers a range with 206.
 - Most scenarios. The probes covered a group chat, the unread badge, presence, the three drag cases, one photo upload, one deletion, the GIF picker, `/giphy` and one preview card. Settings ran nothing.
 
 **Open behaviour:**
@@ -425,7 +427,6 @@ No macOS code is written until someone can run it. Until then the suite runs on 
 - Accessible names on the other modals. Only an open chat, two Settings screens, the auth screen and the friend screens were checked.
 - Whether a theme import accepts a synthetic `change` event.
 - A large Seed. Reset time was measured on very little data.
-- Timings for a video upload.
 - Windows Firewall prompts, locked or minimised windows, and Seeds across a backend upgrade.
 - Real system notifications may appear during a run, because `use-message-notifications.ts` is not gated. They are harmless to tests.
 
