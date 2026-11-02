@@ -64,7 +64,7 @@ const ATTACH_INPUT = '//input[@data-testid="attach-input"]';
 const REMOVE_STAGED = `//button[@aria-label="${en['composer.removeAttachment']}"]`;
 /** A file waiting in the composer, by its name: a photo's description, or the text under a video. */
 const staged = (file) => `//div[button[@aria-label="${en['composer.removeAttachment']}"]][img[@alt="${file}"] or .//span[normalize-space(.)="${file}"]]`;
-// The composer's GIF button has no translated name, so it is found by "GIF" and by opening a picker.
+/** The composer's GIF button has no translated name, so it is found by "GIF" and by opening a picker. */
 const GIF_BUTTON = '//button[@aria-label="GIF"][@aria-expanded]';
 const GIF_SEARCH = `//input[@placeholder="${en['composer.gifSearch']}"]`;
 /** A result in the picker is a button titled like the GIF. */

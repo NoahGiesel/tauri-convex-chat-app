@@ -20,8 +20,14 @@ afterEach(() => {
 });
 
 describe("the GIPHY address", () => {
-  it("is GIPHY's own when no address is set", async () => {
-    vi.stubEnv("VITE_GIPHY_API_URL", "");
+  it("is GIPHY's own when no address is set, as in a release", async () => {
+    vi.stubEnv("VITE_GIPHY_API_URL", undefined);
+    const url = await requestedUrl();
+    expect(url.origin + url.pathname).toBe("https://api.giphy.com/v1/gifs/search");
+  });
+
+  it("is GIPHY's own when the address is blank", async () => {
+    vi.stubEnv("VITE_GIPHY_API_URL", " ");
     const url = await requestedUrl();
     expect(url.origin + url.pathname).toBe("https://api.giphy.com/v1/gifs/search");
   });

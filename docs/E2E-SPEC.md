@@ -278,7 +278,7 @@ The files live in `e2e/assets`. The app re-encodes a photo before upload, and th
 
 ## External services
 
-The suite never calls a live service, so a developer needs no credentials and no account. Once its tools are installed, a run needs no internet.
+The suite never depends on a live service, so a developer needs no credentials and no account. Once its tools are installed, a run needs no internet. The one request a run sends out is for a sent GIF's image, which no test waits for (see below).
 
 | Service | Treatment | App change |
 |---|---|---|

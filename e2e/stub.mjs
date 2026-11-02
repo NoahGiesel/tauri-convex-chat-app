@@ -23,7 +23,7 @@ const gifId = (title) => title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 /** A sent GIF keeps a giphy.com address, because `messages.sendGif` accepts no other. So a test checks this address. */
 export const gifAddress = (title) => `https://media.giphy.com/media/${gifId(title)}/giphy.gif`;
 
-function gifs(search, host) {
+function giphyResponse(search, host) {
   return {
     data: gifTitles(search).map((title) => ({
       id: gifId(title),
@@ -59,7 +59,7 @@ export function startStub({ root = STUB_FILES, logFile = STUB_LOG, port = STUB_P
     if (req.method === 'OPTIONS') return send(204);
     if (req.method === 'GET' && (pathname === '/v1/gifs/trending' || pathname === '/v1/gifs/search')) {
       const search = pathname.endsWith('/search') ? (searchParams.get('q') ?? '') : '';
-      return send(200, { 'content-type': 'application/json' }, JSON.stringify(gifs(search, req.headers.host)));
+      return send(200, { 'content-type': 'application/json' }, JSON.stringify(giphyResponse(search, req.headers.host)));
     }
     if (req.method === 'GET' && pathname.startsWith('/thumb/')) return send(200, { 'content-type': 'image/gif' }, THUMBNAIL);
     if (req.method === 'PUT') {
