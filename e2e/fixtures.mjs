@@ -1,6 +1,6 @@
 // What a test works with: domain actions per user. Selectors and waits live here, never in a test.
 import { en } from '../src/i18n/en.ts';
-import { EXPIRED_INVITE_TOKEN, INTERFACE_WAIT_MS, PASSWORD, POLL_MS, USERS } from './config.mjs';
+import { EXPIRED_INVITE_TOKEN, INTERFACE_WAIT_MS, MAIN_WINDOW, PASSWORD, POLL_MS, USERS } from './config.mjs';
 import { reset } from './reset.mjs';
 import { scriptedUser } from './scripted-user.mjs';
 
@@ -51,6 +51,12 @@ const section = (title) => `//section[div/${sectionToggle(title)}]`;
 /** What a person drags to move a section: its heading, which holds the toggle. */
 const sectionHeading = (title) => `//div[@draggable][${sectionToggle(title)}]`;
 const folderControl = (folder, label) => `${section(folder)}/div//button[@aria-label="${label}"]`;
+/** An open chat's tab, by its close button, which is named after the chat. */
+const tabClose = (title) => `//button[@aria-label="${named('tabs.close', title)}"]`;
+const tab = (title) => `//div[@draggable="true"][.${tabClose(title)}]`;
+/** Where a dragged tab drops to split the view. They show only during a drag, on the one chat shown. */
+const tabDrop = (side) => `//*[@data-testid="tab-drop-${side}"]`;
+const secondComposer = `(//textarea[@aria-label="${en['chat.composer']}"])[2]`;
 /** The second element comes after the first in the page, so a person sees it lower down. */
 const followedBy = (first, then) => `${first}/following::${then.replace(/^\/\//, '')}`;
 
@@ -81,8 +87,9 @@ function unnamedControls() {
 async function fireDragEvent(element, type, at) {
   if (type === 'dragstart') window.e2eDataTransfer = new DataTransfer();
   const rect = element.getBoundingClientRect();
-  const clientY = { top: rect.top + 2, middle: rect.top + rect.height / 2, bottom: rect.bottom - 2 }[at];
-  const init = { bubbles: true, cancelable: true, clientX: rect.left + rect.width / 2, clientY, dataTransfer: window.e2eDataTransfer };
+  const clientY = { top: rect.top + 2, middle: rect.top + rect.height / 2, bottom: rect.bottom - 2, outside: -50 }[at];
+  const clientX = at === 'outside' ? -50 : rect.left + rect.width / 2;
+  const init = { bubbles: true, cancelable: true, clientX, clientY, dataTransfer: window.e2eDataTransfer };
   element.dispatchEvent(new DragEvent(type, init));
   await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 }
@@ -95,6 +102,11 @@ async function bringWindowToFront() {
   if (document.hasFocus()) return;
   const { label } = window.__TAURI_INTERNALS__.metadata.currentWindow;
   await window.__TAURI_INTERNALS__.invoke('plugin:window|set_focus', { label });
+}
+
+/** Runs in the page. What the page sees as the pointer leaves the window during a drag. */
+function leaveWindowDragging() {
+  document.dispatchEvent(new DragEvent('dragleave', { bubbles: true, relatedTarget: null, dataTransfer: window.e2eDataTransfer }));
 }
 
 function drivenUser(name) {
@@ -297,6 +309,46 @@ function drivenUser(name) {
       await user.seesChatInList(title);
       // Not the composer: the chat open before has one too. Only the new group is empty.
       await waitUntilShown(textSelector(en['chat.noMessages']), `${name} did not open ${title}`);
+    },
+
+    seesTab: (title) => waitUntilShown(tab(title), `${name} has no tab for ${title}`),
+    stopsSeeingTab: (title) => waitUntilGone(tab(title), `${name} still has a tab for ${title}`),
+    /** The tab of the chat shown, whose close button is always there. */
+    closeTab: (title) => press(tabClose(title)),
+    /** Any other tab shows its close button only on hover. */
+    closeBackgroundTab: (title) => pressHoverOnly(tabClose(title)),
+    showTab: (title) => press(`${tab(title)}/button[1]`),
+    splitView: (title, side) => drag(tab(title), tabDrop(side)),
+    /** Two chats shown at once, each with its own composer, the first message's to the left. */
+    async seesSideBySide(leftMessage, rightMessage) {
+      await waitUntilShown(secondComposer, `${name} does not see two chats at once`);
+      await waitUntilShown(followedBy(messageRow(leftMessage), messageRow(rightMessage)), `${name} did not see "${leftMessage}" left of "${rightMessage}"`);
+    },
+    async seesOneChatAtATime() {
+      await waitUntilShown(COMPOSER, `${name} has no chat open`);
+      if (await b.$(secondComposer).isExisting()) throw new Error(`${name} still sees two chats at once`);
+    },
+    /**
+     * Drags the tab out of the window, which opens the chat in a window of its own, then acts there.
+     * Found as the one new window, because its handle holds the conversation ID.
+     */
+    async popOut(title) {
+      const before = await b.getWindowHandles();
+      await fireDrag(tab(title), 'dragstart');
+      await b.execute(leaveWindowDragging);
+      await fireDrag(tab(title), 'dragend', 'outside');
+      let popout;
+      await b.waitUntil(async () => (popout = (await b.getWindowHandles()).find((handle) => !before.includes(handle))), {
+        ...WAIT,
+        timeoutMsg: `${name} did not get a window for ${title}`,
+      });
+      await b.switchToWindow(popout);
+      await waitUntilShown(COMPOSER, `${name} has no composer in the window for ${title}`);
+    },
+    returnToMainWindow: () => b.switchToWindow(MAIN_WINDOW),
+    async seesOnlyMainWindow() {
+      const handles = await b.getWindowHandles();
+      if (handles.length !== 1 || handles[0] !== MAIN_WINDOW) throw new Error(`${name} has windows ${handles.join(', ')}`);
     },
 
     seesLastOnline: (person, time) =>

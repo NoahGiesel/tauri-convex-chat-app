@@ -240,7 +240,7 @@ The driver's `click()` is synthetic. It presses a button under a full-screen cov
 
 Hover cannot be driven. `moveTo` does not trigger `:hover`, and a pointer move onto a hidden element fails with `could not read element center`. Message actions, the tab close button and the section controls all depend on hover.
 
-`opacity-0` reads as hidden. WebdriverIO 9's `isDisplayed` calls `checkVisibility` with `opacityProperty`, so `isClickable` is false for the folder controls, Rename and Delete, and they go through `pressHoverOnly()`. The other section controls are always shown, and go through `press()`.
+`opacity-0` reads as hidden. WebdriverIO 9's `isDisplayed` calls `checkVisibility` with `opacityProperty`, so `isClickable` is false for the folder controls, Rename and Delete, and they go through `pressHoverOnly()`. The other section controls are always shown, and go through `press()`. The same holds for a tab's close button: it shows on the tab of the chat in view, which goes through `press()`, and only on hover on any other tab, which goes through `pressHoverOnly()`.
 
 **Each press brings the window to the front first,** as a person's click would. The two instances take turns in front, and Chromium fires no focus or blur events in a window in the background. There a new folder's name field opened with no text chosen, so typing added to "New folder", and Enter could not leave the field. Seen in 2 of 2 tests on one run, and on none after the fix. The Fixture calls the app's own `set_focus`, which the app's capabilities already allow.
 
@@ -262,7 +262,11 @@ This moved a chat into a folder, split a tab into two panes, and opened a real p
 
 The Fixture's helper looks the target up only after `dragstart`, because some targets show only during a drag, and waits two frames after each event, so React has rendered what it changed.
 
-A popout's address holds the conversation ID, so tests must not depend on it across runs.
+A popout's address holds the conversation ID, so tests must not depend on it across runs. Its window handle is its Tauri label, `chat-<conversation ID>`, so the Fixture finds a popout as the one handle that was not there before the drag. The main window's handle is `main`.
+
+A drag out of the window is `dragstart` on the tab, a `dragleave` on the document with no `relatedTarget`, then `dragend` outside the window.
+
+**A popout left open breaks the next test.** The app focuses an open popout instead of opening a second one for the same chat, so a Reset must close it. With the Reset's first step removed, the next popout test found no new window.
 
 ### Uploading
 
@@ -410,9 +414,8 @@ No macOS code is written until someone can run it. Until then the suite runs on 
 
 **Open behaviour:**
 
-- A Reset with a popout open, and a crashed popout.
+- A crashed popout.
 - An app that hangs without exiting. The ping and each request have limits, but only a killed app was tried.
-- The tab close button. It uses `opacity-0`, which reads as hidden for the section controls, but it has not been tried.
 - Accessible names on the other modals. Only an open chat, two Settings screens, the auth screen and the friend screens were checked.
 - Whether a theme import accepts a synthetic `change` event.
 - A large Seed. Reset time was measured on very little data.
