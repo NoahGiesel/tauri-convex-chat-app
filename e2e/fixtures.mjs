@@ -2,10 +2,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { en } from '../src/i18n/en.ts';
-import { ASSETS, EXPIRED_INVITE_TOKEN, INTERFACE_WAIT_MS, MAIN_WINDOW, PASSWORD, POLL_MS, USERS } from './config.mjs';
+import { ASSET_TYPES, ASSETS, EXPIRED_INVITE_TOKEN, INTERFACE_WAIT_MS, MAIN_WINDOW, PASSWORD, POLL_MS, USERS } from './config.mjs';
 import { reset } from './reset.mjs';
-import { scriptedUser, waitUntil } from './scripted-user.mjs';
+import { scriptedUser } from './scripted-user.mjs';
 import { gifAddress, gifTitles, readStubLog } from './stub.mjs';
+import { waitUntil } from './wait.mjs';
 
 const WAIT = { timeout: INTERFACE_WAIT_MS, interval: POLL_MS };
 const COMPOSER = `aria/${en['chat.composer']}`;
@@ -75,18 +76,16 @@ const gifAt = (addresses) => `//img[@alt="${en['chat.gifAlt']}"][${addresses.map
 const LIGHTBOX = '//*[@role="dialog"][@aria-modal="true"]';
 const inLightbox = (file) => `//*[@role="dialog"][@aria-label="${file}"]`;
 const LIBRARY_BUTTON = `//button[@aria-label="${en['library.open']}"]`;
-/** The library is the panel whose tabs include Links. */
-const LIBRARY = `//div[div[@role="tablist"][button[normalize-space(.)="${en['library.links']}"]]]`;
+const LIBRARY = `//*[@role="region"][@aria-label="${en['library.open']}"]`;
 const libraryItem = (file) => `${LIBRARY}//button[starts-with(@title, "${file} · ")]`;
-/** A preview card is a link that shows the page's title. The link in the text shows only the address. */
-const previewCard = (text) => `//*[@data-testid="message"]//a[@href][contains(normalize-space(.), "${text}")][not(starts-with(normalize-space(.), "http"))]`;
+/** A preview card is a link that shows more than its address, which is all the link in the text shows. */
+const PREVIEW_CARD = '//*[@data-testid="message"]//a[@href][not(normalize-space(.) = @href)]';
 
 /** By the name before the extension: a photo is sent re-encoded, and may come back as a .webp. */
 const photo = (name) => `//img[starts-with(@alt, "${name}.")]`;
 const sentPhoto = (name) => `//*[@data-testid="message"]${photo(name)}`;
-const TYPES = { '.png': 'image/png', '.mp4': 'video/mp4', '.txt': 'text/plain' };
 /** A file from `e2e/assets`, ready to hand to the page, under its own name or another. */
-const asset = (file, name = file) => ({ name, type: TYPES[path.extname(file)], base64: fs.readFileSync(path.join(ASSETS, file)).toString('base64') });
+const asset = (file, name = file) => ({ name, type: ASSET_TYPES[path.extname(file)], base64: fs.readFileSync(path.join(ASSETS, file)).toString('base64') });
 
 /** The second element comes after the first in the page: lower down, or to the right of it in a row. */
 const followedBy = (first, then) => `${first}/following::${then.replace(/^\/\//, '')}`;
@@ -422,7 +421,9 @@ function drivenUser(name) {
         `${messageRow(`/giphy ${search}`)}${gifAt(gifTitles(search).map(gifAddress))}`,
         `${name} did not see a GIF found by "/giphy ${search}"`,
       ),
-    openPhoto: (photoName) => press(`//*[@data-testid="message"]${photo(photoName)}`),
+    openPhoto: (photoName) => press(sentPhoto(photoName)),
+    /** Where storage keeps a sent photo, as the stub's log names it. */
+    photoFile: async (photoName) => new URL(await b.$(sentPhoto(photoName)).getAttribute('src')).pathname,
     seesPhotoInLightbox: (file) => waitUntilLoaded(`${inLightbox(file)}//img`, `${name} did not see ${file} full size`),
     seesVideoInLightbox: (file) => waitUntilLoaded(`${inLightbox(file)}//video`, `${name} has no player that read ${file} full size`, hasMetadata),
     closeLightbox: () => press(`${LIGHTBOX}/button[@aria-label="${en['common.close']}"]`),
@@ -436,12 +437,13 @@ function drivenUser(name) {
     openFromLibrary: (file) => press(libraryItem(file)),
     showLibraryLinks: () => press(`${LIBRARY}//button[@role="tab"][normalize-space(.)="${en['library.links']}"]`),
     seesInLinkLibrary: (title) => waitUntilShown(`${LIBRARY}//a[@href][contains(normalize-space(.), "${title}")]`, `${name} did not see "${title}" in the link library`),
-    seesPreviewCard: (title) => waitUntilShown(previewCard(title), `${name} did not see a preview card for "${title}"`),
-    /** Only once the server has tried the link and found nothing, so the card cannot still be on its way. */
+    seesPreviewCard: (title) =>
+      waitUntilShown(`${PREVIEW_CARD}[contains(normalize-space(.), "${title}")]`, `${name} did not see a preview card for "${title}"`),
+    /** Only once the server, asked through a public function, has tried the link and found nothing, so the card cannot still be on its way. */
     async seesNoPreviewCard(link) {
       await (await scriptedUser(name)).seesFailedPreview(link);
       await user.seesMessage(link);
-      if (await b.$(`//*[@data-testid="message"]//a[@href="${link}"][not(normalize-space(.)="${link}")]`).isExisting()) {
+      if (await b.$(`${PREVIEW_CARD}[@href="${link}"]`).isExisting()) {
         throw new Error(`${name} sees a preview card for ${link}`);
       }
     },
@@ -684,10 +686,10 @@ export async function soloWithChats() {
 function storageFromNow() {
   const mark = readStubLog().length;
   return {
-    seesFileDeleted: (extension) =>
+    seesFileDeleted: (file) =>
       waitUntil(
-        () => readStubLog().slice(mark).some(({ method, path: file }) => method === 'DELETE' && file.endsWith(extension)),
-        `storage was not asked to delete a ${extension} file`,
+        () => readStubLog().slice(mark).some((request) => request.method === 'DELETE' && request.path === file),
+        `storage was not asked to delete ${file}`,
       ),
   };
 }

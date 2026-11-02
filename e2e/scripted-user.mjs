@@ -2,21 +2,12 @@
 // So their reads go through queries, and a read waits the way a Driven user's does.
 import fs from 'node:fs';
 import { api } from '../convex/_generated/api.js';
-import { INTERFACE_WAIT_MS, POLL_MS, SESSIONS_FILE } from './config.mjs';
+import { SESSIONS_FILE } from './config.mjs';
 import { clientFor } from './session-client.mjs';
+import { waitUntil } from './wait.mjs';
 
 /** The newest page, as the app loads it first. */
 const PAGE_SIZE = 30;
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-/** `timeoutMsg` may be a function, to name what was last seen. */
-export async function waitUntil(check, timeoutMsg) {
-  const end = Date.now() + INTERFACE_WAIT_MS;
-  while (!(await check())) {
-    if (Date.now() > end) throw new Error(typeof timeoutMsg === 'function' ? timeoutMsg() : timeoutMsg);
-    await sleep(POLL_MS);
-  }
-}
 
 export async function scriptedUser(name) {
   const client = await clientFor(JSON.parse(fs.readFileSync(SESSIONS_FILE, 'utf8'))[name], name);

@@ -57,11 +57,12 @@ describe('what a chat already holds', () => {
   it('deleting a photo deletes its file, and the next Reset brings the photo back', async () => {
     const { alice, bob, storage } = await mediaChatOpen();
     await alice.seesPhotoWithCaption('sunset', 'Seeded photo');
+    const file = await alice.photoFile('sunset');
 
     await alice.deleteMessage('Seeded photo');
 
     await bob.stopsSeeingMessage('Seeded photo');
-    await storage.seesFileDeleted('.png');
+    await storage.seesFileDeleted(file);
     const after = await mediaChatOpen();
     await after.bob.seesPhotoWithCaption('sunset', 'Seeded photo');
   });

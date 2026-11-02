@@ -8,6 +8,8 @@ export const STAGE = path.join(E2E_DIR, '.stage');
 export const SNAPSHOTS = path.join(STAGE, 'snapshots');
 /** Photos, a video and other files that tests and the `media` Seed upload. */
 export const ASSETS = path.join(E2E_DIR, 'assets');
+/** Each asset's type, by extension, as a file picker reports it. */
+export const ASSET_TYPES = { '.png': 'image/png', '.mp4': 'video/mp4', '.txt': 'text/plain' };
 export const SESSIONS_FILE = path.join(STAGE, 'sessions.json');
 /** Written once a test has ended. The stage starts empty, so a run that leaves none matched no test. */
 export const TEST_RAN_FILE = path.join(STAGE, 'a-test-ran');
@@ -55,13 +57,10 @@ export const HISTORY_MESSAGES = 70;
 
 /** What the `media` Seed holds, all sent by Alice to Bob. Tests refer to it by these names and words. */
 export const MEDIA_SEED = {
-  photo: 'sunset.png',
-  photoCaption: 'Seeded photo',
-  video: 'clip.mp4',
-  videoCaption: 'Seeded video',
+  photo: { file: 'sunset.png', caption: 'Seeded photo' },
+  video: { file: 'clip.mp4', caption: 'Seeded video' },
   // A reserved domain, whose preview is Seeded, so the app never fetches it.
-  link: 'https://example.com/seeded-page',
-  linkCaption: 'Seeded link',
+  link: { url: 'https://example.com/seeded-page', caption: 'Seeded link' },
   preview: { title: 'A Seeded page', description: 'Words from the Seed', siteName: 'Example' },
   avatar: 'harbour.png',
 };

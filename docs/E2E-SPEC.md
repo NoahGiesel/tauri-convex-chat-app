@@ -200,7 +200,7 @@ Every run has two Driven users, `alice` and `bob`. Single-user tests leave `bob`
 | Fixture | Seed | Hands to a test | Scenarios |
 |---|---|---|---|
 | `twoFriendsWithChatOpen` | `friends` | `alice`, `bob` with their chat open | Send a photo, send a video, caption, several files, remove a staged file, wrong type, too many files, GIF picker, `/giphy` |
-| `mediaChatOpen` | `media` | `alice`, `bob` with their chat open | Seeded attachment, lightbox, media library, link library, Seeded preview card, delete an attachment, a `.invalid` link shows no card |
+| `mediaChatOpen` | `media` | `alice`, `bob` with their chat open, and `storage`, the stub's record of deletions from the Reset on | Seeded attachment, lightbox, media library, link library, Seeded preview card, delete an attachment, a `.invalid` link shows no card |
 | `settingsOpen` | `friends` | `alice` in Settings, `bob` with the chat open | Name and bio seen live by Bob, set and remove an avatar, language, theme, sidebar side, accent colour, theme import, notify switch |
 
 - **Video:** a small real mp4 joins `e2e/`. A test sends it and checks that Bob's player loaded its metadata. WebView2's player reads the metadata of `e2e/assets/clip.mp4`: 2 s of H.264 Constrained Baseline, 160 by 120, no sound, `faststart`, 10 KB. It was made with `ffmpeg -f lavfi -i testsrc=size=160x120:rate=15:duration=2 -c:v libx264 -profile:v baseline -pix_fmt yuv420p -movflags +faststart -an`. WKWebView may need a specific codec.
@@ -220,7 +220,7 @@ const composer = () => b.$(`aria/${en['chat.composer']}`);
 - **All tests run in English**, because a Reset clears `chat:lang`.
 - **Seed data stays literal.** Names like `Bob Test` and message bodies are test data.
 - **A chat in the list is found by its tooltip**, its title then its presence, such as `Bob Test · Online`. The row's accessible name is its content, and that also holds the unread count.
-- **`data-testid` is the exception.** Use it only where no accessible name exists. The starting list is the tab drop zones, the message row and the three file inputs. If a person sees a control, it gets a real name instead.
+- **`data-testid` is the exception.** Use it only where no accessible name exists. The starting list is the tab drop zones, the message row and the three file inputs. The media library got `role="region"` and the name "Media", the same as the button that opens it. If a person sees a control, it gets a real name instead.
 
 ### Waiting
 
@@ -295,7 +295,7 @@ The suite never depends on a live service, so a developer needs no credentials a
 
 **Sent GIFs keep a giphy.com address**, because `messages.sendGif` accepts only `https` URLs on `*.giphy.com`, and that guard stays. So a sent GIF's image does not load in tests, and a test checks its address, not its pixels. The webview still asks media.giphy.com for it, so this is the one request a run sends out. `/giphy` picks a result at random, so its test accepts any of the three, under the line showing the search. The composer's GIF button has a name only in English, "GIF", so a Fixture finds it by that and by its `aria-expanded`.
 
-**Link previews.** A test sends only Seeded URLs or reserved `.invalid` ones, so nothing leaves the machine. A test that expects no card first waits, as a Scripted user, until the server has saved the failed preview, so the card cannot still be on its way. `isPublicHttpUrl` stays strict, with no bypass, so the real fetch runs only in the Manual smoke.
+**Link previews.** A test sends only Seeded URLs or reserved `.invalid` ones, so nothing leaves the machine. A test that expects no card first asks the server through a public function, and waits until it has saved the failed preview, so the card cannot still be on its way. `isPublicHttpUrl` stays strict, with no bypass, so the real fetch runs only in the Manual smoke.
 
 ## Unit tests
 

@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { getSetCookie } from '@convex-dev/better-auth/client/plugins';
 import { api } from '../convex/_generated/api.js';
-import { APP_ORIGIN, ASSETS, EXPIRED_INVITE_TOKEN, HISTORY_MESSAGES, MEDIA_SEED, PASSWORD, SESSIONS_FILE, SITE_URL, SNAPSHOTS, USERS } from './config.mjs';
+import { APP_ORIGIN, ASSET_TYPES, ASSETS, EXPIRED_INVITE_TOKEN, HISTORY_MESSAGES, MEDIA_SEED, PASSWORD, SESSIONS_FILE, SITE_URL, SNAPSHOTS, USERS } from './config.mjs';
 import { clientFor } from './session-client.mjs';
 import { convexInStage, importSeed } from './stage.mjs';
 
@@ -87,8 +87,9 @@ async function buildGroups({ alice, bob, carol }) {
 }
 
 /** The app's own path: a signed address from Convex, then a PUT to it, which in a run reaches the stub. */
-async function sendAsset(user, conversationId, file, mime, caption) {
+async function sendAsset(user, conversationId, { file, caption }) {
   const bytes = fs.readFileSync(path.join(ASSETS, file));
+  const mime = ASSET_TYPES[path.extname(file)];
   const { key, uploadUrl } = await user.client.action(api.media.createUpload, { conversationId, mime, size: bytes.length });
   const put = await fetch(uploadUrl, { method: 'PUT', headers: { 'content-type': mime }, body: bytes });
   if (!put.ok) throw new Error(`upload ${file}: ${put.status}`);
@@ -97,7 +98,7 @@ async function sendAsset(user, conversationId, file, mime, caption) {
 
 async function setAvatar(user, file) {
   const uploadUrl = await user.client.mutation(api.users.generateAvatarUploadUrl, {});
-  const res = await fetch(uploadUrl, { method: 'POST', headers: { 'content-type': 'image/png' }, body: fs.readFileSync(path.join(ASSETS, file)) });
+  const res = await fetch(uploadUrl, { method: 'POST', headers: { 'content-type': ASSET_TYPES[path.extname(file)] }, body: fs.readFileSync(path.join(ASSETS, file)) });
   if (!res.ok) throw new Error(`avatar ${file}: ${res.status}`);
   await user.client.mutation(api.users.setAvatar, { storageId: (await res.json()).storageId });
 }
@@ -108,10 +109,11 @@ async function setAvatar(user, file) {
  */
 async function buildMedia({ alice }, conversationId) {
   importSeed('friends');
-  await sendAsset(alice, conversationId, MEDIA_SEED.photo, 'image/png', MEDIA_SEED.photoCaption);
-  await sendAsset(alice, conversationId, MEDIA_SEED.video, 'video/mp4', MEDIA_SEED.videoCaption);
-  await alice.client.mutation(api.messages.send, { conversationId, body: `${MEDIA_SEED.linkCaption} ${MEDIA_SEED.link}` });
-  convexInStage(['run', 'previews:save', JSON.stringify({ url: MEDIA_SEED.link, ok: true, ...MEDIA_SEED.preview })]);
+  await sendAsset(alice, conversationId, MEDIA_SEED.photo);
+  await sendAsset(alice, conversationId, MEDIA_SEED.video);
+  const { url, caption } = MEDIA_SEED.link;
+  await alice.client.mutation(api.messages.send, { conversationId, body: `${caption} ${url}` });
+  convexInStage(['run', 'previews:save', JSON.stringify({ url, ok: true, ...MEDIA_SEED.preview })]);
   await setAvatar(alice, MEDIA_SEED.avatar);
   snapshot('media', { withFiles: true });
 }
