@@ -216,9 +216,9 @@ function drivenUser(name) {
     await b.execute(chooseFiles, await b.$(input), files);
   };
 
-  /** `loaded` runs in the page, on the element. */
-  const waitUntilLoaded = (selector, timeoutMsg, loaded = hasLoaded) =>
-    b.waitUntil(async () => (await b.$(selector).isExisting()) && b.execute(loaded, await b.$(selector)), { ...WAIT, timeoutMsg });
+  /** `isReady` runs in the page, on the element: an image has loaded, or a player has read its video. */
+  const waitUntilLoaded = (selector, timeoutMsg, isReady = hasLoaded) =>
+    b.waitUntil(async () => (await b.$(selector).isExisting()) && b.execute(isReady, await b.$(selector)), { ...WAIT, timeoutMsg });
 
   /** A field that opens focused, with its text chosen, so typing replaces it. */
   const typeInFocused = async (selector, text) => {
