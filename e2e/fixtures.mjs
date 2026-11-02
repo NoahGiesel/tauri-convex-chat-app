@@ -61,12 +61,13 @@ const tabDrop = (side) => `//*[@data-testid="tab-drop-${side}"]`;
 const secondComposer = `(//textarea[@aria-label="${en['chat.composer']}"])[2]`;
 const ATTACH_INPUT = '//input[@data-testid="attach-input"]';
 const REMOVE_STAGED = `//button[@aria-label="${en['composer.removeAttachment']}"]`;
-/** A file waiting in the composer, by its name, shown under a video and as a photo's description. */
-const staged = (file) => `//div[button[@aria-label="${en['composer.removeAttachment']}"]][img[@alt="${file}"] or .//span[normalize-space(.)="${file}"]]`;
+/** A photo waiting in the composer, by its name, which is its description. */
+const staged = (file) => `//div[button[@aria-label="${en['composer.removeAttachment']}"]][img[@alt="${file}"]]`;
 /** By the name before the extension: a photo is sent re-encoded, and may come back as a .webp. */
 const photo = (name) => `//img[starts-with(@alt, "${name}.")]`;
+const sentPhoto = (name) => `//*[@data-testid="message"]${photo(name)}`;
 const ASSETS = path.join(E2E_DIR, 'assets');
-const TYPES = { '.png': 'image/png', '.mp4': 'video/mp4', '.txt': 'text/plain' };
+const TYPES = { '.png': 'image/png', '.txt': 'text/plain' };
 /** A file from `e2e/assets`, ready to hand to the page, under its own name or another. */
 const asset = (file, name = file) => ({ name, type: TYPES[path.extname(file)], base64: fs.readFileSync(path.join(ASSETS, file)).toString('base64') });
 
@@ -153,15 +154,20 @@ function drivenUser(name) {
   const waitUntilClickable = (selector) =>
     b.waitUntil(async () => b.$(selector).isClickable(), { ...WAIT, timeoutMsg: `${name} could not press ${selector}` });
 
-  /** The two instances take turns in front, and only the one in front gets focus events. */
+  /**
+   * Only for what needs focus events, because Windows lets a window take the front only while no other app is in use.
+   * The two instances take turns in front, and only the one in front gets focus events.
+   */
   const bringToFront = async () => {
     await b.execute(bringWindowToFront);
-    await b.waitUntil(() => b.execute(() => document.hasFocus()), { ...WAIT, timeoutMsg: `${name} did not come to the front` });
+    await b.waitUntil(() => b.execute(() => document.hasFocus()), {
+      ...WAIT,
+      timeoutMsg: `${name} did not come to the front, which this step needs. Another app in use, or a locked screen, stops it`,
+    });
   };
 
   const press = async (selector) => {
     await waitUntilClickable(selector);
-    await bringToFront();
     await b.$(selector).click();
   };
 
@@ -171,7 +177,6 @@ function drivenUser(name) {
    */
   const pressWithPointer = async (selector) => {
     await waitUntilClickable(selector);
-    await bringToFront();
     await b.action('pointer').move({ origin: await b.$(selector) }).down().up().perform();
   };
 
@@ -181,7 +186,6 @@ function drivenUser(name) {
   const pressHoverOnly = async (selector) => {
     await waitUntilExists(selector, `${name} has no ${selector}`);
     if (await b.$(selector).isDisplayed()) throw new Error(`${selector} is not hover-only any more, so use press()`);
-    await bringToFront();
     await b.$(selector).click();
   };
 
@@ -242,6 +246,11 @@ function drivenUser(name) {
     async openChat(title) {
       await press(`aria/${title}`);
       await waitUntilShown(COMPOSER, `${name} has no composer in the chat with ${title}`);
+    },
+    /** The app marks a chat read only while its window has focus, as when a person looks at it. */
+    async readChat(title) {
+      await bringToFront();
+      await user.openChat(title);
     },
     async send(text) {
       await b.$(COMPOSER).setValue(text);
@@ -369,14 +378,16 @@ function drivenUser(name) {
     seesWrongFileType: () => waitUntilShown(roleSelector('alert', en['error.media_type']), `${name} was not told the file is the wrong type`),
     seesTooManyFiles: () => waitUntilShown(roleSelector('alert', en['error.too_many_attachments']), `${name} was not told there are too many files`),
     sendStaged: () => press(`aria/${en['chat.send']}`),
-    seesPhoto: (photoName) => waitUntilLoaded(`//*[@data-testid="message"]${photo(photoName)}`, `${name} did not see the photo ${photoName} load`),
+    seesPhoto: (photoName) => waitUntilLoaded(sentPhoto(photoName), `${name} did not see the photo ${photoName} load`),
     seesPhotoWithCaption: (photoName, caption) =>
       waitUntilLoaded(`${messageRow(caption)}${photo(photoName)}`, `${name} did not see the photo ${photoName} load with "${caption}"`),
-    /** In one message, so they were sent together. */
-    seesPhotosTogether: (first, second) =>
-      waitUntilLoaded(`//*[@data-testid="message"][.${photo(first)}]${photo(second)}`, `${name} did not see ${first} and ${second} in one message`),
+    /** In one message, so they were sent together, and both loaded. */
+    async seesPhotosTogether(first, second) {
+      const together = `//*[@data-testid="message"][.${photo(first)}][.${photo(second)}]`;
+      for (const one of [first, second]) await waitUntilLoaded(`${together}${photo(one)}`, `${name} did not see ${one} load beside the other in one message`);
+    },
     async doesNotSeePhoto(photoName) {
-      if (await b.$(photo(photoName)).isExisting()) throw new Error(`${name} sees the photo ${photoName}`);
+      if (await b.$(sentPhoto(photoName)).isExisting()) throw new Error(`${name} sees the photo ${photoName}`);
     },
 
     seesTab: (title) => waitUntilShown(tab(title), `${name} has no tab for ${title}`),
@@ -430,13 +441,16 @@ function drivenUser(name) {
       waitUntilShown(followedBy(section(upper), section(lower)), `${name} did not see ${upper} above ${lower}`),
     seesChatInSection: (title, sectionTitle) =>
       waitUntilShown(`${section(sectionTitle)}${chatRow(title)}`, `${name} did not see ${title} in ${sectionTitle}`),
+    /** A folder's name field chooses its text on focus and saves on blur, so its window must be in front. */
     async createFolder(title) {
+      await bringToFront();
       await press(`aria/${en['side.newFolder']}`);
       await typeInFocused(FOLDER_NAME, title);
       await waitUntilShown(section(title), `${name} has no folder called ${title}`);
     },
     /** Rename and Delete show only on hover. */
     async renameFolder(title, newTitle) {
+      await bringToFront();
       await pressHoverOnly(folderControl(title, en['side.renameFolder']));
       await typeInFocused(FOLDER_NAME, newTitle);
       await waitUntilShown(section(newTitle), `${name} has no folder called ${newTitle}`);

@@ -53,7 +53,6 @@ describe('sending photos', () => {
     await alice.attach('note.txt');
 
     await alice.seesWrongFileType();
-    await alice.stopsSeeingStaged('note.txt');
   });
 
   it('a message takes ten files, and refuses the rest', async () => {

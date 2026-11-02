@@ -242,9 +242,9 @@ Hover cannot be driven. `moveTo` does not trigger `:hover`, and a pointer move o
 
 `opacity-0` reads as hidden. WebdriverIO 9's `isDisplayed` calls `checkVisibility` with `opacityProperty`, so `isClickable` is false for the folder controls, Rename and Delete, and they go through `pressHoverOnly()`. The other section controls are always shown, and go through `press()`. The same holds for a tab's close button: it shows on the tab of the focused chat, which goes through `press()`, and only on hover on any other tab, which goes through `pressHoverOnly()`. In a split view, only one of the chats in view is focused.
 
-**Each press brings the window to the front first,** as a person's click would. The two instances take turns in front, and Chromium fires no focus or blur events in a window in the background. There a new folder's name field opened with no text chosen, so typing added to "New folder", and Enter could not leave the field. Seen in 2 of 2 tests on one run, and on none after the fix. The Fixture calls the app's own `set_focus`, which the app's capabilities already allow.
+**Focus events need the window in front.** The two instances take turns in front, and Chromium fires no focus or blur events in a window in the background. There a new folder's name field opened with no text chosen, so typing added to "New folder", and Enter could not leave the field. Seen in 2 of 2 tests on one run. The app also marks a chat read only while its window has focus. So the folder actions, and reading a chat to clear its unread badge, first bring their window to the front, with the app's own `set_focus`, which the app's capabilities already allow.
 
-So a run keeps taking the keyboard focus. **Do not type during a run:** the keys reach the instance in front. One run saw "bob" typed into a search box become "bobs", once, with no `s` in any test.
+Only those actions do it. Bringing the window forward on every press made 4 tests fail in one run: Windows lets a window take the front only while no other app is in use, and the developer was using one. It also let a stray key reach a test: "bob" typed into a search box once became "bobs". Those tests can still fail while another app is in use or the screen is locked, and say so.
 
 ### Dragging
 

@@ -67,6 +67,7 @@ Copy dev → prod with `npx convex env list` / `set --prod`):
 | `BETTER_AUTH_SECRET` | Better Auth signing secret |
 | `SITE_URL` | Extra trusted origin for auth (the app origins `tauri://localhost`, `http(s)://tauri.localhost`, `http://localhost:1420` are already hard-coded in `convex/auth.ts`) |
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | Cloudflare R2 credentials (token with *Object Read & Write* on that bucket only) |
+| `R2_ENDPOINT` | **Never set it on dev or prod.** Only the E2E Test backend sets it, to point R2 at a local stub |
 | `R2_JURISDICTION` | **Required when the bucket was created in the EU jurisdiction** (`eu`). Without it uploads fail with a CORS-looking `network/CORS` error |
 | `OPENROUTER_API_KEY` | Enables the "Summarize" button (links, YouTube/video files and texts over 10k characters). Model: `google/gemini-3.1-flash-lite` (see `convex/summaryPrompt.ts`). Without it the button shows a "not set up" error |
 | `AI_MODEL` | Optional. OpenRouter model used for `/ask` and for all transcriptions. Default `google/gemini-3.1-flash-lite`. YouTube links are sent as URLs, so the model must read them (Gemini does); with another model they may fail |
