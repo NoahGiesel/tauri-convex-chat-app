@@ -325,7 +325,7 @@ These come from one machine with very little data. Treat them as orders of magni
 | Later `tauri build` | 15 to 17 s |
 | Backend start and function push | 2.6 to 4.6 s |
 | All Seed work, four Seeds | 9.6 s |
-| Building `history`: a Reset, 70 messages sent one at a time, and the export | 3.5 to 3.7 s |
+| Building `history`: a Reset, 70 messages sent one at a time, and the export | 3.3 to 3.7 s |
 | Reset plus Fixture, 40 idle rounds | Median 2.2 s, max 2.4 s |
 | Reset plus Fixture, 20 rounds with all cores busy | Median 3.9 s, max 6.1 s |
 | Message reaches the other user, idle | Median 28 ms, max 138 ms |
