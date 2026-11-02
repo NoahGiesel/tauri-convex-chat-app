@@ -88,6 +88,7 @@ describe('a popout', () => {
 
     await after.alice.seesOnlyMainWindow();
     await after.alice.openChat('Weekend');
+    await after.alice.popOut('Weekend');
     await after.alice.seesMessage('Seeded group hello');
   });
 });

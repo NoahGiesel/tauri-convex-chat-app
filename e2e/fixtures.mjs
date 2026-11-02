@@ -57,7 +57,7 @@ const tab = (title) => `//div[@draggable="true"][.${tabClose(title)}]`;
 /** Where a dragged tab drops to split the view. They show only during a drag, on the one chat shown. */
 const tabDrop = (side) => `//*[@data-testid="tab-drop-${side}"]`;
 const secondComposer = `(//textarea[@aria-label="${en['chat.composer']}"])[2]`;
-/** The second element comes after the first in the page, so a person sees it lower down. */
+/** The second element comes after the first in the page: lower down, or to the right of it in a row. */
 const followedBy = (first, then) => `${first}/following::${then.replace(/^\/\//, '')}`;
 
 /** Runs in the page. What a person can see of how some words are set. */
@@ -87,8 +87,13 @@ function unnamedControls() {
 async function fireDragEvent(element, type, at) {
   if (type === 'dragstart') window.e2eDataTransfer = new DataTransfer();
   const rect = element.getBoundingClientRect();
-  const clientY = { top: rect.top + 2, middle: rect.top + rect.height / 2, bottom: rect.bottom - 2, outside: -50 }[at];
-  const clientX = at === 'outside' ? -50 : rect.left + rect.width / 2;
+  const centreX = rect.left + rect.width / 2;
+  const [clientX, clientY] = {
+    top: [centreX, rect.top + 2],
+    middle: [centreX, rect.top + rect.height / 2],
+    bottom: [centreX, rect.bottom - 2],
+    outside: [-50, -50],
+  }[at];
   const init = { bubbles: true, cancelable: true, clientX, clientY, dataTransfer: window.e2eDataTransfer };
   element.dispatchEvent(new DragEvent(type, init));
   await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
@@ -317,16 +322,16 @@ function drivenUser(name) {
     closeTab: (title) => press(tabClose(title)),
     /** Any other tab shows its close button only on hover. */
     closeBackgroundTab: (title) => pressHoverOnly(tabClose(title)),
-    showTab: (title) => press(`${tab(title)}/button[1]`),
+    showTab: (title) => press(`${tab(title)}/button[.//span[normalize-space(.)="${title}"]]`),
     splitView: (title, side) => drag(tab(title), tabDrop(side)),
-    /** Two chats shown at once, each with its own composer, the first message's to the left. */
+    /** Two chats shown at once, each with its own composer. The panes sit in a row, so the first in the page is on the left. */
     async seesSideBySide(leftMessage, rightMessage) {
       await waitUntilShown(secondComposer, `${name} does not see two chats at once`);
       await waitUntilShown(followedBy(messageRow(leftMessage), messageRow(rightMessage)), `${name} did not see "${leftMessage}" left of "${rightMessage}"`);
     },
     async seesOneChatAtATime() {
+      await waitUntilGone(secondComposer, `${name} still sees two chats at once`);
       await waitUntilShown(COMPOSER, `${name} has no chat open`);
-      if (await b.$(secondComposer).isExisting()) throw new Error(`${name} still sees two chats at once`);
     },
     /**
      * Drags the tab out of the window, which opens the chat in a window of its own, then acts there.

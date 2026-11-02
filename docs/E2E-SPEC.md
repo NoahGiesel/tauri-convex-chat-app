@@ -240,9 +240,11 @@ The driver's `click()` is synthetic. It presses a button under a full-screen cov
 
 Hover cannot be driven. `moveTo` does not trigger `:hover`, and a pointer move onto a hidden element fails with `could not read element center`. Message actions, the tab close button and the section controls all depend on hover.
 
-`opacity-0` reads as hidden. WebdriverIO 9's `isDisplayed` calls `checkVisibility` with `opacityProperty`, so `isClickable` is false for the folder controls, Rename and Delete, and they go through `pressHoverOnly()`. The other section controls are always shown, and go through `press()`. The same holds for a tab's close button: it shows on the tab of the chat in view, which goes through `press()`, and only on hover on any other tab, which goes through `pressHoverOnly()`.
+`opacity-0` reads as hidden. WebdriverIO 9's `isDisplayed` calls `checkVisibility` with `opacityProperty`, so `isClickable` is false for the folder controls, Rename and Delete, and they go through `pressHoverOnly()`. The other section controls are always shown, and go through `press()`. The same holds for a tab's close button: it shows on the tab of the focused chat, which goes through `press()`, and only on hover on any other tab, which goes through `pressHoverOnly()`. In a split view, only one of the chats in view is focused.
 
 **Each press brings the window to the front first,** as a person's click would. The two instances take turns in front, and Chromium fires no focus or blur events in a window in the background. There a new folder's name field opened with no text chosen, so typing added to "New folder", and Enter could not leave the field. Seen in 2 of 2 tests on one run, and on none after the fix. The Fixture calls the app's own `set_focus`, which the app's capabilities already allow.
+
+So a run keeps taking the keyboard focus. **Do not type during a run:** the keys reach the instance in front. One run saw "bob" typed into a search box become "bobs", once, with no `s` in any test.
 
 ### Dragging
 
