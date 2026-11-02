@@ -41,6 +41,8 @@ export const BACKEND_VERSION = 'precompiled-2026-10-22-1447815';
 export const TEST_SECRET = 'e2e-test-only-secret-never-use-on-a-real-deployment';
 
 export const EXPIRED_INVITE_TOKEN = 'e2e-expired-invite';
+/** On top of `friends`' one, so that the direct chat holds three pages of 30. */
+export const HISTORY_MESSAGES = 70;
 export const PASSWORD = 'correct-horse-battery';
 export const USERS = {
   alice: { name: 'Alice Test', email: 'alice@e2e.invalid' },

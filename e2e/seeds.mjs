@@ -4,7 +4,7 @@ import path from 'node:path';
 import { getCookie, getSetCookie } from '@convex-dev/better-auth/client/plugins';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../convex/_generated/api.js';
-import { APP_ORIGIN, CONVEX_URL, EXPIRED_INVITE_TOKEN, PASSWORD, SESSIONS_FILE, SITE_URL, SNAPSHOTS, USERS } from './config.mjs';
+import { APP_ORIGIN, CONVEX_URL, EXPIRED_INVITE_TOKEN, HISTORY_MESSAGES, PASSWORD, SESSIONS_FILE, SITE_URL, SNAPSHOTS, USERS } from './config.mjs';
 import { convexInStage, importSeed } from './stage.mjs';
 
 async function signUp({ name, email }) {
@@ -46,6 +46,7 @@ async function buildFriends({ alice, bob }) {
   const conversationId = await bob.client.mutation(api.friends.accept, { friendshipId: incoming[0].friendshipId });
   await alice.client.mutation(api.messages.send, { conversationId, body: 'Seeded hello' });
   snapshot('friends');
+  return conversationId;
 }
 
 /** Branches from `base`, so that Seed goes back in first. No public function can make an invite that has expired. */
@@ -56,11 +57,25 @@ function buildExpiredInvite() {
   snapshot('expired-invite');
 }
 
+/** Branches from `friends`. Zero-padded, so that no message's text holds another's, as "History 1" would hold "History 10". */
+async function buildHistory({ alice, bob }, conversationId) {
+  const start = Date.now();
+  importSeed('friends');
+  for (let i = 1; i <= HISTORY_MESSAGES; i++) {
+    const author = i % 2 ? bob : alice;
+    await author.client.mutation(api.messages.send, { conversationId, body: `History ${String(i).padStart(2, '0')}` });
+  }
+  snapshot('history');
+  // The spec records this time. A Seed this big was never measured before.
+  console.log(`[e2e] the history Seed took ${((Date.now() - start) / 1000).toFixed(1)} s`);
+}
+
 export async function buildSeeds() {
   fs.mkdirSync(SNAPSHOTS, { recursive: true });
   const users = await buildBase();
-  await buildFriends(users);
+  const directChat = await buildFriends(users);
   buildExpiredInvite();
+  await buildHistory(users, directChat);
 
   const sessions = Object.fromEntries(Object.entries(users).map(([key, { session }]) => [key, session]));
   fs.writeFileSync(SESSIONS_FILE, JSON.stringify(sessions));

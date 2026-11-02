@@ -18,6 +18,12 @@ const messageRow = (text) => `//*[@data-testid="message"][contains(normalize-spa
 const messageButton = (text, label) => `${messageRow(text)}//button[@aria-label="${label}"]`;
 /** The raw text, not `messageRow()`: `normalize-space` would hide the spaces that `/pre` keeps. */
 const messageWords = (text) => `//*[@data-testid="message"]//*[text()[contains(., "${text}")]]`;
+/** A chat in the list, by its title. The row is named by its content, which also holds the unread count. */
+const chatRow = (title) => `//button[starts-with(@title, "${title} · ")]`;
+const unreadBadge = (title, count) => `${chatRow(title)}//*[@title="${en['side.unread'].replace('{count}', count)}"]`;
+const anyUnreadBadge = (title) => `${chatRow(title)}//*[contains(@title, "${en['side.unread'].replace('{count}', '')}")]`;
+const LOAD_OLDER = `aria/${en['chat.loadOlder']}`;
+const JUMP_TO_LATEST = `aria/${en['chat.jumpToLatest']}`;
 const reactionChip = (text, emoji) => `${messageRow(text)}//button[@aria-pressed][contains(normalize-space(.), "${emoji}")]`;
 
 /** Runs in the page. What a person can see of how some words are set. */
@@ -49,6 +55,15 @@ function drivenUser(name) {
   const press = async (selector) => {
     await b.waitUntil(async () => b.$(selector).isClickable(), { ...WAIT, timeoutMsg: `${name} could not press ${selector}` });
     await b.$(selector).click();
+  };
+
+  /**
+   * For a button that starts a smooth scroll. The driver's click() focuses the button after clicking it,
+   * and that focus stops the scroll. A pointer focuses on the way down, before the click, as a mouse does.
+   */
+  const pressWithPointer = async (selector) => {
+    await b.waitUntil(async () => b.$(selector).isClickable(), { ...WAIT, timeoutMsg: `${name} could not press ${selector}` });
+    await b.action('pointer').move({ origin: await b.$(selector) }).down().up().perform();
   };
 
   /** For actions shown only on hover, which cannot be driven. If this one stops being hidden, it moves to `press()`. */
@@ -99,6 +114,18 @@ function drivenUser(name) {
     },
 
     seesMessage: (text) => waitUntilShown(messageRow(text), `${name} did not see the message "${text}"`),
+    /** Scrolled to where a person would see it, not only somewhere in the chat. */
+    seesMessageInView: (text) =>
+      b.waitUntil(async () => b.$(messageRow(text)).isDisplayed({ withinViewport: true }), {
+        ...WAIT,
+        timeoutMsg: `${name} did not see the message "${text}" without scrolling`,
+      }),
+    async doesNotSeeMessageInView(text) {
+      if (await b.$(messageRow(text)).isDisplayed({ withinViewport: true })) throw new Error(`${name} still sees the message "${text}"`);
+    },
+    loadOlderMessages: () => press(LOAD_OLDER),
+    seesAllMessagesLoaded: () => waitUntilGone(LOAD_OLDER, `${name} can still load older messages`),
+    jumpToLatest: () => pressWithPointer(JUMP_TO_LATEST),
     async doesNotSeeMessage(text) {
       if (await b.$(messageRow(text)).isExisting()) throw new Error(`${name} still sees the message "${text}"`);
     },
@@ -159,6 +186,10 @@ function drivenUser(name) {
       return landed;
     },
     seesCoinOn: (side) => waitUntilShown(messageRow(`🪙 ${side}`), `${name} did not see the coin on ${side}`),
+
+    seesUnread: (title, count) => waitUntilShown(unreadBadge(title, count), `${name} did not see ${count} unread in ${title}`),
+    seesNoUnread: (title) => waitUntilGone(anyUnreadBadge(title), `${name} still sees unread messages in ${title}`),
+    seesOnline: (person) => waitUntilShown(`//button[@title="${person} · ${en['side.online']}"]`, `${name} did not see ${person} online`),
 
     seesAuthScreen: () => waitUntilShown(textSelector(en['auth.welcomeBack']), `${name} is not on the auth screen`),
     seesChats: () => waitUntilShown(SETTINGS, `${name} did not reach their chats`),
@@ -269,6 +300,21 @@ export async function expiredInviteLink() {
   const bob = drivenUser('bob');
   await bob.seesChats();
   return { bob, link: `chat://invite/${EXPIRED_INVITE_TOKEN}` };
+}
+
+export async function twoFriends() {
+  await reset('friends');
+  const { alice, bob } = aliceAndBob();
+  await alice.seesChats();
+  await bob.seesChats();
+  return { alice, bob };
+}
+
+export async function longChat() {
+  await reset('history');
+  const alice = drivenUser('alice');
+  await alice.openChat(USERS.bob.name);
+  return { alice };
 }
 
 export async function twoFriendsWithChatOpen() {
