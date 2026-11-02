@@ -246,6 +246,7 @@ export const it: Messages = {
   "side.folderEmpty": "Trascina qui le chat.",
   "side.renameFolder": "Rinomina cartella",
   "side.deleteFolder": "Elimina cartella",
+  "side.folderName": "Nome della cartella",
   "composer.cmdGiphy": "Invia una GIF a caso cercando su GIPHY con il tuo testo",
   "composer.giphyUsage": "Scrivi cosa cercare dopo il comando, ad esempio /giphy gatti.",
   "composer.giphySearching": "Cerco su GIPHY…",

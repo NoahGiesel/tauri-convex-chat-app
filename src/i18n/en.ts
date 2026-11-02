@@ -245,6 +245,7 @@ export const en = {
   "side.folderEmpty": "Drag chats here.",
   "side.renameFolder": "Rename folder",
   "side.deleteFolder": "Delete folder",
+  "side.folderName": "Folder name",
   "composer.cmdGiphy": "Post a random GIF found by searching GIPHY with your text",
   "composer.giphyUsage": "Add something to search after the command, e.g. /giphy cats.",
   "composer.giphySearching": "Searching GIPHY…",

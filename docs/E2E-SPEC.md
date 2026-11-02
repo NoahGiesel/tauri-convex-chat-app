@@ -240,6 +240,10 @@ The driver's `click()` is synthetic. It presses a button under a full-screen cov
 
 Hover cannot be driven. `moveTo` does not trigger `:hover`, and a pointer move onto a hidden element fails with `could not read element center`. Message actions, the tab close button and the section controls all depend on hover.
 
+`opacity-0` reads as hidden. WebdriverIO 9's `isDisplayed` calls `checkVisibility` with `opacityProperty`, so `isClickable` is false for the folder controls, Rename and Delete, and they go through `pressHoverOnly()`. The other section controls are always shown, and go through `press()`.
+
+**Each press brings the window to the front first,** as a person's click would. The two instances take turns in front, and Chromium fires no focus or blur events in a window in the background. There a new folder's name field opened with no text chosen, so typing added to "New folder", and Enter could not leave the field. Seen in 2 of 2 tests on one run, and on none after the fix. The Fixture calls the app's own `set_focus`, which the app's capabilities already allow.
+
 ### Dragging
 
 WebDriver's `dragAndDrop` does nothing in WebView2 with the `embedded` driver, because no `dragstart` fires. Dispatch synthetic `DragEvent`s with a real `DataTransfer` from `execute` instead:
@@ -254,7 +258,9 @@ fire(target, 'drop');
 fire(source, 'dragend');
 ```
 
-This moved a chat into a folder, split a tab into two panes, and opened a real popout that was signed in and could be driven. It skips the gesture itself, so the Manual smoke holds the three real gestures.
+This moved a chat into a folder, split a tab into two panes, and opened a real popout that was signed in and could be driven. It also reorders chats and sections, which take the `clientY` of the event to choose above or below. It skips the gesture itself, so the Manual smoke holds the three real gestures.
+
+The Fixture's helper looks the target up only after `dragstart`, because some targets show only during a drag, and waits two frames after each event, so React has rendered what it changed.
 
 A popout's address holds the conversation ID, so tests must not depend on it across runs.
 
@@ -406,8 +412,7 @@ No macOS code is written until someone can run it. Until then the suite runs on 
 
 - A Reset with a popout open, and a crashed popout.
 - An app that hangs without exiting. The ping and each request have limits, but only a killed app was tried.
-- Section and chat reordering by drag. Only moving a chat into a folder was tried.
-- The tab close button and section controls. They use `opacity-0`, not `display: none`, so `isClickable` may read them differently.
+- The tab close button. It uses `opacity-0`, which reads as hidden for the section controls, but it has not been tried.
 - Accessible names on the other modals. Only an open chat, two Settings screens, the auth screen and the friend screens were checked.
 - Whether a theme import accepts a synthetic `change` event.
 - A large Seed. Reset time was measured on very little data.
