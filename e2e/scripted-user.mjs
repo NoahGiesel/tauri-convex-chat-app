@@ -10,7 +10,7 @@ const PAGE_SIZE = 30;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /** `timeoutMsg` may be a function, to name what was last seen. */
-async function waitUntil(check, timeoutMsg) {
+export async function waitUntil(check, timeoutMsg) {
   const end = Date.now() + INTERFACE_WAIT_MS;
   while (!(await check())) {
     if (Date.now() > end) throw new Error(typeof timeoutMsg === 'function' ? timeoutMsg() : timeoutMsg);
@@ -46,6 +46,11 @@ export async function scriptedUser(name) {
     },
     /** Shows this user online to the others, as their app would. */
     comesOnline: () => client.mutation(api.users.heartbeat, {}),
+    /** Also deletes the file from Convex storage. */
+    removeProfilePhoto: () => client.mutation(api.users.removeAvatar, {}),
+    /** The server tried the link and found nothing to show. */
+    seesFailedPreview: (url) =>
+      waitUntil(async () => (await client.query(api.previews.get, { url }))?.ok === false, `${name} has no failed preview for ${url}`),
 
     seesMessage: (title, text) =>
       waitUntil(async () => (await latestBodies(title)).includes(text), `${name} did not see the message "${text}" in ${title}`),

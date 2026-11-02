@@ -140,7 +140,9 @@ Seeds are built at the start of every run and saved as snapshots with `convex ex
 | `expired-invite` | `base` | An expired invite from Alice, with a fixed token |
 | `media` | `friends` | A photo, a video, a link with a Seeded preview, and an avatar for Alice |
 
-`media` is exported with `--include-file-storage`, because avatars live in Convex file storage. Its preview row comes from the existing internal `previews:save`.
+`media` is exported with `--include-file-storage`, because avatars live in Convex file storage. Its preview row comes from the existing internal `previews:save`. Its photo and video go up the app's own way, a signed address from `media.createUpload` and then a PUT, so they land in the stub, which a Reset does not touch. `MEDIA_SEED` in `config.mjs` names what it holds.
+
+An import does not empty Convex file storage, so a file from an earlier Seed is still there after a Reset to a snapshot without it. So the avatar test first removes Alice's photo, which deletes its file, and only then checks that a Reset brings it back. Without `--include-file-storage` that test fails, and checking the photo alone did not.
 
 Carol's `lastSeenAt` and the expired invite use the internal fallback. `groups`, `history`, `media` and `expired-invite` branch from an earlier Seed, so building them needs a Reset first.
 
@@ -293,7 +295,7 @@ The suite never depends on a live service, so a developer needs no credentials a
 
 **Sent GIFs keep a giphy.com address**, because `messages.sendGif` accepts only `https` URLs on `*.giphy.com`, and that guard stays. So a sent GIF's image does not load in tests, and a test checks its address, not its pixels. The webview still asks media.giphy.com for it, so this is the one request a run sends out. `/giphy` picks a result at random, so its test accepts any of the three, under the line showing the search. The composer's GIF button has a name only in English, "GIF", so a Fixture finds it by that and by its `aria-expanded`.
 
-**Link previews.** A test sends only Seeded URLs or reserved `.invalid` ones, so nothing leaves the machine. `isPublicHttpUrl` stays strict, with no bypass, so the real fetch runs only in the Manual smoke.
+**Link previews.** A test sends only Seeded URLs or reserved `.invalid` ones, so nothing leaves the machine. A test that expects no card first waits, as a Scripted user, until the server has saved the failed preview, so the card cannot still be on its way. `isPublicHttpUrl` stays strict, with no bypass, so the real fetch runs only in the Manual smoke.
 
 ## Unit tests
 
@@ -348,6 +350,7 @@ These come from one machine with very little data. Treat them as orders of magni
 | Six photo tests, Fixtures included | 15 s |
 | Sending the 10 KB video, Fixture included | 2.4 s |
 | Three GIF tests, Fixtures included | 7.7 s |
+| Seven tests on the `media` Seed, Fixtures included, two with a second Reset | 10 s |
 
 **A full run should take about 7 minutes.** That is an estimate: 68 scenarios at about 5 s each, plus about 40 s to start.
 
@@ -418,6 +421,7 @@ No macOS code is written until someone can run it. Until then the suite runs on 
 - The five-language test.
 - A `media` Seed with a video and a link message. The prototype's had neither.
 - A real video anywhere but WebView2.
+- Whether the resolver asked about a `.invalid` host sends the question out. RFC 6761 tells resolvers to answer it themselves.
 - A video served in parts. The stub ignores `Range` and always sends the whole file, where R2 answers a range with 206.
 - Most scenarios. The probes covered a group chat, the unread badge, presence, the three drag cases, one photo upload, one deletion, the GIF picker, `/giphy` and one preview card. Settings ran nothing.
 
