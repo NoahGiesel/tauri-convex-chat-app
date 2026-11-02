@@ -33,6 +33,8 @@ export const TEST_LIMIT_MS = 30_000;
 export const DRIVEN_USERS = ['alice', 'bob'];
 
 export const APP_ORIGIN = 'http://tauri.localhost';
+/** The main window's handle, which is its Tauri label. A popout's holds its conversation ID, so no test names one. */
+export const MAIN_WINDOW = 'main';
 export const APP_URL = `${APP_ORIGIN}/`;
 export const IDENTIFIER = 'dev.NoahGiesel.chat.e2e';
 
