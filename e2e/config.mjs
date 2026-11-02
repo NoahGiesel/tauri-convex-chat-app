@@ -24,6 +24,8 @@ export const STUB_URL = `http://127.0.0.1:${STUB_PORT}`;
 export const FIRST_INSTANCE_PORT = 4540;
 export const PORTS = [CONVEX_PORT, SITE_PORT, STUB_PORT, FIRST_INSTANCE_PORT, FIRST_INSTANCE_PORT + 1];
 export const INTERFACE_WAIT_MS = 5_000;
+/** How often a wait looks again. */
+export const POLL_MS = 100;
 /** One whole test, Fixture included. */
 export const TEST_LIMIT_MS = 30_000;
 

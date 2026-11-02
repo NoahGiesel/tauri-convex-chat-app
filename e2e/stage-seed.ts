@@ -1,8 +1,16 @@
 // Copied into the stage's convex/ as e2eSeed.ts. It never lives in the repo's convex/, because `npx convex deploy` works from there.
 import { v } from "convex/values";
-import { internalMutation } from "./_generated/server";
+import { internalMutation, type MutationCtx } from "./_generated/server";
 
-/** The one thing public functions cannot do here: make the random avatar index deterministic. */
+/** By email, because IDs and tokens differ between runs. A Seed holds three profiles, so a scan is enough. */
+async function profileByEmail(ctx: MutationCtx, email: string) {
+  for await (const profile of ctx.db.query("profiles")) {
+    if (profile.email === email) return profile;
+  }
+  throw new Error(`no profile for ${email}`);
+}
+
+/** Public functions cannot make the random avatar index deterministic. */
 export const fixAvatars = internalMutation({
   args: {},
   handler: async (ctx) => {
@@ -19,11 +27,19 @@ export const fixAvatars = internalMutation({
 export const expiredInvite = internalMutation({
   args: { token: v.string(), createdByEmail: v.string() },
   handler: async (ctx, args) => {
-    for await (const profile of ctx.db.query("profiles")) {
-      if (profile.email !== args.createdByEmail) continue;
-      await ctx.db.insert("invites", { token: args.token, createdBy: profile._id, expiresAt: Date.now() - 60 * 60 * 1000 });
-      return;
-    }
-    throw new Error(`no profile for ${args.createdByEmail}`);
+    const profile = await profileByEmail(ctx, args.createdByEmail);
+    await ctx.db.insert("invites", { token: args.token, createdBy: profile._id, expiresAt: Date.now() - 60 * 60 * 1000 });
+  },
+});
+
+/**
+ * The public way to look away, `setInvisible`, also makes the user invisible, and an invisible user's
+ * heartbeat does nothing. A Scripted user could then never come online again.
+ */
+export const setLastSeenAt = internalMutation({
+  args: { email: v.string(), lastSeenAt: v.number() },
+  handler: async (ctx, args) => {
+    const profile = await profileByEmail(ctx, args.email);
+    await ctx.db.patch("profiles", profile._id, { lastSeenAt: args.lastSeenAt });
   },
 });

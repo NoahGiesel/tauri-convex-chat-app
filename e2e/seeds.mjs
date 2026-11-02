@@ -1,11 +1,14 @@
 // Builds the Seeds through real sign-up and public functions, then snapshots them.
 import fs from 'node:fs';
 import path from 'node:path';
-import { getCookie, getSetCookie } from '@convex-dev/better-auth/client/plugins';
-import { ConvexHttpClient } from 'convex/browser';
+import { getSetCookie } from '@convex-dev/better-auth/client/plugins';
 import { api } from '../convex/_generated/api.js';
-import { APP_ORIGIN, CONVEX_URL, EXPIRED_INVITE_TOKEN, HISTORY_MESSAGES, PASSWORD, SESSIONS_FILE, SITE_URL, SNAPSHOTS, USERS } from './config.mjs';
+import { APP_ORIGIN, EXPIRED_INVITE_TOKEN, HISTORY_MESSAGES, PASSWORD, SESSIONS_FILE, SITE_URL, SNAPSHOTS, USERS } from './config.mjs';
+import { clientFor } from './session-client.mjs';
 import { convexInStage, importSeed } from './stage.mjs';
+
+/** Carol's last sign of life in the `groups` Seed. Far past the 2 minutes that count as online, so "Last online" reads the same all run. */
+const CAROL_AWAY_MS = 3 * 24 * 60 * 60_000;
 
 async function signUp({ name, email }) {
   const res = await fetch(`${SITE_URL}/api/auth/sign-up/email`, {
@@ -16,14 +19,7 @@ async function signUp({ name, email }) {
   if (!res.ok) throw new Error(`sign-up ${email}: ${res.status} ${await res.text()}`);
   // The package's own helpers read and write the format that crossDomainClient keeps in localStorage.
   const session = getSetCookie(res.headers.get('set-better-auth-cookie') ?? '');
-
-  const tokenRes = await fetch(`${SITE_URL}/api/auth/convex/token`, {
-    headers: { origin: APP_ORIGIN, 'better-auth-cookie': getCookie(session) },
-  });
-  if (!tokenRes.ok) throw new Error(`token ${email}: ${tokenRes.status} ${await tokenRes.text()}`);
-
-  const client = new ConvexHttpClient(CONVEX_URL);
-  client.setAuth((await tokenRes.json()).token);
+  const client = await clientFor(session, email);
   const profileId = await client.mutation(api.users.ensureProfile, {});
   return { client, session, profileId };
 }
@@ -40,10 +36,15 @@ async function buildBase() {
   return users;
 }
 
+/** Returns their direct chat. The request is the only one the accepter has. */
+async function befriend(requester, accepter) {
+  await requester.client.mutation(api.friends.request, { profileId: accepter.profileId });
+  const { incoming } = await accepter.client.query(api.friends.list, {});
+  return accepter.client.mutation(api.friends.accept, { friendshipId: incoming[0].friendshipId });
+}
+
 async function buildFriends({ alice, bob }) {
-  await alice.client.mutation(api.friends.request, { profileId: bob.profileId });
-  const { incoming } = await bob.client.query(api.friends.list, {});
-  const conversationId = await bob.client.mutation(api.friends.accept, { friendshipId: incoming[0].friendshipId });
+  const conversationId = await befriend(alice, bob);
   await alice.client.mutation(api.messages.send, { conversationId, body: 'Seeded hello' });
   snapshot('friends');
   return conversationId;
@@ -70,12 +71,27 @@ async function buildHistory({ alice, bob }, conversationId) {
   console.log(`[e2e] the history Seed took ${((Date.now() - start) / 1000).toFixed(1)} s`);
 }
 
+/** Branches from `friends`. Carol's old `lastSeenAt` needs the internal fallback, which says why. */
+async function buildGroups({ alice, bob, carol }) {
+  importSeed('friends');
+  for (const friend of [alice, bob]) await befriend(carol, friend);
+  const conversationId = await alice.client.mutation(api.conversations.createGroup, {
+    name: 'Weekend',
+    memberIds: [bob.profileId, carol.profileId],
+  });
+  await carol.client.mutation(api.messages.send, { conversationId, body: 'Seeded group hello' });
+  const away = { email: USERS.carol.email, lastSeenAt: Date.now() - CAROL_AWAY_MS };
+  convexInStage(['run', 'e2eSeed:setLastSeenAt', JSON.stringify(away)]);
+  snapshot('groups');
+}
+
 export async function buildSeeds() {
   fs.mkdirSync(SNAPSHOTS, { recursive: true });
   const users = await buildBase();
   const directChat = await buildFriends(users);
   buildExpiredInvite();
   await buildHistory(users, directChat);
+  await buildGroups(users);
 
   const sessions = Object.fromEntries(Object.entries(users).map(([key, { session }]) => [key, session]));
   fs.writeFileSync(SESSIONS_FILE, JSON.stringify(sessions));
