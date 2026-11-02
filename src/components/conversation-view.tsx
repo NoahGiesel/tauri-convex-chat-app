@@ -973,6 +973,7 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
           />
           <input
             ref={fileInputRef}
+            data-testid="attach-input"
             type="file"
             accept={MEDIA_ACCEPT}
             multiple

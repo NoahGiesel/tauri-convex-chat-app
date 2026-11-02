@@ -10,13 +10,16 @@ export const SESSIONS_FILE = path.join(STAGE, 'sessions.json');
 /** Written once a test has ended. The stage starts empty, so a run that leaves none matched no test. */
 export const TEST_RAN_FILE = path.join(STAGE, 'a-test-ran');
 export const PROFILES = path.join(E2E_DIR, '.profiles');
+/** What the stub keeps. In the stage, so each run starts with none, and a Reset never touches it. */
+export const STUB_FILES = path.join(STAGE, 'stub');
+export const STUB_LOG = path.join(STAGE, 'stub-log.jsonl');
 /** Outside the stage, so that the pictures of a failed run outlive it until the next run. */
 export const FAILURES = path.join(E2E_DIR, '.failures');
 export const EXE = path.join(ROOT, 'src-tauri', 'target', 'debug', 'tauri-convex-chat.exe');
 
 export const CONVEX_PORT = 3310;
 export const SITE_PORT = 3311;
-const STUB_PORT = 3312;
+export const STUB_PORT = 3312;
 export const CONVEX_URL = `http://127.0.0.1:${CONVEX_PORT}`;
 export const SITE_URL = `http://127.0.0.1:${SITE_PORT}`;
 export const STUB_URL = `http://127.0.0.1:${STUB_PORT}`;

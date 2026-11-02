@@ -8,6 +8,7 @@ import { buildEnv, commandEnv, confirmStage, findBusyPorts, parseRunArgs } from 
 import { timingReport } from './report.mjs';
 import { buildSeeds } from './seeds.mjs';
 import { convexInStage, prepareStage, startBackend } from './stage.mjs';
+import { STUB_READY } from './stub.mjs';
 
 let grep;
 try {
@@ -76,20 +77,30 @@ async function buildTestBuild() {
   });
 }
 
-async function startTestBackend() {
-  prepareStage();
-  const backend = track(startBackend());
+/** Gathers what a started process prints. `died` rejects with all of it if the process exits. */
+function watch(what, child) {
   let output = '';
-  backend.stdout.on('data', (chunk) => { output += chunk; });
-  backend.stderr.on('data', (chunk) => { output += chunk; });
+  child.stdout.on('data', (chunk) => { output += chunk; });
+  child.stderr.on('data', (chunk) => { output += chunk; });
   const died = new Promise((_, reject) => {
-    backend.once('exit', (code) => reject(new Error(`convex dev exited with ${code}\n${output}`)));
+    child.once('exit', (code) => reject(new Error(`${what} exited with ${code}
+${output}`)));
   });
   died.catch(() => {});
+  const untilPrinted = (text, description) => Promise.race([waitFor(description, async () => output.includes(text)), died]);
+  return { died, untilPrinted };
+}
+
+async function startTestBackend() {
+  prepareStage();
+  // Its own process: a Seed's CLI call blocks this one while Convex may be calling the stub.
+  const stub = watch('the stub', track(spawn(process.execPath, [path.join(E2E_DIR, 'stub.mjs')], { cwd: E2E_DIR, env: commandEnv(), stdio: ['ignore', 'pipe', 'pipe'] })));
+  await stub.untilPrinted(STUB_READY, 'the stub');
+  const backend = watch('convex dev', track(startBackend()));
 
   // A write during the first push fails with an OCC error, so the variables below must wait for it.
   // Polling the auth routes instead would be an auth call before the secret exists.
-  await Promise.race([waitFor('the first function push', async () => output.includes('Convex functions ready')), died]);
+  await backend.untilPrinted('Convex functions ready', 'the first function push');
   confirmStage(STAGE);
 
   // Before any auth call: with no secret, Better Auth silently uses a public default.
@@ -102,7 +113,7 @@ async function startTestBackend() {
     `R2_ENDPOINT=${STUB_URL}`,
   ].join('\n'));
   convexInStage(['env', 'set', '--from-file', 'e2e.env']);
-  await Promise.race([waitFor('auth routes', async () => (await fetch(`${SITE_URL}/api/auth/ok`)).ok), died]);
+  await Promise.race([waitFor('auth routes', async () => (await fetch(`${SITE_URL}/api/auth/ok`)).ok), backend.died]);
 }
 
 async function removeWithRetries(target) {
@@ -174,7 +185,7 @@ process.on('SIGINT', () => {
 try {
   await removeWithRetries(FAILURES);
   await timed('building the Test build', buildTestBuild);
-  await timed('starting the Test backend', startTestBackend);
+  await timed('starting the Test backend and the stub', startTestBackend);
   await timed('building Seeds', buildSeeds);
   await makeProfiles();
   await timed('running tests', runTests);
