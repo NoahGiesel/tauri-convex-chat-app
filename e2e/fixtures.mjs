@@ -2,10 +2,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { en } from '../src/i18n/en.ts';
-import { E2E_DIR, EXPIRED_INVITE_TOKEN, INTERFACE_WAIT_MS, MAIN_WINDOW, PASSWORD, POLL_MS, USERS } from './config.mjs';
+import { ASSET_TYPES, ASSETS, EXPIRED_INVITE_TOKEN, INTERFACE_WAIT_MS, MAIN_WINDOW, PASSWORD, POLL_MS, USERS } from './config.mjs';
 import { reset } from './reset.mjs';
 import { scriptedUser } from './scripted-user.mjs';
-import { gifAddress, gifTitles } from './stub.mjs';
+import { gifAddress, gifTitles, readStubLog } from './stub.mjs';
+import { waitUntil } from './wait.mjs';
 
 const WAIT = { timeout: INTERFACE_WAIT_MS, interval: POLL_MS };
 const COMPOSER = `aria/${en['chat.composer']}`;
@@ -72,13 +73,19 @@ const gifResult = (title) => `//button[@title="${title}"]`;
 /** A GIF in a message, at any of these addresses. */
 const gifAt = (addresses) => `//img[@alt="${en['chat.gifAlt']}"][${addresses.map((address) => `@src="${address}"`).join(' or ')}]`;
 
+const LIGHTBOX = '//*[@role="dialog"][@aria-modal="true"]';
+const inLightbox = (file) => `//*[@role="dialog"][@aria-label="${file}"]`;
+const LIBRARY_BUTTON = `//button[@aria-label="${en['library.open']}"]`;
+const LIBRARY = `//*[@role="region"][@aria-label="${en['library.open']}"]`;
+const libraryItem = (file) => `${LIBRARY}//button[starts-with(@title, "${file} · ")]`;
+/** A preview card is a link that shows more than its address, which is all the link in the text shows. */
+const PREVIEW_CARD = '//*[@data-testid="message"]//a[@href][not(normalize-space(.) = @href)]';
+
 /** By the name before the extension: a photo is sent re-encoded, and may come back as a .webp. */
 const photo = (name) => `//img[starts-with(@alt, "${name}.")]`;
 const sentPhoto = (name) => `//*[@data-testid="message"]${photo(name)}`;
-const ASSETS = path.join(E2E_DIR, 'assets');
-const TYPES = { '.png': 'image/png', '.mp4': 'video/mp4', '.txt': 'text/plain' };
 /** A file from `e2e/assets`, ready to hand to the page, under its own name or another. */
-const asset = (file, name = file) => ({ name, type: TYPES[path.extname(file)], base64: fs.readFileSync(path.join(ASSETS, file)).toString('base64') });
+const asset = (file, name = file) => ({ name, type: ASSET_TYPES[path.extname(file)], base64: fs.readFileSync(path.join(ASSETS, file)).toString('base64') });
 
 /** The second element comes after the first in the page: lower down, or to the right of it in a row. */
 const followedBy = (first, then) => `${first}/following::${then.replace(/^\/\//, '')}`;
@@ -414,6 +421,36 @@ function drivenUser(name) {
         `${messageRow(`/giphy ${search}`)}${gifAt(gifTitles(search).map(gifAddress))}`,
         `${name} did not see a GIF found by "/giphy ${search}"`,
       ),
+    openPhoto: (photoName) => press(sentPhoto(photoName)),
+    /** Where storage keeps a sent photo, as the stub's log names it. */
+    photoFile: async (photoName) => new URL(await b.$(sentPhoto(photoName)).getAttribute('src')).pathname,
+    seesPhotoInLightbox: (file) => waitUntilLoaded(`${inLightbox(file)}//img`, `${name} did not see ${file} full size`),
+    seesVideoInLightbox: (file) => waitUntilLoaded(`${inLightbox(file)}//video`, `${name} has no player that read ${file} full size`, hasMetadata),
+    closeLightbox: () => press(`${LIGHTBOX}/button[@aria-label="${en['common.close']}"]`),
+    stopsSeeingLightbox: () => waitUntilGone(LIGHTBOX, `${name} still sees a photo or video full size`),
+    async openLibrary() {
+      await press(LIBRARY_BUTTON);
+      await waitUntilShown(LIBRARY, `${name} has no media library`);
+    },
+    seesPhotoInLibrary: (file) => waitUntilLoaded(`${libraryItem(file)}//img`, `${name} did not see ${file} load in the media library`),
+    seesVideoInLibrary: (file) => waitUntilLoaded(`${libraryItem(file)}//video`, `${name} has no player that read ${file} in the media library`, hasMetadata),
+    openFromLibrary: (file) => press(libraryItem(file)),
+    showLibraryLinks: () => press(`${LIBRARY}//button[@role="tab"][normalize-space(.)="${en['library.links']}"]`),
+    seesInLinkLibrary: (title) => waitUntilShown(`${LIBRARY}//a[@href][contains(normalize-space(.), "${title}")]`, `${name} did not see "${title}" in the link library`),
+    seesPreviewCard: (title) =>
+      waitUntilShown(`${PREVIEW_CARD}[contains(normalize-space(.), "${title}")]`, `${name} did not see a preview card for "${title}"`),
+    /** Only once the server, asked through a public function, has tried the link and found nothing, so the card cannot still be on its way. */
+    async seesNoPreviewCard(link) {
+      await (await scriptedUser(name)).seesFailedPreview(link);
+      await user.seesMessage(link);
+      if (await b.$(`${PREVIEW_CARD}[@href="${link}"]`).isExisting()) {
+        throw new Error(`${name} sees a preview card for ${link}`);
+      }
+    },
+    seesProfilePhotoOf: (person) => waitUntilLoaded(`${chatRow(person)}//img`, `${name} did not see ${person}'s profile photo load`),
+    /** As from another device, through the public function. Settings, where a person does it, has its own tests. */
+    removeProfilePhotoElsewhere: async () => (await scriptedUser(name)).removeProfilePhoto(),
+    stopsSeeingProfilePhotoOf: (person) => waitUntilGone(`${chatRow(person)}//img`, `${name} still sees ${person}'s profile photo`),
     seesVideoWithCaption: (caption) =>
       waitUntilLoaded(`${messageRow(caption)}//video`, `${name} has no player that read the video sent with "${caption}"`, hasMetadata),
     async doesNotSeePhoto(photoName) {
@@ -640,6 +677,31 @@ export async function soloWithChats() {
   for (const title of ['Weekend', USERS.bob.name, USERS.carol.name]) await alice.seesChatInList(title);
   await alice.hasNoChatOpen();
   return { alice };
+}
+
+/**
+ * The stub's record of R2 deletions from now on. A Reset leaves the stub's files alone,
+ * so a Seeded file deleted by one test is there again after the next Reset.
+ */
+function storageFromNow() {
+  const mark = readStubLog().length;
+  return {
+    seesFileDeleted: (file) =>
+      waitUntil(
+        () => readStubLog().slice(mark).some((request) => request.method === 'DELETE' && request.path === file),
+        `storage was not asked to delete ${file}`,
+      ),
+  };
+}
+
+/** The `media` Seed: Alice sent Bob a photo, a video and a link with a Seeded preview, and has a profile photo. */
+export async function mediaChatOpen() {
+  await reset('media');
+  const storage = storageFromNow();
+  const { alice, bob } = aliceAndBob();
+  await alice.openChat(USERS.bob.name);
+  await bob.openChat(USERS.alice.name);
+  return { alice, bob, storage };
 }
 
 export async function twoFriendsWithChatOpen() {
