@@ -25,6 +25,8 @@ describe('the sidebar', () => {
     await alice.renameFolder('Plans', 'Trips');
 
     await alice.seesChatInSection('Weekend', 'Trips');
+    await alice.reload();
+    await alice.seesChatInSection('Weekend', 'Trips');
   });
 
   it('the chat with the newest message comes first', async () => {
@@ -63,9 +65,9 @@ describe('the sidebar', () => {
     const { alice } = await soloWithChats();
 
     await alice.searchChats('car');
-    await alice.seesChatInList('Carol Test');
     await alice.stopsSeeingChatInList('Bob Test');
     await alice.stopsSeeingChatInList('Weekend');
+    await alice.seesChatInList('Carol Test');
 
     await alice.searchChats('nobody');
     await alice.seesNoChatsFound();

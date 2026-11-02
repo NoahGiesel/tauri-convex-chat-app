@@ -27,6 +27,8 @@ const messageWords = (text) => `//*[@data-testid="message"]//*[text()[contains(.
  */
 const rowTooltip = (title, presence = '') => `${title} · ${presence}`;
 const chatRow = (title) => `//button[starts-with(@title, "${rowTooltip(title)}")]`;
+/** A chat in the list, with exactly this presence in its tooltip. */
+const chatRowWith = (title, presence) => `//button[@title="${rowTooltip(title, presence)}"]`;
 /** A friend's tick box in the new group form, by the name beside it. Not `aria/`, which also matches the friend's chat row. */
 const memberChoice = (person) => `//label[.//span[normalize-space(.)="${person}"]]//input[@type="checkbox"]`;
 /** What a group's row says about it: how many are in it, and how many of the others are online. */
@@ -126,9 +128,11 @@ function drivenUser(name) {
     await b.action('pointer').move({ origin: await b.$(selector) }).down().up().perform();
   };
 
+  const waitUntilExists = (selector, timeoutMsg) => b.waitUntil(async () => b.$(selector).isExisting(), { ...WAIT, timeoutMsg });
+
   /** For actions shown only on hover, which cannot be driven. If this one stops being hidden, it moves to `press()`. */
   const pressHoverOnly = async (selector) => {
-    await b.waitUntil(async () => b.$(selector).isExisting(), { ...WAIT, timeoutMsg: `${name} has no ${selector}` });
+    await waitUntilExists(selector, `${name} has no ${selector}`);
     if (await b.$(selector).isDisplayed()) throw new Error(`${selector} is not hover-only any more, so use press()`);
     await bringToFront();
     await b.$(selector).click();
@@ -137,7 +141,7 @@ function drivenUser(name) {
   const waitUntilGone = (selector, timeoutMsg) => b.waitUntil(async () => !(await b.$(selector).isExisting()), { ...WAIT, timeoutMsg });
 
   const fireDrag = async (selector, type, at = 'middle') => {
-    await b.waitUntil(async () => b.$(selector).isExisting(), { ...WAIT, timeoutMsg: `${name} has no ${selector} for ${type}` });
+    await waitUntilExists(selector, `${name} has no ${selector} for ${type}`);
     await b.execute(fireDragEvent, await b.$(selector), type, at);
   };
 
@@ -146,7 +150,7 @@ function drivenUser(name) {
    * and the target is looked up only after `dragstart`, because some targets show only during a drag.
    * It skips the gesture itself, which the Manual smoke covers.
    */
-  const drag = async (source, target, at) => {
+  const drag = async (source, target, at = 'middle') => {
     await fireDrag(source, 'dragstart');
     await fireDrag(target, 'dragover', at);
     await fireDrag(target, 'drop', at);
@@ -233,7 +237,7 @@ function drivenUser(name) {
     },
     async canChangeMessage(text) {
       for (const label of [en['chat.editMessage'], en['chat.deleteMessage']]) {
-        await b.waitUntil(async () => b.$(messageButton(text, label)).isExisting(), { ...WAIT, timeoutMsg: `${name} has no ${label} on "${text}"` });
+        await waitUntilExists(messageButton(text, label), `${name} has no ${label} on "${text}"`);
       }
     },
     async cannotChangeMessage(text) {
@@ -282,9 +286,9 @@ function drivenUser(name) {
     },
     seesUnread: (title, count) => waitUntilShown(unreadBadge(title, count), `${name} did not see ${count} unread in ${title}`),
     seesNoUnread: (title) => waitUntilGone(anyUnreadBadge(title), `${name} still sees unread messages in ${title}`),
-    seesOnline: (person) => waitUntilShown(`//button[@title="${rowTooltip(person, en['side.online'])}"]`, `${name} did not see ${person} online`),
+    seesOnline: (person) => waitUntilShown(chatRowWith(person, en['side.online']), `${name} did not see ${person} online`),
     seesGroup: (title, counts) =>
-      waitUntilShown(`//button[@title="${rowTooltip(title, groupStatus(counts))}"]`, `${name} did not see ${title} as "${groupStatus(counts)}"`),
+      waitUntilShown(chatRowWith(title, groupStatus(counts)), `${name} did not see ${title} as "${groupStatus(counts)}"`),
     async createGroup(title, members) {
       await press(`aria/${en['side.createGroup']}`);
       await fill(en['group.nameLabel'], title);
@@ -296,7 +300,7 @@ function drivenUser(name) {
     },
 
     seesLastOnline: (person, time) =>
-      waitUntilShown(`//button[@title="${rowTooltip(person, lastOnline(time))}"]`, `${name} did not see ${person} last online ${time}`),
+      waitUntilShown(chatRowWith(person, lastOnline(time)), `${name} did not see ${person} last online ${time}`),
     searchChats: (text) => fill(en['side.search'], text),
     seesNoChatsFound: () => waitUntilShown(textSelector(en['side.noResults']), `${name} was shown a chat`),
     stopsSeeingChatInList: (title) => waitUntilGone(chatRow(title), `${name} still has ${title} in the list`),
@@ -321,8 +325,10 @@ function drivenUser(name) {
       await pressHoverOnly(folderControl(title, en['side.deleteFolder']));
       await waitUntilGone(section(title), `${name} still has the folder ${title}`);
     },
-    moveChatToFolder: (title, folder) => drag(chatRow(title), sectionHeading(folder), 'middle'),
+    moveChatToFolder: (title, folder) => drag(chatRow(title), sectionHeading(folder)),
+    /** The top of a row puts the chat before it. */
     moveChatAbove: (title, other) => drag(chatRow(title), chatRow(other), 'top'),
+    /** A section takes a dragged section on its whole area, and its top half puts it before. */
     moveSectionAbove: (title, other) => drag(sectionHeading(title), section(other), 'top'),
 
     seesAuthScreen: () => waitUntilShown(textSelector(en['auth.welcomeBack']), `${name} is not on the auth screen`),
