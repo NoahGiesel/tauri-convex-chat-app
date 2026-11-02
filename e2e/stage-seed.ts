@@ -27,3 +27,16 @@ export const expiredInvite = internalMutation({
     throw new Error(`no profile for ${args.createdByEmail}`);
   },
 });
+
+/** Public functions only set `lastSeenAt` to now. */
+export const lastSeenAt = internalMutation({
+  args: { email: v.string(), lastSeenAt: v.number() },
+  handler: async (ctx, args) => {
+    for await (const profile of ctx.db.query("profiles")) {
+      if (profile.email !== args.email) continue;
+      await ctx.db.patch("profiles", profile._id, { lastSeenAt: args.lastSeenAt });
+      return;
+    }
+    throw new Error(`no profile for ${args.email}`);
+  },
+});

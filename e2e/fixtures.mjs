@@ -2,6 +2,7 @@
 import { en } from '../src/i18n/en.ts';
 import { EXPIRED_INVITE_TOKEN, INTERFACE_WAIT_MS, PASSWORD, USERS } from './config.mjs';
 import { reset } from './reset.mjs';
+import { scriptedUser } from './scripted-user.mjs';
 
 const WAIT = { timeout: INTERFACE_WAIT_MS, interval: 100 };
 const COMPOSER = `aria/${en['chat.composer']}`;
@@ -26,6 +27,13 @@ const messageWords = (text) => `//*[@data-testid="message"]//*[text()[contains(.
  */
 const rowTooltip = (title, presence = '') => `${title} · ${presence}`;
 const chatRow = (title) => `//button[starts-with(@title, "${rowTooltip(title)}")]`;
+/** A friend's tick box in the new group form, by the name beside it. */
+const memberChoice = (person) => `//label[.//span[normalize-space(.)="${person}"]]//input[@type="checkbox"]`;
+/** What a group's row says about it: how many are in it, and how many of the others are online. */
+const groupStatus = ({ members, online }) =>
+  online > 0
+    ? en['presence.groupOnline'].replace('{count}', members).replace('{online}', online)
+    : en['chat.members'].replace('{count}', members);
 const unread = (count) => en['side.unread'].replace('{count}', count);
 const unreadBadge = (title, count) => `${chatRow(title)}//*[@title="${unread(count)}"]`;
 /** Any count: the text that follows the number. */
@@ -203,6 +211,17 @@ function drivenUser(name) {
     seesUnread: (title, count) => waitUntilShown(unreadBadge(title, count), `${name} did not see ${count} unread in ${title}`),
     seesNoUnread: (title) => waitUntilGone(anyUnreadBadge(title), `${name} still sees unread messages in ${title}`),
     seesOnline: (person) => waitUntilShown(`//button[@title="${rowTooltip(person, en['side.online'])}"]`, `${name} did not see ${person} online`),
+    seesGroup: (title, counts) =>
+      waitUntilShown(`//button[@title="${rowTooltip(title, groupStatus(counts))}"]`, `${name} did not see ${title} as "${groupStatus(counts)}"`),
+    async createGroup(title, members) {
+      await press(`aria/${en['side.createGroup']}`);
+      await fill(en['group.nameLabel'], title);
+      for (const person of members) await press(memberChoice(person));
+      await press(`aria/${en['people.createGroup']}`);
+      await user.seesChatInList(title);
+      // Not the composer: the chat open before has one too. Only the new group is empty.
+      await waitUntilShown(textSelector(en['chat.noMessages']), `${name} did not open ${title}`);
+    },
 
     seesAuthScreen: () => waitUntilShown(textSelector(en['auth.welcomeBack']), `${name} is not on the auth screen`),
     seesChats: () => waitUntilShown(SETTINGS, `${name} did not reach their chats`),
@@ -331,6 +350,15 @@ export async function longChat() {
   const alice = drivenUser('alice');
   await alice.openChat(USERS.bob.name);
   return { alice };
+}
+
+export async function groupChatOpen() {
+  await reset('groups');
+  const { alice, bob } = aliceAndBob();
+  await alice.openChat('Weekend');
+  await bob.openChat('Weekend');
+  const carol = await scriptedUser('carol');
+  return { alice, bob, carol };
 }
 
 export async function twoFriendsWithChatOpen() {

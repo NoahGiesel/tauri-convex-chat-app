@@ -398,7 +398,6 @@ No macOS code is written until someone can run it. Until then the suite runs on 
 
 - The release guard and `releaseDraft: true` with two platforms. Tags must not be pushed to test it, so the first real release is the test.
 - The five-language test.
-- Carol's old `lastSeenAt`.
 - A `media` Seed with a video and a link message. The prototype's had neither.
 - Anything with a real video.
 - Most scenarios. The probes covered a group chat, the unread badge, presence, the three drag cases, one photo upload, one deletion, the GIF picker, `/giphy` and one preview card. Settings ran nothing.
