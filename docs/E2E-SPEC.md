@@ -274,6 +274,8 @@ A drag out of the window is `dragstart` on the tab, a `dragleave` on the documen
 
 The `embedded` driver refuses files: `sending keys to a file input (file upload) is not supported`. Set `input.files` from a `DataTransfer` and fire a `change` event. The app then runs its real upload. The native file picker stays in the Manual smoke.
 
+The files live in `e2e/assets`. The app re-encodes a photo before upload, and the small PNGs came back as WebP, so a Fixture finds a sent photo by its name before the extension. A photo counts as seen only once it has loaded, with `naturalWidth` above 0.
+
 ## External services
 
 The suite never calls a live service, so a developer needs no credentials and no account. Once its tools are installed, a run needs no internet.
@@ -284,7 +286,7 @@ The suite never calls a live service, so a developer needs no credentials and no
 | GIPHY | Local stub | Optional `VITE_GIPHY_API_URL` |
 | Link previews, YouTube oEmbed | Seeded rows, plus unit tests | None |
 
-**The stub** is one small Node server in `e2e/`, on the fixed loopback port 3312.
+**The stub** is one small Node server in `e2e/`, on the fixed loopback port 3312. `pnpm e2e` starts it as a process of its own, because a Seed's CLI call blocks its own process while Convex may call the stub. It keeps its files and its log in the stage, so each run starts with none. If the port is busy, the run stops.
 
 - **R2:** it stores on PUT and serves on GET, with CORS. It checks no signatures. **DELETE is only logged**, and the file stays, so a Reset cannot bring back a message whose image is gone. A test checks a deletion by reading the stub's log.
 - **GIPHY:** it returns canned `trending` and `search` results, with thumbnails from the stub.
@@ -342,6 +344,8 @@ These come from one machine with very little data. Treat them as orders of magni
 | Reset plus Fixture, 20 rounds with all cores busy | Median 3.9 s, max 6.1 s |
 | Message reaches the other user, idle | Median 28 ms, max 138 ms |
 | Message reaches the other user, all cores busy | Median 104 ms, max 253 ms |
+| Seven tab, split view and popout tests, Fixtures included | 19 s |
+| Six photo tests, Fixtures included | 15 s |
 
 **A full run should take about 7 minutes.** That is an estimate: 68 scenarios at about 5 s each, plus about 40 s to start.
 
@@ -421,7 +425,7 @@ No macOS code is written until someone can run it. Until then the suite runs on 
 - Accessible names on the other modals. Only an open chat, two Settings screens, the auth screen and the friend screens were checked.
 - Whether a theme import accepts a synthetic `change` event.
 - A large Seed. Reset time was measured on very little data.
-- Timings for uploads and popouts, so 5 s per test is a guess for them.
+- Timings for a video upload.
 - Windows Firewall prompts, locked or minimised windows, and Seeds across a backend upgrade.
 - Real system notifications may appear during a run, because `use-message-notifications.ts` is not gated. They are harmless to tests.
 

@@ -1,6 +1,8 @@
 // What a test works with: domain actions per user. Selectors and waits live here, never in a test.
+import fs from 'node:fs';
+import path from 'node:path';
 import { en } from '../src/i18n/en.ts';
-import { EXPIRED_INVITE_TOKEN, INTERFACE_WAIT_MS, MAIN_WINDOW, PASSWORD, POLL_MS, USERS } from './config.mjs';
+import { E2E_DIR, EXPIRED_INVITE_TOKEN, INTERFACE_WAIT_MS, MAIN_WINDOW, PASSWORD, POLL_MS, USERS } from './config.mjs';
 import { reset } from './reset.mjs';
 import { scriptedUser } from './scripted-user.mjs';
 
@@ -57,6 +59,17 @@ const tab = (title) => `//div[@draggable="true"][.${tabClose(title)}]`;
 /** Where a dragged tab drops to split the view. They show only during a drag, on the one chat shown. */
 const tabDrop = (side) => `//*[@data-testid="tab-drop-${side}"]`;
 const secondComposer = `(//textarea[@aria-label="${en['chat.composer']}"])[2]`;
+const ATTACH_INPUT = '//input[@data-testid="attach-input"]';
+const REMOVE_STAGED = `//button[@aria-label="${en['composer.removeAttachment']}"]`;
+/** A file waiting in the composer, by its name, shown under a video and as a photo's description. */
+const staged = (file) => `//div[button[@aria-label="${en['composer.removeAttachment']}"]][img[@alt="${file}"] or .//span[normalize-space(.)="${file}"]]`;
+/** By the name before the extension: a photo is sent re-encoded, and may come back as a .webp. */
+const photo = (name) => `//img[starts-with(@alt, "${name}.")]`;
+const ASSETS = path.join(E2E_DIR, 'assets');
+const TYPES = { '.png': 'image/png', '.mp4': 'video/mp4', '.txt': 'text/plain' };
+/** A file from `e2e/assets`, ready to hand to the page, under its own name or another. */
+const asset = (file, name = file) => ({ name, type: TYPES[path.extname(file)], base64: fs.readFileSync(path.join(ASSETS, file)).toString('base64') });
+
 /** The second element comes after the first in the page: lower down, or to the right of it in a row. */
 const followedBy = (first, then) => `${first}/following::${then.replace(/^\/\//, '')}`;
 
@@ -108,6 +121,23 @@ async function bringWindowToFront() {
   const { label } = window.__TAURI_INTERNALS__.metadata.currentWindow;
   await window.__TAURI_INTERNALS__.invoke('plugin:window|set_focus', { label });
 }
+
+/**
+ * Runs in the page. The driver refuses to type into a file input, so this gives it files as a picker would,
+ * then fires `change`. The app then runs its real upload.
+ */
+function chooseFiles(input, files) {
+  const dataTransfer = new DataTransfer();
+  for (const { name, type, base64 } of files) {
+    const bytes = Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
+    dataTransfer.items.add(new File([bytes], name, { type }));
+  }
+  input.files = dataTransfer.files;
+  input.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+/** Runs in the page. Whether an image has really loaded, not only been placed. */
+const hasLoaded = (img) => img.complete && img.naturalWidth > 0;
 
 /** Runs in the page. What the page sees as the pointer leaves the window during a drag. */
 function leaveWindowDragging() {
@@ -173,6 +203,15 @@ function drivenUser(name) {
     await fireDrag(target, 'drop', at);
     await fireDrag(source, 'dragend');
   };
+
+  /** `files` are what `asset()` gives. The input is hidden, as a file picker's always is. */
+  const upload = async (input, files) => {
+    await waitUntilExists(input, `${name} has no ${input}`);
+    await b.execute(chooseFiles, await b.$(input), files);
+  };
+
+  const waitUntilLoaded = (selector, timeoutMsg) =>
+    b.waitUntil(async () => (await b.$(selector).isExisting()) && b.execute(hasLoaded, await b.$(selector)), { ...WAIT, timeoutMsg });
 
   /** A field that opens focused, with its text chosen, so typing replaces it. */
   const typeInFocused = async (selector, text) => {
@@ -314,6 +353,30 @@ function drivenUser(name) {
       await user.seesChatInList(title);
       // Not the composer: the chat open before has one too. Only the new group is empty.
       await waitUntilShown(textSelector(en['chat.noMessages']), `${name} did not open ${title}`);
+    },
+
+    attach: (...files) => upload(ATTACH_INPUT, files.map((file) => asset(file))),
+    /** More files than a message takes, all copies of one, each under its own name. */
+    attachCopies: (file, count) =>
+      upload(ATTACH_INPUT, Array.from({ length: count }, (_, i) => asset(file, `${i + 1}-${file}`))),
+    seesStaged: (file) => waitUntilShown(staged(file), `${name} does not see ${file} waiting to be sent`),
+    stopsSeeingStaged: (file) => waitUntilGone(staged(file), `${name} still sees ${file} waiting to be sent`),
+    removeStaged: (file) => press(`${staged(file)}/button`),
+    async seesStagedCount(count) {
+      await waitUntilShown(`(${REMOVE_STAGED})[${count}]`, `${name} does not see ${count} files waiting`);
+      if (await b.$(`(${REMOVE_STAGED})[${count + 1}]`).isExisting()) throw new Error(`${name} sees more than ${count} files waiting`);
+    },
+    seesWrongFileType: () => waitUntilShown(roleSelector('alert', en['error.media_type']), `${name} was not told the file is the wrong type`),
+    seesTooManyFiles: () => waitUntilShown(roleSelector('alert', en['error.too_many_attachments']), `${name} was not told there are too many files`),
+    sendStaged: () => press(`aria/${en['chat.send']}`),
+    seesPhoto: (photoName) => waitUntilLoaded(`//*[@data-testid="message"]${photo(photoName)}`, `${name} did not see the photo ${photoName} load`),
+    seesPhotoWithCaption: (photoName, caption) =>
+      waitUntilLoaded(`${messageRow(caption)}${photo(photoName)}`, `${name} did not see the photo ${photoName} load with "${caption}"`),
+    /** In one message, so they were sent together. */
+    seesPhotosTogether: (first, second) =>
+      waitUntilLoaded(`//*[@data-testid="message"][.${photo(first)}]${photo(second)}`, `${name} did not see ${first} and ${second} in one message`),
+    async doesNotSeePhoto(photoName) {
+      if (await b.$(photo(photoName)).isExisting()) throw new Error(`${name} sees the photo ${photoName}`);
     },
 
     seesTab: (title) => waitUntilShown(tab(title), `${name} has no tab for ${title}`),

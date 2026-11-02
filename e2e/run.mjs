@@ -8,6 +8,7 @@ import { buildEnv, commandEnv, confirmStage, findBusyPorts, parseRunArgs } from 
 import { timingReport } from './report.mjs';
 import { buildSeeds } from './seeds.mjs';
 import { convexInStage, prepareStage, startBackend } from './stage.mjs';
+import { STUB_READY } from './stub.mjs';
 
 let grep;
 try {
@@ -76,8 +77,23 @@ async function buildTestBuild() {
   });
 }
 
+/** Its own process: a Seed's CLI call blocks this one while Convex may be calling the stub. */
+async function startStub() {
+  const stub = track(spawn(process.execPath, [path.join(E2E_DIR, 'stub.mjs')], { cwd: E2E_DIR, env: commandEnv(), stdio: ['ignore', 'pipe', 'pipe'] }));
+  let output = '';
+  stub.stdout.on('data', (chunk) => { output += chunk; });
+  stub.stderr.on('data', (chunk) => { output += chunk; });
+  const died = new Promise((_, reject) => {
+    stub.once('exit', (code) => reject(new Error(`the stub exited with ${code}
+${output}`)));
+  });
+  died.catch(() => {});
+  await Promise.race([waitFor('the stub', async () => output.includes(STUB_READY)), died]);
+}
+
 async function startTestBackend() {
   prepareStage();
+  await startStub();
   const backend = track(startBackend());
   let output = '';
   backend.stdout.on('data', (chunk) => { output += chunk; });
@@ -174,7 +190,7 @@ process.on('SIGINT', () => {
 try {
   await removeWithRetries(FAILURES);
   await timed('building the Test build', buildTestBuild);
-  await timed('starting the Test backend', startTestBackend);
+  await timed('starting the Test backend and the stub', startTestBackend);
   await timed('building Seeds', buildSeeds);
   await makeProfiles();
   await timed('running tests', runTests);
