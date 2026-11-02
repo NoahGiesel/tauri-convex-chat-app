@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { insertAtTop, useAction, useMutation, usePaginatedQuery, useQuery } from "convex/react";
 import type { OptimisticLocalStore } from "convex/browser";
-import { ArrowDown, Film, Images, Loader2, Maximize2, Paperclip, Send, Smile, Sparkles, X } from "lucide-react";
+import { ArrowDown, Ban, Film, Images, Loader2, Maximize2, Paperclip, Send, Smile, Sparkles, X } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { Avatar } from "@/components/avatar";
 import { EmojiGifPicker, type PickerTab } from "@/components/emoji-gif-picker";
 import { MediaLightbox, type LightboxItem } from "@/components/media-lightbox";
-import { LinkPreview } from "@/components/link-preview";
+import { GameCard } from "@/components/game-card";
+import { QuizCard } from "@/components/quiz-card";
+import { EmbedPlayer, LinkPreview } from "@/components/link-preview";
+import { embedFor, htmlEmbed } from "@/lib/embeds";
 import { MediaLibrary } from "@/components/media-library";
 import { ProfileModal } from "@/components/profile-modal";
 import { MinimizableMedia } from "@/components/minimizable-media";
@@ -16,6 +19,7 @@ import { SummaryCard } from "@/components/summary-card";
 import { MessageEditor } from "@/components/message-editor";
 import { Markdown, MessageBody, isEditableStyle } from "@/components/message-body";
 import { ReactionChips, ReactionToolbar } from "@/components/message-reactions";
+import type { MessageKey } from "@/i18n/en";
 import { useI18n } from "@/i18n/i18n-provider";
 import { usePresence } from "@/lib/presence";
 import { errorKey } from "@/lib/errors";
@@ -42,7 +46,13 @@ const COMMANDS = [
   { name: "random", description: "composer.cmdRandom" },
   { name: "flip", description: "composer.cmdFlip" },
   { name: "ask", description: "composer.cmdAsk" },
+  { name: "stone-paper-scissors", description: "composer.cmdGame" },
+  { name: "quiz3", description: "composer.cmdQuiz3" },
+  { name: "quiz5", description: "composer.cmdQuiz5" },
 ] as const;
+
+/** Comandi che si usano solo in una chat diretta (sono sfide 1 contro 1). */
+const DIRECT_ONLY = new Set<string>(["stone-paper-scissors", "quiz3", "quiz5"]);
 
 type TextStyle = "me" | "code" | "pre" | "spoiler" | "quote";
 const MAX_ATTACHMENTS = 10;
@@ -52,6 +62,22 @@ interface PendingFile {
   previewUrl: string | null;
 }
 const TEXT_STYLES: readonly string[] = ["me", "code", "pre", "spoiler", "quote"];
+
+/** I link del messaggio che hanno un'anteprima (al massimo due). */
+function previewLinks(body: string): string[] {
+  return [...new Set(splitLinks(body).flatMap((p) => (p.type === "link" ? [p.href] : [])))].slice(0, 2);
+}
+
+/** Il messaggio è solo il link di un video o di una canzone: il testo si nasconde, basta il player. */
+function isOnlyEmbed(body: string): boolean {
+  const parts = splitLinks(body).filter((p) => p.type === "link" || p.text.trim() !== "");
+  return parts.length === 1 && parts[0].type === "link" && !!embedFor(parts[0].href);
+}
+
+/** Il primo link che si riproduce in chat (YouTube o Spotify): il suo riquadro ospita il bottone del riassunto. */
+function firstEmbedLink(body: string): string | undefined {
+  return previewLinks(body).find((href) => embedFor(href));
+}
 
 /**
  * `showHeader`: barra con nome e stato in cima (serve nelle finestre staccate, che non hanno le schede);
@@ -102,7 +128,10 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
         editedAt: null,
         style,
         gifQuery,
+        gameId: null,
+        quizId: null,
         summarizable: false,
+        summaryBlocked: null,
         summarized: false,
         summaryOf: null,
         summarySource: null,
@@ -128,6 +157,8 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
   const keepBottom = useCallback(() => {
     if (stickToBottom.current && scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, []);
+  const startGame = useMutation(api.games.start);
+  const startQuiz = useMutation(api.quizzes.start);
   const rollDice = useMutation(api.messages.roll);
   const flipCoin = useMutation(api.messages.flip);
   const [picked, setPicked] = useState({ prefix: "", index: 0 });
@@ -213,7 +244,9 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
     try {
       await summarizeAction({ messageId: id, language });
     } catch (e) {
-      setError(t(errorKey(e)));
+      // Se il contenuto non è riassumibile il bottone diventa già un messaggio: niente errore rosso in più.
+      const key = errorKey(e);
+      if (key !== "error.source_unreachable" && key !== "error.video_too_long" && key !== "error.summary_unavailable") setError(t(key));
     } finally {
       setSummarizing((prev) => {
         const next = new Set(prev);
@@ -374,8 +407,8 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
   }, [newestId, conversationId, markRead]);
 
   // Scrivendo "/" compaiono i comandi disponibili; Invio o Tab completano il nome.
-  const slash = /^\/(\w*)$/.exec(draft);
-  const suggestions = slash ? COMMANDS.filter((c) => c.name.startsWith(slash[1].toLowerCase())) : [];
+  const slash = /^\/([\w-]*)$/.exec(draft);
+  const suggestions = slash ? COMMANDS.filter((c) => c.name.startsWith(slash[1].toLowerCase()) && (!DIRECT_ONLY.has(c.name) || !isGroup)) : [];
   const selected = slash && picked.prefix === slash[1] ? Math.min(picked.index, suggestions.length - 1) : 0;
 
   /** `/giphy testo`: cerca su GIPHY e invia una GIF a caso tra i risultati. */
@@ -503,7 +536,7 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
       return;
     }
 
-    const parsed = /^\/(\w+)(?:\s+([\s\S]*))?$/.exec(body);
+    const parsed = /^\/([\w-]+)(?:\s+([\s\S]*))?$/.exec(body);
     const name = parsed?.[1].toLowerCase();
     const arg = (parsed?.[2] ?? "").trim();
 
@@ -517,6 +550,28 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
         return;
       }
       await post(() => sendMessage({ conversationId, body: arg, style: name as TextStyle }), body);
+      return;
+    }
+    if (name === "stone-paper-scissors") {
+      if (isGroup) {
+        setError(t("error.game_direct_only"));
+        return;
+      }
+      setDraft("");
+      setError(null);
+      stickToBottom.current = true;
+      void startGame({ conversationId }).catch((e) => setError(t(errorKey(e))));
+      return;
+    }
+    if (name === "quiz3" || name === "quiz5") {
+      if (isGroup) {
+        setError(t("error.game_direct_only"));
+        return;
+      }
+      setDraft("");
+      setError(null);
+      stickToBottom.current = true;
+      void startQuiz({ conversationId, size: name === "quiz3" ? 3 : 5, language }).catch((e) => setError(t(errorKey(e))));
       return;
     }
     if (name === "ask") {
@@ -733,7 +788,7 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
                   messageId={m._id}
                   onError={setError}
                   onEdit={m.mine && m.kind === "text" && isEditableStyle(m.style) ? () => setEditingId(m._id) : undefined}
-                  onDelete={m.mine && m.kind !== "ai" ? () => void deleteMessage(m._id) : undefined}
+                  onDelete={m.mine && m.kind !== "ai" && m.kind !== "game" ? () => void deleteMessage(m._id) : undefined}
                 />
               )}
               <div className="min-w-0 flex-1">
@@ -755,6 +810,10 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
                       <Markdown text={m.body} />
                     </div>
                   )
+                ) : m.kind === "game" && m.gameId ? (
+                  <GameCard gameId={m.gameId} onLayout={keepBottom} />
+                ) : m.kind === "game" && m.quizId ? (
+                  <QuizCard quizId={m.quizId} onLayout={keepBottom} />
                 ) : m.kind === "media" && m.attachments.length > 0 ? (
                   <div>
                     {m.body && (
@@ -822,21 +881,35 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
                       onCancel={() => setEditingId(null)}
                     />
                   ) : (
+                    m.kind === "text" && m.style === null && (isOnlyEmbed(m.body) || (htmlEmbed(m.body) && htmlEmbed(m.body)!.rest === "")) ? null : (
                     <MessageBody
                       style={m.style}
-                      body={m.body}
+                      body={m.kind === "text" && m.style === null ? (htmlEmbed(m.body)?.rest ?? m.body) : m.body}
                       authorName={m.authorName}
                       edited={!!m.editedAt}
                       className={row.head ? "mt-[3px]" : undefined}
                     />
+                    )
                   )
                 )}
                 {editingId !== m._id &&
                   (m.kind === "media" || (m.kind === "text" && (m.style === null || m.style === "me" || m.style === "quote"))) &&
-                  [...new Set(splitLinks(m.body).flatMap((p) => (p.type === "link" ? [p.href] : [])))]
-                    .slice(0, 2)
-                    .map((href) => <LinkPreview key={href} url={href} onLayout={keepBottom} />)}
-                {m.summarizable && !m.summarized && editingId !== m._id && (
+                  (htmlEmbed(m.body) ? [] : previewLinks(m.body)).map((href) => (
+                    <LinkPreview
+                      key={href}
+                      url={href}
+                      onLayout={keepBottom}
+                      summary={
+                        m.summarizable && !m.summarized && !m.summaryBlocked && href === firstEmbedLink(m.body)
+                          ? { busy: summarizing.has(m._id), onClick: () => void summarize(m._id) }
+                          : undefined
+                      }
+                    />
+                  ))}
+                {editingId !== m._id && m.kind === "text" && m.style === null && htmlEmbed(m.body) && (
+                  <EmbedPlayer embed={htmlEmbed(m.body)!.embed} url={htmlEmbed(m.body)!.url} onLayout={keepBottom} />
+                )}
+                {m.summarizable && !m.summarized && !m.summaryBlocked && editingId !== m._id && !firstEmbedLink(m.body) && (
                   <button
                     type="button"
                     disabled={summarizing.has(m._id)}
@@ -846,6 +919,12 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
                     {summarizing.has(m._id) ? <Loader2 className="size-3.5 animate-spin" strokeWidth={2.2} /> : <Sparkles className="size-3.5" strokeWidth={2} />}
                     {summarizing.has(m._id) ? t("chat.summarizing") : t("chat.summarize")}
                   </button>
+                )}
+                {m.summaryBlocked && editingId !== m._id && (
+                  <p className="mt-1.5 flex w-fit items-center gap-1.5 text-[13px] text-app-text-dim" title={t(`error.${m.summaryBlocked}` as MessageKey)}>
+                    <Ban className="size-3.5" strokeWidth={2} />
+                    {t("chat.summaryUnavailable")}
+                  </p>
                 )}
                 <ReactionChips messageId={m._id} reactions={m.reactions} onError={setError} />
               </div>

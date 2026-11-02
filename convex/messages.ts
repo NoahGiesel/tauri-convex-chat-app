@@ -134,7 +134,10 @@ export const list = query({
         style: message.style ?? null,
         gifQuery: message.gifQuery ?? null,
         summarizable,
+        gameId: message.gameId ?? null,
+        quizId: message.quizId ?? null,
         summarized,
+        summaryBlocked: message.summaryBlocked ?? null,
         summaryOf: message.summaryOf ?? null,
         summarySource,
         summaryStatus: message.summaryOf ? summaryState(message, nowMs) : null,
@@ -221,7 +224,7 @@ export const remove = mutation({
     const message = await ctx.db.get("messages", args.messageId);
     if (!message) return; // già eliminato (anche da un altro dispositivo)
     await requireMember(ctx, message.conversationId, me._id);
-    if (message.kind === "ai" || message.authorId !== me._id) throw fail("cannot_delete");
+    if (message.kind === "ai" || message.kind === "game" || message.authorId !== me._id) throw fail("cannot_delete");
 
     for (;;) {
       const batch = await ctx.db

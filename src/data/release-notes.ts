@@ -10,11 +10,26 @@ export const RELEASE_NOTES: ReleaseNote[] = [
     version: "next",
     items: {
       en: [
-        "Choose which browser opens links (Settings › Preferences)",
-        "New Preferences section: language and link browser",
+        "YouTube and Spotify links play right inside the chat, and the player can be resized by dragging its corner; pasted “Embed” code from Spotify or YouTube shows the player too",
+        "When a link or video can't be summarized, the button is replaced by a message for everyone",
+        "New game: /stone-paper-scissors challenges the other person in a direct chat to a best-of-3 with a countdown every round",
+        "New game: /quiz3 and /quiz5 — each player picks 3 or 5 topics (or “Random”), the AI writes one question per topic, and you both answer against a countdown; the right answer turns green and the score updates",
+        "New “Games” tab in the chat's media with results and statistics",
+      ],
+      it: [
+        "I link di YouTube e Spotify si riproducono direttamente in chat, e il player si ridimensiona trascinando l'angolo; anche il codice «Incorpora» incollato da Spotify o YouTube mostra il player",
+        "Quando un link o un video non si può riassumere, il bottone viene sostituito da un messaggio per tutti",
+        "Nuovo gioco: /stone-paper-scissors sfida l'altra persona in una chat diretta a una partita al meglio di 3, con un conto alla rovescia a ogni round",
+        "Nuovo gioco: /quiz3 e /quiz5 — ognuno sceglie 3 o 5 argomenti (o «Casuale»), l'AI scrive una domanda per argomento e rispondete a tempo; la risposta giusta diventa verde e il punteggio si aggiorna",
+        "Nuova scheda «Giochi» nei media della chat con risultati e statistiche",
+      ],
+    },
+  },
+  {
+    version: "0.1.16",
+    items: {
+      en: [
         "/ask answers cite their sources as short numbered links at the end of each paragraph, with a hover popup to copy the full link",
-        "Unread badge no longer disappears right away when the app is in the background",
-        "“Transcribe” is now “Get summary”",
         "Edit a group straight from the sidebar: a pencil appears when you hover it",
         "Delete a group (only its creator can), with a double confirmation",
         "Public and private groups: public ones can be found under “Browse groups” and joined by anyone; private ones show a lock in the sidebar",
@@ -23,11 +38,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
         "After an update, a window shows what's new in the installed version",
       ],
       it: [
-        "Scegli in quale browser aprire i link (Impostazioni › Preferenze)",
-        "Nuova sezione Preferenze: lingua e browser per i link",
         "Le risposte di /ask citano le fonti con link brevi numerati a fine paragrafo, con popup al passaggio del mouse per copiare il link completo",
-        "Il badge dei non letti non sparisce più subito quando l'app è in secondo piano",
-        "«Trascrivi» ora è «Ottieni riassunto»",
         "Modifica un gruppo direttamente dalla sidebar: al passaggio del mouse compare una matita",
         "Elimina un gruppo (solo chi lo ha creato), con doppia conferma",
         "Gruppi pubblici e privati: quelli pubblici si trovano in «Esplora gruppi» e chiunque può unirsi; quelli privati hanno un lucchetto nella sidebar",
@@ -40,8 +51,16 @@ export const RELEASE_NOTES: ReleaseNote[] = [
   {
     version: "0.1.15",
     items: {
-      en: ["Improvements to the summary feature in the conversation view"],
-      it: ["Miglioramenti alla funzione di riassunto nella conversazione"],
+      en: [
+        "“Transcribe” is now “Get summary”",
+        "Unread badge no longer disappears right away when the app is in the background",
+        "Improvements to the summary feature in the conversation view",
+      ],
+      it: [
+        "«Trascrivi» ora è «Ottieni riassunto»",
+        "Il badge dei non letti non sparisce più subito quando l'app è in secondo piano",
+        "Miglioramenti alla funzione di riassunto nella conversazione",
+      ],
     },
   },
   {

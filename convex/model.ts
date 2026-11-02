@@ -44,7 +44,12 @@ export type ErrorCode =
   | "usage_unavailable"
   | "video_too_long"
   | "not_group_owner"
-  | "group_not_public";
+  | "group_not_public"
+  | "summary_unavailable"
+  | "game_direct_only"
+  | "game_in_progress"
+  | "game_closed"
+  | "quiz_invalid_topics";
 
 export const fail = (code: ErrorCode) => new ConvexError({ code });
 

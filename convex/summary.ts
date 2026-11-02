@@ -31,6 +31,7 @@ export const load = internalQuery({
     if (!message) throw fail("message_not_found");
     await requireMember(ctx, message.conversationId, me._id);
     if (message.kind !== "text") throw fail("nothing_to_summarize");
+    if (message.summaryBlocked) throw fail("summary_unavailable");
     const existing = await ctx.db.query("messages").withIndex("by_summaryOf", (q) => q.eq("summaryOf", message._id)).order("desc").first();
     if (blocksNewSummary(existing, Date.now())) throw fail("already_summarized");
     return { profileId: me._id, conversationId: message.conversationId, body: message.body };
@@ -77,6 +78,16 @@ export const cached = internalQuery({
   handler: async (ctx, args) => {
     const saved = await ctx.db.query("transcripts").withIndex("by_key", (q) => q.eq("key", args.key)).first();
     return saved?.body ?? null;
+  },
+});
+
+/** Errori che dipendono dal contenuto e non passano riprovando: da lì in poi il riassunto è bloccato per tutti. */
+const PERMANENT_ERRORS = new Set(["source_unreachable", "video_too_long"]);
+
+export const block = internalMutation({
+  args: { messageId: v.id("messages"), code: v.string() },
+  handler: async (ctx, args) => {
+    if (await ctx.db.get("messages", args.messageId)) await ctx.db.patch("messages", args.messageId, { summaryBlocked: args.code });
   },
 });
 
@@ -270,6 +281,8 @@ export const summarize = action({
       await ctx.runMutation(internal.summary.finish, { messageId: pendingId, body: text.slice(0, 20_000), key });
     } catch (e) {
       await ctx.runMutation(internal.summary.abort, { messageId: pendingId });
+      const code = e instanceof ConvexError ? (e.data as { code?: string } | undefined)?.code : undefined;
+      if (code && PERMANENT_ERRORS.has(code)) await ctx.runMutation(internal.summary.block, { messageId: args.messageId, code });
       if (e instanceof ConvexError) throw e;
       throw fail("summary_failed");
     }

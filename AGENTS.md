@@ -18,4 +18,6 @@ Read `docs/DEPLOY.md` before any deploy or release. Never push tags, run `npx co
 
 ## Release notes
 
-For every user-visible change (feature, fix, UI or text change), add a line to the `"next"` entry of `src/data/release-notes.ts` in the same piece of work, in English and Italian. When a release is made, rename `"next"` to the version number and start a new `"next"` entry. Do not list purely internal changes (tests, refactors).
+`src/data/release-notes.ts` lists, per version, only the user-visible changes (feature, fix, UI or text change) of that version, in English and Italian. The `"next"` entry holds only what is NOT in the latest release yet.
+
+To fill or check `"next"`, diff against the latest release tag (`git describe --tags --abbrev=0`, then `git diff <tag> --stat` and `git grep` on the tag for each candidate item) and list only what is new compared to that tag. Never carry over an item already shipped in an earlier version. At release time rename `"next"` to the version number and start a new `"next"`. Do not list purely internal changes (tests, refactors).

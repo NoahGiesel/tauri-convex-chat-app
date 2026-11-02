@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { usePaginatedQuery } from "convex/react";
+import { usePaginatedQuery, useQuery } from "convex/react";
 import { Link2, Play, Sparkles, X } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
@@ -10,7 +10,7 @@ import { useI18n } from "@/i18n/i18n-provider";
 import { openLink } from "@/lib/links";
 import { cn } from "@/lib/utils";
 
-type Tab = "media" | "links" | "ai";
+type Tab = "media" | "links" | "ai" | "games";
 const PAGE = 30;
 
 /** Tutte le foto, i video e i link mandati in una chat o in un gruppo. */
@@ -29,7 +29,7 @@ export function MediaLibrary({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div role="tablist" className="flex shrink-0 gap-1 border-b border-app-border px-6 pt-2">
-        {(["media", "links", "ai"] as const).map((id) => (
+        {(["media", "links", "ai", "games"] as const).map((id) => (
           <button
             key={id}
             type="button"
@@ -41,7 +41,7 @@ export function MediaLibrary({
               tab === id ? "border-app-accent text-app-text-strong" : "border-transparent text-app-text-muted hover:text-app-text",
             )}
           >
-            {id === "ai" ? t("chat.aiName") : t(id === "media" ? "library.media" : "library.links")}
+            {id === "ai" ? t("chat.aiName") : id === "games" ? t("library.games") : t(id === "media" ? "library.media" : "library.links")}
           </button>
         ))}
         <button
@@ -58,6 +58,7 @@ export function MediaLibrary({
         {tab === "media" && <MediaTab conversationId={conversationId} onOpenMedia={onOpenMedia} />}
         {tab === "links" && <LinksTab conversationId={conversationId} />}
         {tab === "ai" && <AiTab conversationId={conversationId} />}
+        {tab === "games" && <GamesTab conversationId={conversationId} />}
       </div>
     </div>
   );
@@ -209,5 +210,114 @@ function AiTab({ conversationId }: { conversationId: Id<"conversations"> }) {
       </ul>
       <LoadMore status={status} onMore={() => loadMore(PAGE)} />
     </>
+  );
+}
+
+/** Storico dei giochi della chat (sasso-carta-forbici e quiz), con le statistiche di chi ha giocato. */
+function GamesTab({ conversationId }: { conversationId: Id<"conversations"> }) {
+  const { t, language } = useI18n();
+  const rps = useQuery(api.games.history, { conversationId });
+  const quiz = useQuery(api.quizzes.history, { conversationId });
+  const when = (ms: number) => new Date(ms).toLocaleString(language, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+
+  if (!rps || !quiz) return null;
+  if (rps.total === 0 && quiz.total === 0) return <p className="pt-10 text-center text-sm text-app-text-muted">{t("library.noGames")}</p>;
+
+  /** Una riga per gioco: titolo e totali, poi i due giocatori con vittorie e una barra che li mette a confronto. */
+  const stats = (
+    title: string,
+    total: number,
+    draws: number,
+    players: { profileId: string; name: string; wins: number; extra: string }[],
+  ) => {
+    if (total === 0) return null;
+    const [p1, p2] = players;
+    const wins = players.reduce((sum, p) => sum + p.wins, 0);
+    const share = p1 && p2 && wins > 0 ? (p1.wins / wins) * 100 : 50;
+    return (
+      <section className="flex flex-col gap-2.5 rounded-xl border border-app-border bg-app-panel px-3.5 py-3">
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="text-sm font-bold text-app-text-strong">{title}</span>
+          <span className="text-xs text-app-text-dim">
+            {t("library.gamesPlayed", { count: total })}
+            {draws > 0 ? ` · ${t("library.gamesDraws", { count: draws })}` : ""}
+          </span>
+        </div>
+        {p1 && p2 ? (
+          <>
+            <div className="flex items-center gap-3">
+              <span className="min-w-0 flex-1 truncate text-sm font-semibold text-app-text">{p1.name}</span>
+              <span className="text-xl leading-none font-extrabold text-app-text-strong tabular-nums">
+                {p1.wins}
+                <span className="px-1.5 text-sm font-bold text-app-text-dim">–</span>
+                {p2.wins}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-right text-sm font-semibold text-app-text">{p2.name}</span>
+            </div>
+            <div className="flex h-1.5 overflow-hidden rounded-full bg-app-border" aria-hidden>
+              {wins > 0 && (
+                <>
+                  <div className="bg-app-accent transition-[width]" style={{ width: `${share}%` }} />
+                  <div className="bg-app-text-dim/60" style={{ width: `${100 - share}%` }} />
+                </>
+              )}
+            </div>
+            <div className="flex justify-between text-[11px] text-app-text-dim">
+              <span>{p1.extra}</span>
+              <span>{p2.extra}</span>
+            </div>
+          </>
+        ) : (
+          players.map((p) => (
+            <div key={p.profileId} className="flex items-center justify-between text-sm">
+              <span className="font-semibold text-app-text">{p.name}</span>
+              <span className="font-extrabold text-app-text-strong">{p.wins}</span>
+            </div>
+          ))
+        )}
+      </section>
+    );
+  };
+
+  const list = [
+    ...rps.recent.map((g) => ({ ...g, icon: "🪨", mode: null as string | null })),
+    ...quiz.recent.map((g) => ({ ...g, icon: "🧠", mode: `quiz${g.size}` as string | null })),
+  ].sort((x, y) => y.finishedAt - x.finishedAt);
+
+  return (
+    <div className="flex flex-col gap-3">
+      {stats(
+        `🪨 ${t("game.title")}`,
+        rps.total,
+        rps.draws,
+        rps.players.map((p) => ({ profileId: p.profileId, name: p.name, wins: p.wins, extra: t("library.gamesRounds", { count: p.roundWins }) })),
+      )}
+      {stats(
+        `🧠 ${t("library.quizzes")}`,
+        quiz.total,
+        quiz.draws,
+        quiz.players.map((p) => ({ profileId: p.profileId, name: p.name, wins: p.wins, extra: t("library.quizPoints", { count: p.points }) })),
+      )}
+
+      <ul className="mt-1 flex flex-col divide-y divide-app-border">
+        {list.map((g) => (
+          <li key={g._id} className="flex items-center gap-2.5 py-2">
+            <span className="w-5 shrink-0 text-center text-base">{g.icon}</span>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[13px] font-semibold text-app-text">
+                {g.nameA} <span className="font-extrabold text-app-text-strong">{g.scoreA}–{g.scoreB}</span> {g.nameB}
+              </div>
+              <div className="text-[11px] text-app-text-dim">
+                {when(g.finishedAt)}
+                {g.mode && <span className="ml-1.5 rounded bg-app-field px-1 py-px font-mono font-semibold text-app-text-muted">{g.mode}</span>}
+              </div>
+            </div>
+            <span className={cn("shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-bold", g.winnerSide ? "bg-app-accent-soft text-app-accent-text" : "bg-app-field text-app-text-muted")}>
+              {g.winnerSide ? g.winnerSide === "a" ? g.nameA : g.nameB : t("library.gameTie")}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
