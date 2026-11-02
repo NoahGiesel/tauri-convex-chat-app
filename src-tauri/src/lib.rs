@@ -2,6 +2,29 @@
 #[cfg(all(feature = "e2e", not(debug_assertions)))]
 compile_error!("the e2e feature is for the Test build alone, which pnpm e2e builds with --debug");
 
+use std::net::{SocketAddr, TcpStream};
+use std::time::{Duration, Instant};
+
+/// Latenza di rete in millisecondi: tempo di handshake TCP verso Cloudflare. Host e porta sono fissi (nessun input dal frontend).
+/// `None` se nessuno dei due indirizzi risponde entro il timeout.
+#[tauri::command]
+async fn ping() -> Option<u32> {
+    tauri::async_runtime::spawn_blocking(|| {
+        const HOSTS: [&str; 2] = ["1.1.1.1:443", "1.0.0.1:443"];
+        for host in HOSTS {
+            let Ok(addr) = host.parse::<SocketAddr>() else { continue };
+            let start = Instant::now();
+            if TcpStream::connect_timeout(&addr, Duration::from_millis(2000)).is_ok() {
+                return Some(start.elapsed().as_millis() as u32);
+            }
+        }
+        None
+    })
+    .await
+    .ok()
+    .flatten()
+}
+
 pub fn run() {
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -14,6 +37,7 @@ pub fn run() {
     let builder = builder.plugin(tauri_plugin_wdio_webdriver::init());
 
     builder
+        .invoke_handler(tauri::generate_handler![ping])
         .run(tauri::generate_context!())
         .expect("errore durante l'avvio dell'applicazione");
 }

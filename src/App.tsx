@@ -55,6 +55,10 @@ function Session() {
               setSection("account");
               setPage("settings");
             }}
+            onOpenPreferences={() => {
+              setSection("preferences");
+              setPage("settings");
+            }}
             onOpenReleaseNotes={() => {
               setSection("releaseNotes");
               setPage("settings");

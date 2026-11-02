@@ -32,7 +32,15 @@ const MIN_PANE_PX = 280;
  * Pagina Chat: barra laterale, schede delle chat aperte e uno o più pannelli affiancati.
  * Per dividere la vista si trascina una scheda sulla metà sinistra o destra di una chat già aperta.
  */
-export function ChatApp({ onOpenSettings, onOpenReleaseNotes }: { onOpenSettings: () => void; onOpenReleaseNotes: () => void }) {
+export function ChatApp({
+  onOpenSettings,
+  onOpenReleaseNotes,
+  onOpenPreferences,
+}: {
+  onOpenSettings: () => void;
+  onOpenReleaseNotes: () => void;
+  onOpenPreferences: () => void;
+}) {
   const sidebar = useSidebar();
   const { t } = useI18n();
   usePresenceHeartbeat();
@@ -193,6 +201,7 @@ export function ChatApp({ onOpenSettings, onOpenReleaseNotes }: { onOpenSettings
         onEditGroup={setEditGroupId}
         onOpenSettings={onOpenSettings}
         onOpenReleaseNotes={onOpenReleaseNotes}
+        onOpenPreferences={onOpenPreferences}
       />
 
       <section className="flex min-w-0 flex-1 flex-col bg-app-panel">
@@ -302,7 +311,7 @@ export function ChatApp({ onOpenSettings, onOpenReleaseNotes }: { onOpenSettings
               )}
               {split && <div className={cn("h-[3px] shrink-0", activeIndex === i ? "bg-app-accent" : "bg-transparent")} />}
               {id ? (
-                <ConversationView key={id} conversationId={id} />
+                <ConversationView key={id} conversationId={id} onOpenPreferences={onOpenPreferences} />
               ) : (
                 <div className="flex flex-1 items-center justify-center px-6 text-center text-sm text-app-text-muted">
                   {t("chat.select")}

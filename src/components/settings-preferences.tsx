@@ -1,5 +1,6 @@
 import { SettingsLanguage } from "@/components/settings-language";
 import { SettingsLinkBrowser } from "@/components/settings-link-browser";
+import { SettingsPing } from "@/components/settings-ping";
 import { useI18n } from "@/i18n/i18n-provider";
 
 export function SettingsPreferences() {
@@ -13,6 +14,7 @@ export function SettingsPreferences() {
       </div>
       <SettingsLanguage />
       <SettingsLinkBrowser />
+      <SettingsPing />
     </div>
   );
 }

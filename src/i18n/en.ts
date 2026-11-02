@@ -462,6 +462,18 @@ export const en = {
   "quiz.modeChoose": "Choose topics",
   "quiz.modeRandom": "Random",
   "quiz.randomHint": "The AI will pick {count} varied topics for you.",
+  "side.ping": "Ping",
+  "side.pingOffline": "offline",
+  "side.pingHint": "Network latency to the internet (not to the chat server)",
+  "settings.ping.title": "Show ping:",
+  "settings.ping.description": "Your internet latency: green under 100 ms, orange up to 350 ms, red above.",
+  "settings.ping.status": "Next to status",
+  "settings.ping.bottomLeft": "Bottom left of sidebar",
+  "settings.ping.bottomRight": "Bottom right of sidebar",
+  "settings.ping.avatar": "Under the avatar",
+  "settings.ping.composer": "Next to the paperclip",
+  "settings.ping.off": "Hidden",
+  "settings.ping.compact": "Show only the number (e.g. 42 ms)",
 } as const;
 
 export type MessageKey = keyof typeof en;

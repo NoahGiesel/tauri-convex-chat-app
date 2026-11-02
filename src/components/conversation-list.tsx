@@ -20,6 +20,8 @@ import { ChatSections, UnreadBadge } from "@/components/chat-sections";
 import type { ConversationItem } from "@/components/chat-app";
 import { SIDEBAR_MAX, SIDEBAR_MIN, SIDEBAR_RAIL, useSidebar } from "@/hooks/use-sidebar";
 import { useAppVersion } from "@/hooks/use-app-version";
+import { PingIndicator } from "@/components/ping-indicator";
+import { usePingPlace } from "@/hooks/use-ping";
 import { useI18n } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
@@ -38,6 +40,7 @@ export function ConversationList({
   onEditGroup,
   onOpenSettings,
   onOpenReleaseNotes,
+  onOpenPreferences,
 }: {
   me: { name: string; avatarIndex: number; avatarUrl: string | null } | null | undefined;
   conversations: ConversationItem[] | null | undefined;
@@ -49,9 +52,11 @@ export function ConversationList({
   onEditGroup: (id: Id<"conversations">) => void;
   onOpenSettings: () => void;
   onOpenReleaseNotes: () => void;
+  onOpenPreferences: () => void;
 }) {
   const { t } = useI18n();
   const version = useAppVersion();
+  const pingPlace = usePingPlace();
   const { width, collapsed, hidden, side, setWidth, resetWidth, setCollapsed, setHidden } = useSidebar();
   const [query, setQuery] = useState("");
   const [dragging, setDragging] = useState(false);
@@ -251,19 +256,25 @@ export function ConversationList({
       {handle}
 
       <div className="flex items-center gap-2 pt-2 pr-2 pb-3 pl-4">
-        <button
-          type="button"
-          aria-label={t("nav.settings")}
-          title={t("nav.settings")}
-          onClick={onOpenSettings}
-          className="relative size-[46px] shrink-0 cursor-pointer rounded-[calc(11px*var(--radius-scale))]"
-        >
-          <Avatar name={me?.name ?? ""} index={0} src={me?.avatarUrl} size={46} accent />
-          <span className={cn("absolute -right-[3px] -bottom-[3px] size-3.5 rounded-full border-[3px] border-app-sidebar", invisible ? "bg-app-text-dim" : "bg-app-online")} />
-        </button>
+        <div className="flex shrink-0 flex-col items-center gap-1">
+          <button
+            type="button"
+            aria-label={t("nav.settings")}
+            title={t("nav.settings")}
+            onClick={onOpenSettings}
+            className="relative size-[46px] shrink-0 cursor-pointer rounded-[calc(11px*var(--radius-scale))]"
+          >
+            <Avatar name={me?.name ?? ""} index={0} src={me?.avatarUrl} size={46} accent />
+            <span className={cn("absolute -right-[3px] -bottom-[3px] size-3.5 rounded-full border-[3px] border-app-sidebar", invisible ? "bg-app-text-dim" : "bg-app-online")} />
+          </button>
+          <PingIndicator place="avatar" onClick={onOpenPreferences} />
+        </div>
         <div className="mr-1 ml-1 min-w-0 flex-1">
           <div className="truncate text-base font-bold text-app-text-strong">{me?.name ?? "…"}</div>
-          <StatusMenu />
+          <div className="flex items-center gap-2.5">
+            <StatusMenu />
+            <PingIndicator place="status" onClick={onOpenPreferences} />
+          </div>
         </div>
         <div className="-mr-1 flex shrink-0 flex-col-reverse items-center">
         <button
@@ -326,18 +337,23 @@ export function ConversationList({
           ● {t("side.devBuild")}
         </div>
       )}
-      {version && (
-        <div className="shrink-0 px-4 pb-2.5 pt-1.5">
+      <div className="flex shrink-0 items-center justify-between gap-2 px-4 pb-2.5 pt-1.5">
+        <PingIndicator place="bottomLeft" onClick={onOpenPreferences} />
+        {version && (
           <button
             type="button"
             onClick={onOpenReleaseNotes}
             title={t("settings.nav.releaseNotes")}
-            className="text-[11px] font-medium text-app-text-dim opacity-60 transition-opacity hover:opacity-100"
+            className={cn(
+              "text-[11px] font-medium text-app-text-dim opacity-60 transition-opacity hover:opacity-100",
+              pingPlace !== "bottomRight" && "ml-auto",
+            )}
           >
             v{version}
           </button>
-        </div>
-      )}
+        )}
+        <PingIndicator place="bottomRight" onClick={onOpenPreferences} />
+      </div>
     </aside>
   );
 }

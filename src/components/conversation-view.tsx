@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { insertAtTop, useAction, useMutation, usePaginatedQuery, useQuery } from "convex/react";
 import type { OptimisticLocalStore } from "convex/browser";
+import { PingIndicator } from "@/components/ping-indicator";
 import { ArrowDown, Ban, Film, Images, Loader2, Maximize2, Paperclip, Send, Smile, Sparkles, X } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
@@ -83,7 +84,15 @@ function firstEmbedLink(body: string): string | undefined {
  * `showHeader`: barra con nome e stato in cima (serve nelle finestre staccate, che non hanno le schede);
  * nella finestra principale nome e stato stanno già nella scheda, e il pulsante Media è sovrapposto alla lista.
  */
-export function ConversationView({ conversationId, showHeader = false }: { conversationId: Id<"conversations">; showHeader?: boolean }) {
+export function ConversationView({
+  conversationId,
+  showHeader = false,
+  onOpenPreferences,
+}: {
+  conversationId: Id<"conversations">;
+  showHeader?: boolean;
+  onOpenPreferences?: () => void;
+}) {
   const { t, locale, language } = useI18n();
   const presence = usePresence();
   const [profileId, setProfileId] = useState<Id<"profiles"> | null>(null);
@@ -1063,6 +1072,9 @@ export function ConversationView({ conversationId, showHeader = false }: { conve
               if (files.length > 0) stageFiles(files);
             }}
           />
+          <div className="flex h-11 shrink-0 items-center">
+            <PingIndicator place="composer" onClick={onOpenPreferences} />
+          </div>
           <button
             type="button"
             aria-label={t("composer.attach")}
