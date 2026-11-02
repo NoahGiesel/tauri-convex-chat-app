@@ -11,6 +11,8 @@ const EDITOR = `//textarea[@aria-label="${en['chat.editMessage']}"]`;
 const MONOSPACE = /mono|consolas|courier|menlo/i;
 /** The form's button, because `aria/` also matches a row's button by its visible text. */
 const REDEEM_BUTTON = `//form//button[normalize-space(.)="${en['invite.add']}"]`;
+const LOAD_OLDER = `aria/${en['chat.loadOlder']}`;
+const JUMP_TO_LATEST = `aria/${en['chat.jumpToLatest']}`;
 const textSelector = (text) => `//*[contains(normalize-space(.), "${text}") and not(*)]`;
 const roleSelector = (role, text) => `//*[@role="${role}"][contains(normalize-space(.), "${text}")]`;
 const named = (key, name) => en[key].replace('{name}', name);
@@ -18,6 +20,16 @@ const messageRow = (text) => `//*[@data-testid="message"][contains(normalize-spa
 const messageButton = (text, label) => `${messageRow(text)}//button[@aria-label="${label}"]`;
 /** The raw text, not `messageRow()`: `normalize-space` would hide the spaces that `/pre` keeps. */
 const messageWords = (text) => `//*[@data-testid="message"]//*[text()[contains(., "${text}")]]`;
+/**
+ * A chat in the list, by the tooltip a person sees on it: its title, then its presence.
+ * Not by `aria/`, because the row is named by its content, which also holds the unread count.
+ */
+const rowTooltip = (title, presence = '') => `${title} · ${presence}`;
+const chatRow = (title) => `//button[starts-with(@title, "${rowTooltip(title)}")]`;
+const unread = (count) => en['side.unread'].replace('{count}', count);
+const unreadBadge = (title, count) => `${chatRow(title)}//*[@title="${unread(count)}"]`;
+/** Any count: the text that follows the number. */
+const anyUnreadBadge = (title) => `${chatRow(title)}//*[contains(@title, "${unread('')}")]`;
 const reactionChip = (text, emoji) => `${messageRow(text)}//button[@aria-pressed][contains(normalize-space(.), "${emoji}")]`;
 
 /** Runs in the page. What a person can see of how some words are set. */
@@ -46,9 +58,21 @@ function drivenUser(name) {
   const waitUntilShown = (selector, timeoutMsg) => b.waitUntil(async () => b.$(selector).isDisplayed(), { ...WAIT, timeoutMsg });
 
   /** The driver's click() also presses covered and hidden buttons, so a click must first prove a person could do it. */
+  const waitUntilClickable = (selector) =>
+    b.waitUntil(async () => b.$(selector).isClickable(), { ...WAIT, timeoutMsg: `${name} could not press ${selector}` });
+
   const press = async (selector) => {
-    await b.waitUntil(async () => b.$(selector).isClickable(), { ...WAIT, timeoutMsg: `${name} could not press ${selector}` });
+    await waitUntilClickable(selector);
     await b.$(selector).click();
+  };
+
+  /**
+   * For a button that starts a smooth scroll. The driver's click() focuses the button after clicking it,
+   * and that focus stops the scroll. A pointer focuses on the way down, before the click, as a mouse does.
+   */
+  const pressWithPointer = async (selector) => {
+    await waitUntilClickable(selector);
+    await b.action('pointer').move({ origin: await b.$(selector) }).down().up().perform();
   };
 
   /** For actions shown only on hover, which cannot be driven. If this one stops being hidden, it moves to `press()`. */
@@ -99,6 +123,18 @@ function drivenUser(name) {
     },
 
     seesMessage: (text) => waitUntilShown(messageRow(text), `${name} did not see the message "${text}"`),
+    /** Scrolled to where a person would see it, not only somewhere in the chat. */
+    seesMessageInView: (text) =>
+      b.waitUntil(async () => b.$(messageRow(text)).isDisplayed({ withinViewport: true }), {
+        ...WAIT,
+        timeoutMsg: `${name} did not see the message "${text}" without scrolling`,
+      }),
+    async doesNotSeeMessageInView(text) {
+      if (await b.$(messageRow(text)).isDisplayed({ withinViewport: true })) throw new Error(`${name} still sees the message "${text}" without scrolling`);
+    },
+    loadOlderMessages: () => press(LOAD_OLDER),
+    seesAllMessagesLoaded: () => waitUntilGone(LOAD_OLDER, `${name} can still load older messages`),
+    jumpToLatest: () => pressWithPointer(JUMP_TO_LATEST),
     async doesNotSeeMessage(text) {
       if (await b.$(messageRow(text)).isExisting()) throw new Error(`${name} still sees the message "${text}"`);
     },
@@ -159,6 +195,14 @@ function drivenUser(name) {
       return landed;
     },
     seesCoinOn: (side) => waitUntilShown(messageRow(`🪙 ${side}`), `${name} did not see the coin on ${side}`),
+
+    seesChatInList: (title) => waitUntilShown(chatRow(title), `${name} has no chat with ${title} in the list`),
+    async hasNoChatOpen() {
+      if (await b.$(COMPOSER).isExisting()) throw new Error(`${name} has a chat open`);
+    },
+    seesUnread: (title, count) => waitUntilShown(unreadBadge(title, count), `${name} did not see ${count} unread in ${title}`),
+    seesNoUnread: (title) => waitUntilGone(anyUnreadBadge(title), `${name} still sees unread messages in ${title}`),
+    seesOnline: (person) => waitUntilShown(`//button[@title="${rowTooltip(person, en['side.online'])}"]`, `${name} did not see ${person} online`),
 
     seesAuthScreen: () => waitUntilShown(textSelector(en['auth.welcomeBack']), `${name} is not on the auth screen`),
     seesChats: () => waitUntilShown(SETTINGS, `${name} did not reach their chats`),
@@ -269,6 +313,24 @@ export async function expiredInviteLink() {
   const bob = drivenUser('bob');
   await bob.seesChats();
   return { bob, link: `chat://invite/${EXPIRED_INVITE_TOKEN}` };
+}
+
+export async function twoFriends() {
+  await reset('friends');
+  const { alice, bob } = aliceAndBob();
+  // The list proves the chats rendered, so the absence of a chat after it means something.
+  await alice.seesChatInList(USERS.bob.name);
+  await bob.seesChatInList(USERS.alice.name);
+  await alice.hasNoChatOpen();
+  await bob.hasNoChatOpen();
+  return { alice, bob };
+}
+
+export async function longChat() {
+  await reset('history');
+  const alice = drivenUser('alice');
+  await alice.openChat(USERS.bob.name);
+  return { alice };
 }
 
 export async function twoFriendsWithChatOpen() {

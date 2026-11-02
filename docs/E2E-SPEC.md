@@ -217,6 +217,7 @@ const composer = () => b.$(`aria/${en['chat.composer']}`);
 
 - **All tests run in English**, because a Reset clears `chat:lang`.
 - **Seed data stays literal.** Names like `Bob Test` and message bodies are test data.
+- **A chat in the list is found by its tooltip**, its title then its presence, such as `Bob Test · Online`. The row's accessible name is its content, and that also holds the unread count.
 - **`data-testid` is the exception.** Use it only where no accessible name exists. The starting list is the tab drop zones, the message row and the three file inputs. If a person sees a control, it gets a real name instead.
 
 ### Waiting
@@ -235,8 +236,9 @@ The driver's `click()` is synthetic. It presses a button under a full-screen cov
 
 - **`press()` is the default.** It waits for `isClickable`, then clicks.
 - **`pressHoverOnly()` is the exception**, for actions shown only on hover. It checks that the element is hidden, then clicks it. If an action stops being hover-only, the check fails and the test moves to `press()`.
+- **`pressWithPointer()` is for a button that starts a smooth scroll**, such as "Jump to latest message". The driver's `click()` focuses the button after the click, and that focus stops the scroll partway. A pointer down and up focuses first, as a mouse does, and the scroll finishes.
 
-Hover cannot be driven. `moveTo` does not trigger `:hover`, and a pointer move onto an element fails with `could not read element center`. Message actions, the tab close button and the section controls all depend on hover.
+Hover cannot be driven. `moveTo` does not trigger `:hover`, and a pointer move onto a hidden element fails with `could not read element center`. Message actions, the tab close button and the section controls all depend on hover.
 
 ### Dragging
 
@@ -323,6 +325,7 @@ These come from one machine with very little data. Treat them as orders of magni
 | Later `tauri build` | 15 to 17 s |
 | Backend start and function push | 2.6 to 4.6 s |
 | All Seed work, four Seeds | 9.6 s |
+| Building `history`: a Reset, 70 messages sent one at a time, and the export | 3.3 to 3.7 s |
 | Reset plus Fixture, 40 idle rounds | Median 2.2 s, max 2.4 s |
 | Reset plus Fixture, 20 rounds with all cores busy | Median 3.9 s, max 6.1 s |
 | Message reaches the other user, idle | Median 28 ms, max 138 ms |
@@ -395,7 +398,7 @@ No macOS code is written until someone can run it. Until then the suite runs on 
 
 - The release guard and `releaseDraft: true` with two platforms. Tags must not be pushed to test it, so the first real release is the test.
 - The five-language test.
-- The `history` Seed, Carol's old `lastSeenAt`, and sending 70 messages in a Seed.
+- Carol's old `lastSeenAt`.
 - A `media` Seed with a video and a link message. The prototype's had neither.
 - Anything with a real video.
 - Most scenarios. The probes covered a group chat, the unread badge, presence, the three drag cases, one photo upload, one deletion, the GIF picker, `/giphy` and one preview card. Settings ran nothing.
@@ -409,7 +412,7 @@ No macOS code is written until someone can run it. Until then the suite runs on 
 - Accessible names on the other modals. Only an open chat, two Settings screens, the auth screen and the friend screens were checked.
 - Whether a theme import accepts a synthetic `change` event.
 - A large Seed. Reset time was measured on very little data.
-- Timings for uploads, popouts and `history`, so 5 s per test is a guess.
+- Timings for uploads and popouts, so 5 s per test is a guess for them.
 - Windows Firewall prompts, locked or minimised windows, and Seeds across a backend upgrade.
 - Real system notifications may appear during a run, because `use-message-notifications.ts` is not gated. They are harmless to tests.
 
