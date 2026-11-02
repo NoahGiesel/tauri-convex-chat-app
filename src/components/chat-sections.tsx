@@ -451,9 +451,11 @@ function IconButton({
 
 /** Campo per rinominare una cartella: Invio conferma, Esc annulla, perdere il focus conferma. */
 function FolderNameInput({ initial, onDone }: { initial: string; onDone: (name: string) => void }) {
+  const { t } = useI18n();
   const cancelled = useRef(false);
   return (
     <input
+      aria-label={t("side.folderName")}
       autoFocus
       defaultValue={initial}
       maxLength={MAX_FOLDER_NAME}

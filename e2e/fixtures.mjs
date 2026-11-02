@@ -39,6 +39,18 @@ const unreadBadge = (title, count) => `${chatRow(title)}//*[@title="${unread(cou
 /** Any count: the text that follows the number. */
 const anyUnreadBadge = (title) => `${chatRow(title)}//*[contains(@title, "${unread('')}")]`;
 const reactionChip = (text, emoji) => `${messageRow(text)}//button[@aria-pressed][contains(normalize-space(.), "${emoji}")]`;
+const lastOnline = (time) => en['presence.lastOnline'].replace('{time}', time);
+/** The sections of the chat list that every person has. Folders are named by the person. */
+export const SECTION = { groups: en['side.groups'], direct: en['side.direct'] };
+const FOLDER_NAME = `aria/${en['side.folderName']}`;
+/** The button that opens and closes a section, by the name on it. */
+const sectionToggle = (title) => `button[@aria-expanded][.//span[normalize-space(.)="${title}"]]`;
+const section = (title) => `//section[div/${sectionToggle(title)}]`;
+/** What a person drags to move a section: its heading, which holds the toggle. */
+const sectionHeading = (title) => `//div[@draggable][${sectionToggle(title)}]`;
+const folderControl = (folder, label) => `${section(folder)}/div//button[@aria-label="${label}"]`;
+/** The second element comes after the first in the page, so a person sees it lower down. */
+const followedBy = (first, then) => `${first}/following::${then.replace(/^\/\//, '')}`;
 
 /** Runs in the page. What a person can see of how some words are set. */
 function lookOf(element) {
@@ -60,6 +72,29 @@ function unnamedControls() {
     .map((control) => control.outerHTML.slice(0, 120));
 }
 
+/**
+ * Runs in the page. One event of a drag, at the top, middle or bottom of the element, sharing one DataTransfer
+ * from `dragstart` on. Then two frames, so React has rendered what the event changed before the next one reads it.
+ */
+async function fireDragEvent(element, type, at) {
+  if (type === 'dragstart') window.e2eDataTransfer = new DataTransfer();
+  const rect = element.getBoundingClientRect();
+  const clientY = { top: rect.top + 2, middle: rect.top + rect.height / 2, bottom: rect.bottom - 2 }[at];
+  const init = { bubbles: true, cancelable: true, clientX: rect.left + rect.width / 2, clientY, dataTransfer: window.e2eDataTransfer };
+  element.dispatchEvent(new DragEvent(type, init));
+  await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+}
+
+/**
+ * Runs in the page. Brings this window to the front, as a person's click would. Chromium fires no focus or blur
+ * events in a window in the background, so a field there opens with no text chosen and Enter cannot leave it.
+ */
+async function bringWindowToFront() {
+  if (document.hasFocus()) return;
+  const { label } = window.__TAURI_INTERNALS__.metadata.currentWindow;
+  await window.__TAURI_INTERNALS__.invoke('plugin:window|set_focus', { label });
+}
+
 function drivenUser(name) {
   const b = browser.getInstance(name);
   /** Looks the element up on every poll: a message row gets replaced, and a held element then never reads as displayed. */
@@ -69,8 +104,15 @@ function drivenUser(name) {
   const waitUntilClickable = (selector) =>
     b.waitUntil(async () => b.$(selector).isClickable(), { ...WAIT, timeoutMsg: `${name} could not press ${selector}` });
 
+  /** The two instances take turns in front, and only the one in front gets focus events. */
+  const bringToFront = async () => {
+    await b.execute(bringWindowToFront);
+    await b.waitUntil(() => b.execute(() => document.hasFocus()), { ...WAIT, timeoutMsg: `${name} did not come to the front` });
+  };
+
   const press = async (selector) => {
     await waitUntilClickable(selector);
+    await bringToFront();
     await b.$(selector).click();
   };
 
@@ -80,6 +122,7 @@ function drivenUser(name) {
    */
   const pressWithPointer = async (selector) => {
     await waitUntilClickable(selector);
+    await bringToFront();
     await b.action('pointer').move({ origin: await b.$(selector) }).down().up().perform();
   };
 
@@ -87,10 +130,39 @@ function drivenUser(name) {
   const pressHoverOnly = async (selector) => {
     await b.waitUntil(async () => b.$(selector).isExisting(), { ...WAIT, timeoutMsg: `${name} has no ${selector}` });
     if (await b.$(selector).isDisplayed()) throw new Error(`${selector} is not hover-only any more, so use press()`);
+    await bringToFront();
     await b.$(selector).click();
   };
 
   const waitUntilGone = (selector, timeoutMsg) => b.waitUntil(async () => !(await b.$(selector).isExisting()), { ...WAIT, timeoutMsg });
+
+  const fireDrag = async (selector, type, at = 'middle') => {
+    await b.waitUntil(async () => b.$(selector).isExisting(), { ...WAIT, timeoutMsg: `${name} has no ${selector} for ${type}` });
+    await b.execute(fireDragEvent, await b.$(selector), type, at);
+  };
+
+  /**
+   * WebDriver's drag does nothing in WebView2, because no `dragstart` fires. So a drag is synthetic events,
+   * and the target is looked up only after `dragstart`, because some targets show only during a drag.
+   * It skips the gesture itself, which the Manual smoke covers.
+   */
+  const drag = async (source, target, at) => {
+    await fireDrag(source, 'dragstart');
+    await fireDrag(target, 'dragover', at);
+    await fireDrag(target, 'drop', at);
+    await fireDrag(source, 'dragend');
+  };
+
+  /** A field that opens focused, with its text chosen, so typing replaces it. */
+  const typeInFocused = async (selector, text) => {
+    const focused = async () => (await b.$(selector).isExisting()) && b.execute((field) => field === document.activeElement, await b.$(selector));
+    await b.waitUntil(focused, {
+      ...WAIT,
+      timeoutMsg: `${name} is not typing in ${selector}`,
+    });
+    await b.keys(text);
+    await b.keys('Enter');
+  };
 
   const waitUntilLooks = (text, looksRight, description) =>
     b.waitUntil(
@@ -222,6 +294,36 @@ function drivenUser(name) {
       // Not the composer: the chat open before has one too. Only the new group is empty.
       await waitUntilShown(textSelector(en['chat.noMessages']), `${name} did not open ${title}`);
     },
+
+    seesLastOnline: (person, time) =>
+      waitUntilShown(`//button[@title="${rowTooltip(person, lastOnline(time))}"]`, `${name} did not see ${person} last online ${time}`),
+    searchChats: (text) => fill(en['side.search'], text),
+    seesNoChatsFound: () => waitUntilShown(textSelector(en['side.noResults']), `${name} was shown a chat`),
+    stopsSeeingChatInList: (title) => waitUntilGone(chatRow(title), `${name} still has ${title} in the list`),
+    seesChatAbove: (upper, lower) =>
+      waitUntilShown(followedBy(chatRow(upper), chatRow(lower)), `${name} did not see ${upper} above ${lower}`),
+    seesSectionAbove: (upper, lower) =>
+      waitUntilShown(followedBy(section(upper), section(lower)), `${name} did not see ${upper} above ${lower}`),
+    seesChatInSection: (title, sectionTitle) =>
+      waitUntilShown(`${section(sectionTitle)}${chatRow(title)}`, `${name} did not see ${title} in ${sectionTitle}`),
+    async createFolder(title) {
+      await press(`aria/${en['side.newFolder']}`);
+      await typeInFocused(FOLDER_NAME, title);
+      await waitUntilShown(section(title), `${name} has no folder called ${title}`);
+    },
+    /** Rename and Delete show only on hover. */
+    async renameFolder(title, newTitle) {
+      await pressHoverOnly(folderControl(title, en['side.renameFolder']));
+      await typeInFocused(FOLDER_NAME, newTitle);
+      await waitUntilShown(section(newTitle), `${name} has no folder called ${newTitle}`);
+    },
+    async deleteFolder(title) {
+      await pressHoverOnly(folderControl(title, en['side.deleteFolder']));
+      await waitUntilGone(section(title), `${name} still has the folder ${title}`);
+    },
+    moveChatToFolder: (title, folder) => drag(chatRow(title), sectionHeading(folder), 'middle'),
+    moveChatAbove: (title, other) => drag(chatRow(title), chatRow(other), 'top'),
+    moveSectionAbove: (title, other) => drag(sectionHeading(title), section(other), 'top'),
 
     seesAuthScreen: () => waitUntilShown(textSelector(en['auth.welcomeBack']), `${name} is not on the auth screen`),
     seesChats: () => waitUntilShown(SETTINGS, `${name} did not reach their chats`),
@@ -359,6 +461,15 @@ export async function groupChatOpen() {
   await bob.openChat('Weekend');
   const carol = await scriptedUser('carol');
   return { alice, bob, carol };
+}
+
+/** Alice has Weekend, and a direct chat each with Bob and Carol. Bob stays idle. */
+export async function soloWithChats() {
+  await reset('groups');
+  const alice = drivenUser('alice');
+  for (const title of ['Weekend', USERS.bob.name, USERS.carol.name]) await alice.seesChatInList(title);
+  await alice.hasNoChatOpen();
+  return { alice };
 }
 
 export async function twoFriendsWithChatOpen() {

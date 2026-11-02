@@ -246,6 +246,7 @@ export const ro: Messages = {
   "side.folderEmpty": "Trage chaturile aici.",
   "side.renameFolder": "Redenumește dosarul",
   "side.deleteFolder": "Șterge dosarul",
+  "side.folderName": "Numele dosarului",
   "composer.cmdGiphy": "Trimite un GIF aleatoriu căutând pe GIPHY cu textul tău",
   "composer.giphyUsage": "Adaugă o căutare după comandă, de ex. /giphy pisici.",
   "composer.giphySearching": "Caut pe GIPHY…",
