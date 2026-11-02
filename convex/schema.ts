@@ -54,11 +54,15 @@ export default defineSchema({
     name: v.optional(v.string()),
     /** Solo gruppi: emoji scelta come icona (assente = icona predefinita). */
     icon: v.optional(v.string()),
+    /** Solo gruppi: "public" = tutti gli utenti dell'app lo vedono e possono entrare; assente o "private" = solo i membri aggiunti. */
+    visibility: v.optional(v.union(v.literal("public"), v.literal("private"))),
     createdBy: v.id("profiles"),
     /** Solo per le chat dirette: la `pairKey` della coppia. */
     directKey: v.optional(v.string()),
     lastMessageAt: v.number(),
-  }).index("by_directKey", ["directKey"]),
+  })
+    .index("by_directKey", ["directKey"])
+    .index("by_visibility", ["visibility"]),
 
   /** Appartenenza a una conversazione, con stato di lettura. */
   members: defineTable({

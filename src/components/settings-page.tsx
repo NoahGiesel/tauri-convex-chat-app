@@ -4,12 +4,13 @@ import { SettingsAi } from "@/components/settings-ai";
 import { SettingsPreferences } from "@/components/settings-preferences";
 import { SettingsNotifications } from "@/components/settings-notifications";
 import { SettingsAppearance } from "@/components/settings-appearance";
+import { SettingsReleaseNotes } from "@/components/settings-release-notes";
 import { SettingsUpdates } from "@/components/settings-updates";
 import { useUpdater } from "@/hooks/use-updater";
 import { useI18n } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
-export type SettingsSection = "account" | "preferences" | "appearance" | "notifications" | "ai" | "updates";
+export type SettingsSection = "account" | "preferences" | "appearance" | "notifications" | "ai" | "updates" | "releaseNotes";
 
 /** Impostazioni a tutta finestra: navigazione a sinistra, contenuto a destra (come nel design). */
 export function SettingsPage({
@@ -31,6 +32,7 @@ export function SettingsPage({
     { id: "notifications", label: t("settings.nav.notifications") },
     { id: "ai", label: t("settings.nav.ai") },
     { id: "updates", label: t("settings.nav.updates"), dot: status === "available" },
+    { id: "releaseNotes", label: t("settings.nav.releaseNotes") },
   ];
 
   return (
@@ -76,6 +78,7 @@ export function SettingsPage({
         {section === "notifications" && <SettingsNotifications />}
         {section === "ai" && <SettingsAi />}
         {section === "updates" && <SettingsUpdates />}
+        {section === "releaseNotes" && <SettingsReleaseNotes />}
       </main>
     </div>
   );

@@ -4,6 +4,7 @@ import { api } from "../convex/_generated/api";
 import { AuthScreen } from "@/components/auth-screen";
 import { ChatApp } from "@/components/chat-app";
 import { TranscriptPanelProvider } from "@/hooks/use-transcript-panel";
+import { WhatsNewModal } from "@/components/whats-new-modal";
 import { SettingsPage, type SettingsSection } from "@/components/settings-page";
 import { UpdateBanner } from "@/components/update-banner";
 import { PopoutChat } from "@/components/popout-chat";
@@ -39,6 +40,7 @@ function Session() {
     <SidebarProvider>
     <TranscriptPanelProvider>
     <div className="flex h-screen flex-col bg-app-bg text-app-text">
+      <WhatsNewModal />
       <UpdateBanner
         onOpenSettings={() => {
           setSection("updates");
@@ -51,6 +53,10 @@ function Session() {
           <ChatApp
             onOpenSettings={() => {
               setSection("account");
+              setPage("settings");
+            }}
+            onOpenReleaseNotes={() => {
+              setSection("releaseNotes");
               setPage("settings");
             }}
           />

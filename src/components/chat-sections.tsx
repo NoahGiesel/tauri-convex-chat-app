@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery } from "convex/react";
-import { ChevronDown, Folder, FolderPlus, Hash, Pencil, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, Folder, FolderPlus, Hash, Lock, Pencil, Plus, Trash2 } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { Avatar } from "@/components/avatar";
@@ -99,6 +99,7 @@ export function ChatSections({
   onSelect,
   onOpenGroup,
   onOpenInvite,
+  onEditGroup,
 }: {
   conversations: ConversationItem[];
   query: string;
@@ -107,6 +108,7 @@ export function ChatSections({
   onSelect: (id: ChatId) => void;
   onOpenGroup: () => void;
   onOpenInvite: () => void;
+  onEditGroup: (id: Id<"conversations">) => void;
 }) {
   const { t } = useI18n();
   const presence = usePresence();
@@ -344,7 +346,7 @@ export function ChatSections({
                 return (
                   <div
                     key={c._id}
-                    className={cn("relative", drag?.type === "chat" && drag.id === c._id && "opacity-40")}
+                    className={cn("group/row relative", drag?.type === "chat" && drag.id === c._id && "opacity-40")}
                     onDragOver={(e) => {
                       if (drag?.type !== "chat" || drag.id === c._id || searching) return;
                       e.preventDefault();
@@ -402,12 +404,31 @@ export function ChatSections({
                         )}
                       </span>
                       <span className="min-w-0 flex-1 truncate">{c.title}</span>
+                      {c.kind === "group" && c.visibility === "private" && (
+                        <span title={t("group.private")} className="flex shrink-0">
+                          <Lock className="size-3.5 opacity-60" strokeWidth={2.2} />
+                        </span>
+                      )}
                       {unread && (
                         <span title={t("side.unread", { count: c.unreadCount })} className="flex">
                           <UnreadBadge count={c.unreadCount} className={selected ? "bg-app-accent-fg text-app-accent" : undefined} />
                         </span>
                       )}
                     </button>
+                    {c.kind === "group" && (
+                      <button
+                        type="button"
+                        title={t("group.edit")}
+                        aria-label={t("group.edit")}
+                        onClick={() => onEditGroup(c._id)}
+                        className={cn(
+                          "absolute top-1/2 right-1.5 flex size-6 -translate-y-1/2 items-center justify-center rounded-md opacity-0 transition-opacity group-hover/row:opacity-100 focus-visible:opacity-100",
+                          selected ? "bg-app-accent text-app-accent-fg hover:bg-app-accent-fg/20" : "bg-app-sidebar text-app-text-muted hover:bg-app-field hover:text-app-text",
+                        )}
+                      >
+                        <Pencil className="size-3.5" strokeWidth={2} />
+                      </button>
+                    )}
                   </div>
                 );
               })}

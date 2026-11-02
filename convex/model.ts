@@ -42,7 +42,9 @@ export type ErrorCode =
   | "already_summarized"
   | "source_unreachable"
   | "usage_unavailable"
-  | "video_too_long";
+  | "video_too_long"
+  | "not_group_owner"
+  | "group_not_public";
 
 export const fail = (code: ErrorCode) => new ConvexError({ code });
 

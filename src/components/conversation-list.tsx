@@ -19,6 +19,7 @@ import { StatusMenu } from "@/components/status-menu";
 import { ChatSections, UnreadBadge } from "@/components/chat-sections";
 import type { ConversationItem } from "@/components/chat-app";
 import { SIDEBAR_MAX, SIDEBAR_MIN, SIDEBAR_RAIL, useSidebar } from "@/hooks/use-sidebar";
+import { useAppVersion } from "@/hooks/use-app-version";
 import { useI18n } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
@@ -34,7 +35,9 @@ export function ConversationList({
   onSelect,
   onOpenInvite,
   onOpenGroup,
+  onEditGroup,
   onOpenSettings,
+  onOpenReleaseNotes,
 }: {
   me: { name: string; avatarIndex: number; avatarUrl: string | null } | null | undefined;
   conversations: ConversationItem[] | null | undefined;
@@ -43,9 +46,12 @@ export function ConversationList({
   onSelect: (id: Id<"conversations">) => void;
   onOpenInvite: () => void;
   onOpenGroup: () => void;
+  onEditGroup: (id: Id<"conversations">) => void;
   onOpenSettings: () => void;
+  onOpenReleaseNotes: () => void;
 }) {
   const { t } = useI18n();
+  const version = useAppVersion();
   const { width, collapsed, hidden, side, setWidth, resetWidth, setCollapsed, setHidden } = useSidebar();
   const [query, setQuery] = useState("");
   const [dragging, setDragging] = useState(false);
@@ -310,6 +316,7 @@ export function ConversationList({
             pendingRequests={pendingRequests}
             onSelect={onSelect}
             onOpenGroup={onOpenGroup}
+            onEditGroup={onEditGroup}
             onOpenInvite={onOpenInvite}
           />
         )}
@@ -317,6 +324,18 @@ export function ConversationList({
       {import.meta.env.DEV && (
         <div className="shrink-0 border-t border-app-border px-4 py-2.5 text-xs font-semibold text-amber-400" title={t("side.devBuildHint")}>
           ● {t("side.devBuild")}
+        </div>
+      )}
+      {version && (
+        <div className="shrink-0 px-4 pb-2.5 pt-1.5">
+          <button
+            type="button"
+            onClick={onOpenReleaseNotes}
+            title={t("settings.nav.releaseNotes")}
+            className="text-[11px] font-medium text-app-text-dim opacity-60 transition-opacity hover:opacity-100"
+          >
+            v{version}
+          </button>
         </div>
       )}
     </aside>

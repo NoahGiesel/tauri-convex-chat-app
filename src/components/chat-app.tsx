@@ -32,7 +32,7 @@ const MIN_PANE_PX = 280;
  * Pagina Chat: barra laterale, schede delle chat aperte e uno o più pannelli affiancati.
  * Per dividere la vista si trascina una scheda sulla metà sinistra o destra di una chat già aperta.
  */
-export function ChatApp({ onOpenSettings }: { onOpenSettings: () => void }) {
+export function ChatApp({ onOpenSettings, onOpenReleaseNotes }: { onOpenSettings: () => void; onOpenReleaseNotes: () => void }) {
   const sidebar = useSidebar();
   const { t } = useI18n();
   usePresenceHeartbeat();
@@ -190,7 +190,9 @@ export function ChatApp({ onOpenSettings }: { onOpenSettings: () => void }) {
         onSelect={openChat}
         onOpenInvite={() => setModal("invite")}
         onOpenGroup={() => setModal("group")}
+        onEditGroup={setEditGroupId}
         onOpenSettings={onOpenSettings}
+        onOpenReleaseNotes={onOpenReleaseNotes}
       />
 
       <section className="flex min-w-0 flex-1 flex-col bg-app-panel">
@@ -347,6 +349,9 @@ export function ChatApp({ onOpenSettings }: { onOpenSettings: () => void }) {
           conversationId={editGroupId}
           name={byId.get(editGroupId)!.title}
           icon={byId.get(editGroupId)!.icon}
+          visibility={byId.get(editGroupId)!.visibility ?? "private"}
+          canDelete={byId.get(editGroupId)!.createdByMe}
+          onDeleted={() => closeTab(editGroupId)}
           onClose={() => setEditGroupId(null)}
         />
       )}

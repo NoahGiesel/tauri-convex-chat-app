@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { useI18n } from "@/i18n/i18n-provider";
+import { SourceLink } from "@/components/source-link";
 import { openLink, splitLinks } from "@/lib/links";
 import { cn } from "@/lib/utils";
 
@@ -68,12 +69,16 @@ function Inline({ text }: { text: string }) {
   const nodes: ReactNode[] = [];
   let rest = text;
   let key = 0;
-  const re = /\*\*([^*]+)\*\*|\*([^*\s][^*]*)\*/;
+  const re = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|\*\*([^*]+)\*\*|\*([^*\s][^*]*)\*/;
   for (;;) {
     const m = re.exec(rest);
     if (!m) break;
     if (m.index > 0) nodes.push(<Linkified key={key++} text={rest.slice(0, m.index)} />);
-    nodes.push(m[1] !== undefined ? <strong key={key++} className="font-bold text-app-text-strong">{m[1]}</strong> : <em key={key++}>{m[2]}</em>);
+    if (m[2] !== undefined) {
+      nodes.push(<SourceLink key={key++} href={m[2]}>{m[1]}</SourceLink>);
+    } else {
+      nodes.push(m[3] !== undefined ? <strong key={key++} className="font-bold text-app-text-strong">{m[3]}</strong> : <em key={key++}>{m[4]}</em>);
+    }
     rest = rest.slice(m.index + m[0].length);
   }
   if (rest) nodes.push(<Linkified key={key++} text={rest} />);

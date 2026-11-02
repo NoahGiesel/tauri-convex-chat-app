@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react";
-import { getVersion } from "@tauri-apps/api/app";
 import { Check, MessageSquare } from "lucide-react";
 import { Switch } from "@/components/switch";
+import { useAppVersion } from "@/hooks/use-app-version";
 import { useUpdater } from "@/hooks/use-updater";
 import { useI18n } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
@@ -12,11 +11,7 @@ export function SettingsUpdates() {
   const { status, version, notes, progress, error, lastChecked, hideNotices, setHideNotices, checkNow, install } =
     useUpdater();
   const { t, locale } = useI18n();
-  const [current, setCurrent] = useState<string>("—");
-
-  useEffect(() => {
-    getVersion().then(setCurrent).catch(() => setCurrent("dev"));
-  }, []);
+  const current = useAppVersion() ?? "—";
 
   const busy = status === "checking" || status === "downloading";
   const percent = progress === null ? null : Math.round(progress * 100);
