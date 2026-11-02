@@ -201,7 +201,7 @@ Every run has two Driven users, `alice` and `bob`. Single-user tests leave `bob`
 | `mediaChatOpen` | `media` | `alice`, `bob` with their chat open | Seeded attachment, lightbox, media library, link library, Seeded preview card, delete an attachment, a `.invalid` link shows no card |
 | `settingsOpen` | `friends` | `alice` in Settings, `bob` with the chat open | Name and bio seen live by Bob, set and remove an avatar, language, theme, sidebar side, accent colour, theme import, notify switch |
 
-- **Video:** a small real mp4 joins `e2e/`. A test sends it and checks that Bob's player loaded its metadata. WKWebView may need a specific codec.
+- **Video:** a small real mp4 joins `e2e/`. A test sends it and checks that Bob's player loaded its metadata. WebView2 plays `e2e/assets/clip.mp4`: 2 s of H.264 Constrained Baseline, 160 by 120, no sound, `faststart`, 10 KB. It was made with `ffmpeg -f lavfi -i testsrc=size=160x120:rate=15:duration=2 -c:v libx264 -profile:v baseline -pix_fmt yuv420p -movflags +faststart -an`. WKWebView may need a specific codec.
 - **Language:** one test walks through all five languages, checks one label from each dictionary, then reloads and checks that the last choice stayed.
 - **Updates:** only the notify switch is tested. "Check for updates" would call the real endpoint.
 
@@ -346,6 +346,7 @@ These come from one machine with very little data. Treat them as orders of magni
 | Message reaches the other user, all cores busy | Median 104 ms, max 253 ms |
 | Seven tab, split view and popout tests, Fixtures included | 19 s |
 | Six photo tests, Fixtures included | 15 s |
+| Sending the 10 KB video, Fixture included | 2.4 s |
 
 **A full run should take about 7 minutes.** That is an estimate: 68 scenarios at about 5 s each, plus about 40 s to start.
 
@@ -415,7 +416,7 @@ No macOS code is written until someone can run it. Until then the suite runs on 
 - The release guard and `releaseDraft: true` with two platforms. Tags must not be pushed to test it, so the first real release is the test.
 - The five-language test.
 - A `media` Seed with a video and a link message. The prototype's had neither.
-- Anything with a real video.
+- A real video anywhere but WebView2.
 - Most scenarios. The probes covered a group chat, the unread badge, presence, the three drag cases, one photo upload, one deletion, the GIF picker, `/giphy` and one preview card. Settings ran nothing.
 
 **Open behaviour:**
@@ -425,7 +426,6 @@ No macOS code is written until someone can run it. Until then the suite runs on 
 - Accessible names on the other modals. Only an open chat, two Settings screens, the auth screen and the friend screens were checked.
 - Whether a theme import accepts a synthetic `change` event.
 - A large Seed. Reset time was measured on very little data.
-- Timings for a video upload.
 - Windows Firewall prompts, locked or minimised windows, and Seeds across a backend upgrade.
 - Real system notifications may appear during a run, because `use-message-notifications.ts` is not gated. They are harmless to tests.
 

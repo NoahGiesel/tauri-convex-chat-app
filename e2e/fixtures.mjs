@@ -61,13 +61,13 @@ const tabDrop = (side) => `//*[@data-testid="tab-drop-${side}"]`;
 const secondComposer = `(//textarea[@aria-label="${en['chat.composer']}"])[2]`;
 const ATTACH_INPUT = '//input[@data-testid="attach-input"]';
 const REMOVE_STAGED = `//button[@aria-label="${en['composer.removeAttachment']}"]`;
-/** A photo waiting in the composer, by its name, which is its description. */
-const staged = (file) => `//div[button[@aria-label="${en['composer.removeAttachment']}"]][img[@alt="${file}"]]`;
+/** A file waiting in the composer, by its name: a photo's description, or the text under a video. */
+const staged = (file) => `//div[button[@aria-label="${en['composer.removeAttachment']}"]][img[@alt="${file}"] or .//span[normalize-space(.)="${file}"]]`;
 /** By the name before the extension: a photo is sent re-encoded, and may come back as a .webp. */
 const photo = (name) => `//img[starts-with(@alt, "${name}.")]`;
 const sentPhoto = (name) => `//*[@data-testid="message"]${photo(name)}`;
 const ASSETS = path.join(E2E_DIR, 'assets');
-const TYPES = { '.png': 'image/png', '.txt': 'text/plain' };
+const TYPES = { '.png': 'image/png', '.mp4': 'video/mp4', '.txt': 'text/plain' };
 /** A file from `e2e/assets`, ready to hand to the page, under its own name or another. */
 const asset = (file, name = file) => ({ name, type: TYPES[path.extname(file)], base64: fs.readFileSync(path.join(ASSETS, file)).toString('base64') });
 
@@ -139,6 +139,8 @@ function chooseFiles(input, files) {
 
 /** Runs in the page. Whether an image has really loaded, not only been placed. */
 const hasLoaded = (img) => img.complete && img.naturalWidth > 0;
+/** Runs in the page. Whether a player has read the video's metadata, so it could play it. */
+const hasMetadata = (video) => video.readyState >= HTMLMediaElement.HAVE_METADATA && video.duration > 0;
 
 /** Runs in the page. What the page sees as the pointer leaves the window during a drag. */
 function leaveWindowDragging() {
@@ -214,8 +216,9 @@ function drivenUser(name) {
     await b.execute(chooseFiles, await b.$(input), files);
   };
 
-  const waitUntilLoaded = (selector, timeoutMsg) =>
-    b.waitUntil(async () => (await b.$(selector).isExisting()) && b.execute(hasLoaded, await b.$(selector)), { ...WAIT, timeoutMsg });
+  /** `loaded` runs in the page, on the element. */
+  const waitUntilLoaded = (selector, timeoutMsg, loaded = hasLoaded) =>
+    b.waitUntil(async () => (await b.$(selector).isExisting()) && b.execute(loaded, await b.$(selector)), { ...WAIT, timeoutMsg });
 
   /** A field that opens focused, with its text chosen, so typing replaces it. */
   const typeInFocused = async (selector, text) => {
@@ -386,6 +389,8 @@ function drivenUser(name) {
       const together = `//*[@data-testid="message"][.${photo(first)}][.${photo(second)}]`;
       for (const one of [first, second]) await waitUntilLoaded(`${together}${photo(one)}`, `${name} did not see ${one} load beside the other in one message`);
     },
+    seesVideoWithCaption: (caption) =>
+      waitUntilLoaded(`${messageRow(caption)}//video`, `${name} has no player that read the video sent with "${caption}"`, hasMetadata),
     async doesNotSeePhoto(photoName) {
       if (await b.$(sentPhoto(photoName)).isExisting()) throw new Error(`${name} sees the photo ${photoName}`);
     },
