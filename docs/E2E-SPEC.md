@@ -140,7 +140,9 @@ Seeds are built at the start of every run and saved as snapshots with `convex ex
 | `expired-invite` | `base` | An expired invite from Alice, with a fixed token |
 | `media` | `friends` | A photo, a video, a link with a Seeded preview, and an avatar for Alice |
 
-`media` is exported with `--include-file-storage`, because avatars live in Convex file storage. Its preview row comes from the existing internal `previews:save`.
+`media` is exported with `--include-file-storage`, because avatars live in Convex file storage. Its preview row comes from the existing internal `previews:save`. Its photo and video go up the app's own way, a signed address from `media.createUpload` and then a PUT, so they land in the stub, which a Reset does not touch. `MEDIA_SEED` in `config.mjs` names what it holds.
+
+An import does not empty Convex file storage, so a file from an earlier Seed is still there after a Reset to a snapshot without it. So the avatar test first removes Alice's photo, which deletes its file, and only then checks that a Reset brings it back. Without `--include-file-storage` that test fails, and checking the photo alone did not.
 
 Carol's `lastSeenAt` and the expired invite use the internal fallback. `groups`, `history`, `media` and `expired-invite` branch from an earlier Seed, so building them needs a Reset first.
 
@@ -198,10 +200,10 @@ Every run has two Driven users, `alice` and `bob`. Single-user tests leave `bob`
 | Fixture | Seed | Hands to a test | Scenarios |
 |---|---|---|---|
 | `twoFriendsWithChatOpen` | `friends` | `alice`, `bob` with their chat open | Send a photo, send a video, caption, several files, remove a staged file, wrong type, too many files, GIF picker, `/giphy` |
-| `mediaChatOpen` | `media` | `alice`, `bob` with their chat open | Seeded attachment, lightbox, media library, link library, Seeded preview card, delete an attachment, a `.invalid` link shows no card |
+| `mediaChatOpen` | `media` | `alice`, `bob` with their chat open, and `storage`, the stub's record of deletions from the Reset on | Seeded attachment, lightbox, media library, link library, Seeded preview card, delete an attachment, a `.invalid` link shows no card |
 | `settingsOpen` | `friends` | `alice` in Settings, `bob` with the chat open | Name and bio seen live by Bob, set and remove an avatar, language, theme, sidebar side, accent colour, theme import, notify switch |
 
-- **Video:** a small real mp4 joins `e2e/`. A test sends it and checks that Bob's player loaded its metadata. WKWebView may need a specific codec.
+- **Video:** a small real mp4 joins `e2e/`. A test sends it and checks that Bob's player loaded its metadata. WebView2's player reads the metadata of `e2e/assets/clip.mp4`: 2 s of H.264 Constrained Baseline, 160 by 120, no sound, `faststart`, 10 KB. It was made with `ffmpeg -f lavfi -i testsrc=size=160x120:rate=15:duration=2 -c:v libx264 -profile:v baseline -pix_fmt yuv420p -movflags +faststart -an`. WKWebView may need a specific codec.
 - **Language:** one test walks through all five languages, checks one label from each dictionary, then reloads and checks that the last choice stayed.
 - **Updates:** only the notify switch is tested. "Check for updates" would call the real endpoint.
 
@@ -218,7 +220,7 @@ const composer = () => b.$(`aria/${en['chat.composer']}`);
 - **All tests run in English**, because a Reset clears `chat:lang`.
 - **Seed data stays literal.** Names like `Bob Test` and message bodies are test data.
 - **A chat in the list is found by its tooltip**, its title then its presence, such as `Bob Test · Online`. The row's accessible name is its content, and that also holds the unread count.
-- **`data-testid` is the exception.** Use it only where no accessible name exists. The starting list is the tab drop zones, the message row and the three file inputs. If a person sees a control, it gets a real name instead.
+- **`data-testid` is the exception.** Use it only where no accessible name exists. The starting list is the tab drop zones, the message row and the three file inputs. The media library got `role="region"` and the name "Media", the same as the button that opens it. If a person sees a control, it gets a real name instead.
 
 ### Waiting
 
@@ -242,9 +244,9 @@ Hover cannot be driven. `moveTo` does not trigger `:hover`, and a pointer move o
 
 `opacity-0` reads as hidden. WebdriverIO 9's `isDisplayed` calls `checkVisibility` with `opacityProperty`, so `isClickable` is false for the folder controls, Rename and Delete, and they go through `pressHoverOnly()`. The other section controls are always shown, and go through `press()`. The same holds for a tab's close button: it shows on the tab of the focused chat, which goes through `press()`, and only on hover on any other tab, which goes through `pressHoverOnly()`. In a split view, only one of the chats in view is focused.
 
-**Each press brings the window to the front first,** as a person's click would. The two instances take turns in front, and Chromium fires no focus or blur events in a window in the background. There a new folder's name field opened with no text chosen, so typing added to "New folder", and Enter could not leave the field. Seen in 2 of 2 tests on one run, and on none after the fix. The Fixture calls the app's own `set_focus`, which the app's capabilities already allow.
+**Focus events need the window in front.** The two instances take turns in front, and Chromium fires no focus or blur events in a window in the background. There a new folder's name field opened with no text chosen, so typing added to "New folder", and Enter could not leave the field. Seen in 2 of 2 tests on one run. The app also marks a chat read only while its window has focus. So the folder actions, and reading a chat to clear its unread badge, first bring their window to the front, with the app's own `set_focus`, which the app's capabilities already allow.
 
-So a run keeps taking the keyboard focus. **Do not type during a run:** the keys reach the instance in front. One run saw "bob" typed into a search box become "bobs", once, with no `s` in any test.
+Only those actions do it. Bringing the window forward on every press made 4 tests fail in one run: Windows lets a window take the front only while no other app is in use, and the developer was using one. It also let a stray key reach a test: "bob" typed into a search box once became "bobs". Those tests can still fail while another app is in use or the screen is locked, and say so.
 
 ### Dragging
 
@@ -274,9 +276,11 @@ A drag out of the window is `dragstart` on the tab, a `dragleave` on the documen
 
 The `embedded` driver refuses files: `sending keys to a file input (file upload) is not supported`. Set `input.files` from a `DataTransfer` and fire a `change` event. The app then runs its real upload. The native file picker stays in the Manual smoke.
 
+The files live in `e2e/assets`. The app re-encodes a photo before upload, and the small PNGs came back as WebP, so a Fixture finds a sent photo by its name before the extension. A photo counts as seen only once it has loaded, with `naturalWidth` above 0. A video counts as seen once its player has read the metadata, with `readyState` at `HAVE_METADATA` or more and a duration above 0. Playing and seeking are not checked.
+
 ## External services
 
-The suite never calls a live service, so a developer needs no credentials and no account. Once its tools are installed, a run needs no internet.
+The suite never depends on a live service, so a developer needs no credentials and no account. Once its tools are installed, a run needs no internet. The one request a run sends out is for a sent GIF's image, which no test waits for (see below).
 
 | Service | Treatment | App change |
 |---|---|---|
@@ -284,14 +288,14 @@ The suite never calls a live service, so a developer needs no credentials and no
 | GIPHY | Local stub | Optional `VITE_GIPHY_API_URL` |
 | Link previews, YouTube oEmbed | Seeded rows, plus unit tests | None |
 
-**The stub** is one small Node server in `e2e/`, on the fixed loopback port 3312.
+**The stub** is one small Node server in `e2e/`, on the fixed loopback port 3312. `pnpm e2e` starts it as a process of its own, because a Seed's CLI call blocks its own process while Convex may call the stub. It keeps its files and its log in the stage, so each run starts with none. If the port is busy, the run stops.
 
 - **R2:** it stores on PUT and serves on GET, with CORS. It checks no signatures. **DELETE is only logged**, and the file stays, so a Reset cannot bring back a message whose image is gone. A test checks a deletion by reading the stub's log.
-- **GIPHY:** it returns canned `trending` and `search` results, with thumbnails from the stub.
+- **GIPHY:** it returns canned `trending` and `search` results, with thumbnails from the stub. With no search the results are "Trending 1" to "Trending 3", and a search for "Happy cats" finds "Happy cats 1" to "Happy cats 3". `stub.mjs` exports the titles and each one's giphy.com address, so the Fixtures and the stub cannot disagree. The Test build points `src/lib/giphy.ts` at the stub with `VITE_GIPHY_API_URL`. A release stops if it sets that variable.
 
-**Sent GIFs keep a giphy.com address**, because `messages.sendGif` accepts only `https` URLs on `*.giphy.com`, and that guard stays. So a sent GIF's image does not load in tests, and a test checks its address, not its pixels.
+**Sent GIFs keep a giphy.com address**, because `messages.sendGif` accepts only `https` URLs on `*.giphy.com`, and that guard stays. So a sent GIF's image does not load in tests, and a test checks its address, not its pixels. The webview still asks media.giphy.com for it, so this is the one request a run sends out. `/giphy` picks a result at random, so its test accepts any of the three, under the line showing the search. The composer's GIF button has a name only in English, "GIF", so a Fixture finds it by that and by its `aria-expanded`.
 
-**Link previews.** A test sends only Seeded URLs or reserved `.invalid` ones, so nothing leaves the machine. `isPublicHttpUrl` stays strict, with no bypass, so the real fetch runs only in the Manual smoke.
+**Link previews.** A test sends only Seeded URLs or reserved `.invalid` ones, so nothing leaves the machine. A test that expects no card first asks the server through a public function, and waits until it has saved the failed preview, so the card cannot still be on its way. `isPublicHttpUrl` stays strict, with no bypass, so the real fetch runs only in the Manual smoke.
 
 ## Unit tests
 
@@ -342,6 +346,11 @@ These come from one machine with very little data. Treat them as orders of magni
 | Reset plus Fixture, 20 rounds with all cores busy | Median 3.9 s, max 6.1 s |
 | Message reaches the other user, idle | Median 28 ms, max 138 ms |
 | Message reaches the other user, all cores busy | Median 104 ms, max 253 ms |
+| Seven tab, split view and popout tests, Fixtures included | 19 s |
+| Six photo tests, Fixtures included | 15 s |
+| Sending the 10 KB video, Fixture included | 2.4 s |
+| Three GIF tests, Fixtures included | 7.7 s |
+| Seven tests on the `media` Seed, Fixtures included, two with a second Reset | 10 s |
 
 **A full run should take about 7 minutes.** That is an estimate: 68 scenarios at about 5 s each, plus about 40 s to start.
 
@@ -411,7 +420,9 @@ No macOS code is written until someone can run it. Until then the suite runs on 
 - The release guard and `releaseDraft: true` with two platforms. Tags must not be pushed to test it, so the first real release is the test.
 - The five-language test.
 - A `media` Seed with a video and a link message. The prototype's had neither.
-- Anything with a real video.
+- A real video anywhere but WebView2.
+- Whether the resolver asked about a `.invalid` host sends the question out. RFC 6761 tells resolvers to answer it themselves.
+- A video served in parts. The stub ignores `Range` and always sends the whole file, where R2 answers a range with 206.
 - Most scenarios. The probes covered a group chat, the unread badge, presence, the three drag cases, one photo upload, one deletion, the GIF picker, `/giphy` and one preview card. Settings ran nothing.
 
 **Open behaviour:**
@@ -421,7 +432,6 @@ No macOS code is written until someone can run it. Until then the suite runs on 
 - Accessible names on the other modals. Only an open chat, two Settings screens, the auth screen and the friend screens were checked.
 - Whether a theme import accepts a synthetic `change` event.
 - A large Seed. Reset time was measured on very little data.
-- Timings for uploads and popouts, so 5 s per test is a guess for them.
 - Windows Firewall prompts, locked or minimised windows, and Seeds across a backend upgrade.
 - Real system notifications may appear during a run, because `use-message-notifications.ts` is not gated. They are harmless to tests.
 

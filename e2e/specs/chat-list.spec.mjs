@@ -11,7 +11,7 @@ describe('the chat list', () => {
     await bob.send('Hello?');
     await alice.seesUnread('Bob Test', 2);
 
-    await alice.openChat('Bob Test');
+    await alice.readChat('Bob Test');
     await alice.seesMessage('Hello?');
     await alice.seesNoUnread('Bob Test');
   });

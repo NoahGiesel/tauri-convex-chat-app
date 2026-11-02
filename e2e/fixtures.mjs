@@ -1,8 +1,12 @@
 // What a test works with: domain actions per user. Selectors and waits live here, never in a test.
+import fs from 'node:fs';
+import path from 'node:path';
 import { en } from '../src/i18n/en.ts';
-import { EXPIRED_INVITE_TOKEN, INTERFACE_WAIT_MS, MAIN_WINDOW, PASSWORD, POLL_MS, USERS } from './config.mjs';
+import { ASSET_TYPES, ASSETS, EXPIRED_INVITE_TOKEN, INTERFACE_WAIT_MS, MAIN_WINDOW, PASSWORD, POLL_MS, USERS } from './config.mjs';
 import { reset } from './reset.mjs';
 import { scriptedUser } from './scripted-user.mjs';
+import { gifAddress, gifTitles, readStubLog } from './stub.mjs';
+import { waitUntil } from './wait.mjs';
 
 const WAIT = { timeout: INTERFACE_WAIT_MS, interval: POLL_MS };
 const COMPOSER = `aria/${en['chat.composer']}`;
@@ -57,6 +61,32 @@ const tab = (title) => `//div[@draggable="true"][.${tabClose(title)}]`;
 /** Where a dragged tab drops to split the view. They show only during a drag, on the one chat shown. */
 const tabDrop = (side) => `//*[@data-testid="tab-drop-${side}"]`;
 const secondComposer = `(//textarea[@aria-label="${en['chat.composer']}"])[2]`;
+const ATTACH_INPUT = '//input[@data-testid="attach-input"]';
+const REMOVE_STAGED = `//button[@aria-label="${en['composer.removeAttachment']}"]`;
+/** A file waiting in the composer, by its name: a photo's description, or the text under a video. */
+const staged = (file) => `//div[button[@aria-label="${en['composer.removeAttachment']}"]][img[@alt="${file}"] or .//span[normalize-space(.)="${file}"]]`;
+/** The composer's GIF button has no translated name, so it is found by "GIF" and by opening a picker. */
+const GIF_BUTTON = '//button[@aria-label="GIF"][@aria-expanded]';
+const GIF_SEARCH = `//input[@placeholder="${en['composer.gifSearch']}"]`;
+/** A result in the picker is a button titled like the GIF. */
+const gifResult = (title) => `//button[@title="${title}"]`;
+/** A GIF in a message, at any of these addresses. */
+const gifAt = (addresses) => `//img[@alt="${en['chat.gifAlt']}"][${addresses.map((address) => `@src="${address}"`).join(' or ')}]`;
+
+const LIGHTBOX = '//*[@role="dialog"][@aria-modal="true"]';
+const inLightbox = (file) => `//*[@role="dialog"][@aria-label="${file}"]`;
+const LIBRARY_BUTTON = `//button[@aria-label="${en['library.open']}"]`;
+const LIBRARY = `//*[@role="region"][@aria-label="${en['library.open']}"]`;
+const libraryItem = (file) => `${LIBRARY}//button[starts-with(@title, "${file} · ")]`;
+/** A preview card is a link that shows more than its address, which is all the link in the text shows. */
+const PREVIEW_CARD = '//*[@data-testid="message"]//a[@href][not(normalize-space(.) = @href)]';
+
+/** By the name before the extension: a photo is sent re-encoded, and may come back as a .webp. */
+const photo = (name) => `//img[starts-with(@alt, "${name}.")]`;
+const sentPhoto = (name) => `//*[@data-testid="message"]${photo(name)}`;
+/** A file from `e2e/assets`, ready to hand to the page, under its own name or another. */
+const asset = (file, name = file) => ({ name, type: ASSET_TYPES[path.extname(file)], base64: fs.readFileSync(path.join(ASSETS, file)).toString('base64') });
+
 /** The second element comes after the first in the page: lower down, or to the right of it in a row. */
 const followedBy = (first, then) => `${first}/following::${then.replace(/^\/\//, '')}`;
 
@@ -109,6 +139,25 @@ async function bringWindowToFront() {
   await window.__TAURI_INTERNALS__.invoke('plugin:window|set_focus', { label });
 }
 
+/**
+ * Runs in the page. The driver refuses to type into a file input, so this gives it files as a picker would,
+ * then fires `change`. The app then runs its real upload.
+ */
+function chooseFiles(input, files) {
+  const dataTransfer = new DataTransfer();
+  for (const { name, type, base64 } of files) {
+    const bytes = Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
+    dataTransfer.items.add(new File([bytes], name, { type }));
+  }
+  input.files = dataTransfer.files;
+  input.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+/** Runs in the page. Whether an image has really loaded, not only been placed. */
+const hasLoaded = (img) => img.complete && img.naturalWidth > 0;
+/** Runs in the page. Whether a player has read the video's metadata, so it could play it. */
+const hasMetadata = (video) => video.readyState >= HTMLMediaElement.HAVE_METADATA && video.duration > 0;
+
 /** Runs in the page. What the page sees as the pointer leaves the window during a drag. */
 function leaveWindowDragging() {
   document.dispatchEvent(new DragEvent('dragleave', { bubbles: true, relatedTarget: null, dataTransfer: window.e2eDataTransfer }));
@@ -123,15 +172,20 @@ function drivenUser(name) {
   const waitUntilClickable = (selector) =>
     b.waitUntil(async () => b.$(selector).isClickable(), { ...WAIT, timeoutMsg: `${name} could not press ${selector}` });
 
-  /** The two instances take turns in front, and only the one in front gets focus events. */
+  /**
+   * Only for what needs focus events, because Windows lets a window take the front only while no other app is in use.
+   * The two instances take turns in front, and only the one in front gets focus events.
+   */
   const bringToFront = async () => {
     await b.execute(bringWindowToFront);
-    await b.waitUntil(() => b.execute(() => document.hasFocus()), { ...WAIT, timeoutMsg: `${name} did not come to the front` });
+    await b.waitUntil(() => b.execute(() => document.hasFocus()), {
+      ...WAIT,
+      timeoutMsg: `${name} did not come to the front, which this step needs. Another app in use, or a locked screen, stops it`,
+    });
   };
 
   const press = async (selector) => {
     await waitUntilClickable(selector);
-    await bringToFront();
     await b.$(selector).click();
   };
 
@@ -141,7 +195,6 @@ function drivenUser(name) {
    */
   const pressWithPointer = async (selector) => {
     await waitUntilClickable(selector);
-    await bringToFront();
     await b.action('pointer').move({ origin: await b.$(selector) }).down().up().perform();
   };
 
@@ -151,7 +204,6 @@ function drivenUser(name) {
   const pressHoverOnly = async (selector) => {
     await waitUntilExists(selector, `${name} has no ${selector}`);
     if (await b.$(selector).isDisplayed()) throw new Error(`${selector} is not hover-only any more, so use press()`);
-    await bringToFront();
     await b.$(selector).click();
   };
 
@@ -173,6 +225,16 @@ function drivenUser(name) {
     await fireDrag(target, 'drop', at);
     await fireDrag(source, 'dragend');
   };
+
+  /** `files` are what `asset()` gives. The input is hidden, as a file picker's always is. */
+  const upload = async (input, files) => {
+    await waitUntilExists(input, `${name} has no ${input}`);
+    await b.execute(chooseFiles, await b.$(input), files);
+  };
+
+  /** `isReady` runs in the page, on the element: an image has loaded, or a player has read its video. */
+  const waitUntilLoaded = (selector, timeoutMsg, isReady = hasLoaded) =>
+    b.waitUntil(async () => (await b.$(selector).isExisting()) && b.execute(isReady, await b.$(selector)), { ...WAIT, timeoutMsg });
 
   /** A field that opens focused, with its text chosen, so typing replaces it. */
   const typeInFocused = async (selector, text) => {
@@ -203,6 +265,11 @@ function drivenUser(name) {
     async openChat(title) {
       await press(`aria/${title}`);
       await waitUntilShown(COMPOSER, `${name} has no composer in the chat with ${title}`);
+    },
+    /** The app marks a chat read only while its window has focus, as when a person looks at it. */
+    async readChat(title) {
+      await bringToFront();
+      await user.openChat(title);
     },
     async send(text) {
       await b.$(COMPOSER).setValue(text);
@@ -316,6 +383,80 @@ function drivenUser(name) {
       await waitUntilShown(textSelector(en['chat.noMessages']), `${name} did not open ${title}`);
     },
 
+    attach: (...files) => upload(ATTACH_INPUT, files.map((file) => asset(file))),
+    /** More files than a message takes, all copies of one, each under its own name. */
+    attachCopies: (file, count) =>
+      upload(ATTACH_INPUT, Array.from({ length: count }, (_, i) => asset(file, `${i + 1}-${file}`))),
+    seesStaged: (file) => waitUntilShown(staged(file), `${name} does not see ${file} waiting to be sent`),
+    stopsSeeingStaged: (file) => waitUntilGone(staged(file), `${name} still sees ${file} waiting to be sent`),
+    removeStaged: (file) => press(`${staged(file)}/button`),
+    async seesStagedCount(count) {
+      await waitUntilShown(`(${REMOVE_STAGED})[${count}]`, `${name} does not see ${count} files waiting`);
+      if (await b.$(`(${REMOVE_STAGED})[${count + 1}]`).isExisting()) throw new Error(`${name} sees more than ${count} files waiting`);
+    },
+    seesWrongFileType: () => waitUntilShown(roleSelector('alert', en['error.media_type']), `${name} was not told the file is the wrong type`),
+    seesTooManyFiles: () => waitUntilShown(roleSelector('alert', en['error.too_many_attachments']), `${name} was not told there are too many files`),
+    sendStaged: () => press(`aria/${en['chat.send']}`),
+    seesPhoto: (photoName) => waitUntilLoaded(sentPhoto(photoName), `${name} did not see the photo ${photoName} load`),
+    seesPhotoWithCaption: (photoName, caption) =>
+      waitUntilLoaded(`${messageRow(caption)}${photo(photoName)}`, `${name} did not see the photo ${photoName} load with "${caption}"`),
+    /** In one message, so they were sent together, and both loaded. */
+    async seesPhotosTogether(first, second) {
+      const together = `//*[@data-testid="message"][.${photo(first)}][.${photo(second)}]`;
+      for (const one of [first, second]) await waitUntilLoaded(`${together}${photo(one)}`, `${name} did not see ${one} load beside the other in one message`);
+    },
+    async openGifPicker() {
+      await press(GIF_BUTTON);
+      await waitUntilShown(GIF_SEARCH, `${name} has no GIF picker`);
+    },
+    searchGifs: (text) => b.$(GIF_SEARCH).setValue(text),
+    /** Its thumbnail loaded from the stub. */
+    seesGifInPicker: (title) => waitUntilLoaded(`${gifResult(title)}/img`, `${name} did not see the GIF "${title}" in the picker`),
+    pickGif: (title) => press(gifResult(title)),
+    /** By its address, because a sent GIF's image comes from giphy.com and does not load in tests. */
+    seesGif: (title) => waitUntilExists(`//*[@data-testid="message"]${gifAt([gifAddress(title)])}`, `${name} did not see the GIF "${title}" in the chat`),
+    /** `/giphy` picks one of the results at random, so any of them will do, under the search it came from. */
+    seesGifFoundBy: (search) =>
+      waitUntilExists(
+        `${messageRow(`/giphy ${search}`)}${gifAt(gifTitles(search).map(gifAddress))}`,
+        `${name} did not see a GIF found by "/giphy ${search}"`,
+      ),
+    openPhoto: (photoName) => press(sentPhoto(photoName)),
+    /** Where storage keeps a sent photo, as the stub's log names it. */
+    photoFile: async (photoName) => new URL(await b.$(sentPhoto(photoName)).getAttribute('src')).pathname,
+    seesPhotoInLightbox: (file) => waitUntilLoaded(`${inLightbox(file)}//img`, `${name} did not see ${file} full size`),
+    seesVideoInLightbox: (file) => waitUntilLoaded(`${inLightbox(file)}//video`, `${name} has no player that read ${file} full size`, hasMetadata),
+    closeLightbox: () => press(`${LIGHTBOX}/button[@aria-label="${en['common.close']}"]`),
+    stopsSeeingLightbox: () => waitUntilGone(LIGHTBOX, `${name} still sees a photo or video full size`),
+    async openLibrary() {
+      await press(LIBRARY_BUTTON);
+      await waitUntilShown(LIBRARY, `${name} has no media library`);
+    },
+    seesPhotoInLibrary: (file) => waitUntilLoaded(`${libraryItem(file)}//img`, `${name} did not see ${file} load in the media library`),
+    seesVideoInLibrary: (file) => waitUntilLoaded(`${libraryItem(file)}//video`, `${name} has no player that read ${file} in the media library`, hasMetadata),
+    openFromLibrary: (file) => press(libraryItem(file)),
+    showLibraryLinks: () => press(`${LIBRARY}//button[@role="tab"][normalize-space(.)="${en['library.links']}"]`),
+    seesInLinkLibrary: (title) => waitUntilShown(`${LIBRARY}//a[@href][contains(normalize-space(.), "${title}")]`, `${name} did not see "${title}" in the link library`),
+    seesPreviewCard: (title) =>
+      waitUntilShown(`${PREVIEW_CARD}[contains(normalize-space(.), "${title}")]`, `${name} did not see a preview card for "${title}"`),
+    /** Only once the server, asked through a public function, has tried the link and found nothing, so the card cannot still be on its way. */
+    async seesNoPreviewCard(link) {
+      await (await scriptedUser(name)).seesFailedPreview(link);
+      await user.seesMessage(link);
+      if (await b.$(`${PREVIEW_CARD}[@href="${link}"]`).isExisting()) {
+        throw new Error(`${name} sees a preview card for ${link}`);
+      }
+    },
+    seesProfilePhotoOf: (person) => waitUntilLoaded(`${chatRow(person)}//img`, `${name} did not see ${person}'s profile photo load`),
+    /** As from another device, through the public function. Settings, where a person does it, has its own tests. */
+    removeProfilePhotoElsewhere: async () => (await scriptedUser(name)).removeProfilePhoto(),
+    stopsSeeingProfilePhotoOf: (person) => waitUntilGone(`${chatRow(person)}//img`, `${name} still sees ${person}'s profile photo`),
+    seesVideoWithCaption: (caption) =>
+      waitUntilLoaded(`${messageRow(caption)}//video`, `${name} has no player that read the video sent with "${caption}"`, hasMetadata),
+    async doesNotSeePhoto(photoName) {
+      if (await b.$(sentPhoto(photoName)).isExisting()) throw new Error(`${name} sees the photo ${photoName}`);
+    },
+
     seesTab: (title) => waitUntilShown(tab(title), `${name} has no tab for ${title}`),
     stopsSeeingTab: (title) => waitUntilGone(tab(title), `${name} still has a tab for ${title}`),
     /** The tab of the chat shown, whose close button is always there. */
@@ -367,13 +508,16 @@ function drivenUser(name) {
       waitUntilShown(followedBy(section(upper), section(lower)), `${name} did not see ${upper} above ${lower}`),
     seesChatInSection: (title, sectionTitle) =>
       waitUntilShown(`${section(sectionTitle)}${chatRow(title)}`, `${name} did not see ${title} in ${sectionTitle}`),
+    /** A folder's name field chooses its text on focus and saves on blur, so its window must be in front. */
     async createFolder(title) {
+      await bringToFront();
       await press(`aria/${en['side.newFolder']}`);
       await typeInFocused(FOLDER_NAME, title);
       await waitUntilShown(section(title), `${name} has no folder called ${title}`);
     },
     /** Rename and Delete show only on hover. */
     async renameFolder(title, newTitle) {
+      await bringToFront();
       await pressHoverOnly(folderControl(title, en['side.renameFolder']));
       await typeInFocused(FOLDER_NAME, newTitle);
       await waitUntilShown(section(newTitle), `${name} has no folder called ${newTitle}`);
@@ -533,6 +677,31 @@ export async function soloWithChats() {
   for (const title of ['Weekend', USERS.bob.name, USERS.carol.name]) await alice.seesChatInList(title);
   await alice.hasNoChatOpen();
   return { alice };
+}
+
+/**
+ * The stub's record of R2 deletions from now on. A Reset leaves the stub's files alone,
+ * so a Seeded file deleted by one test is there again after the next Reset.
+ */
+function storageFromNow() {
+  const mark = readStubLog().length;
+  return {
+    seesFileDeleted: (file) =>
+      waitUntil(
+        () => readStubLog().slice(mark).some((request) => request.method === 'DELETE' && request.path === file),
+        `storage was not asked to delete ${file}`,
+      ),
+  };
+}
+
+/** The `media` Seed: Alice sent Bob a photo, a video and a link with a Seeded preview, and has a profile photo. */
+export async function mediaChatOpen() {
+  await reset('media');
+  const storage = storageFromNow();
+  const { alice, bob } = aliceAndBob();
+  await alice.openChat(USERS.bob.name);
+  await bob.openChat(USERS.alice.name);
+  return { alice, bob, storage };
 }
 
 export async function twoFriendsWithChatOpen() {

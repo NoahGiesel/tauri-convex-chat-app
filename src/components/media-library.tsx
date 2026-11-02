@@ -27,7 +27,7 @@ export function MediaLibrary({
   const [tab, setTab] = useState<Tab>("media");
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div role="region" aria-label={t("library.open")} className="flex min-h-0 flex-1 flex-col">
       <div role="tablist" className="flex shrink-0 gap-1 border-b border-app-border px-6 pt-2">
         {(["media", "links", "ai", "games"] as const).map((id) => (
           <button
