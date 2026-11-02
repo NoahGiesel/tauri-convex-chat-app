@@ -1,4 +1,4 @@
-// The local stand-in for R2, so a run needs no account and no internet. It checks no signatures.
+// The local stand-in for R2 and GIPHY, so a run needs no account, no key and no internet. It checks no signatures.
 // `pnpm e2e` starts it as a process of its own, because Seeds block their own process while Convex calls out.
 import fs from 'node:fs';
 import http from 'node:http';
@@ -14,6 +14,28 @@ const CORS = {
   'access-control-allow-headers': '*',
 };
 
+// A 1 by 1 GIF, so a thumbnail in the picker really loads.
+const THUMBNAIL = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+
+/** The three results for a search, or with none, the trending ones. */
+export const gifTitles = (search = '') => [1, 2, 3].map((i) => `${search || 'Trending'} ${i}`);
+const gifId = (title) => title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+/** A sent GIF keeps a giphy.com address, because `messages.sendGif` accepts no other. So a test checks this address. */
+export const gifAddress = (title) => `https://media.giphy.com/media/${gifId(title)}/giphy.gif`;
+
+function gifs(search, host) {
+  return {
+    data: gifTitles(search).map((title) => ({
+      id: gifId(title),
+      title,
+      images: {
+        fixed_height: { url: gifAddress(title), width: '100', height: '100' },
+        fixed_width_small: { url: `http://${host}/thumb/${gifId(title)}.gif`, width: '100', height: '100' },
+      },
+    })),
+  };
+}
+
 /** One JSON line per request, oldest first. A test checks a deletion here. */
 export function readStubLog(logFile = STUB_LOG) {
   if (!fs.existsSync(logFile)) return [];
@@ -27,7 +49,7 @@ export function startStub({ root = STUB_FILES, logFile = STUB_LOG, port = STUB_P
   const fileFor = (pathname) => path.join(root, encodeURIComponent(pathname));
 
   const server = http.createServer((req, res) => {
-    const { pathname } = new URL(req.url, 'http://stub');
+    const { pathname, searchParams } = new URL(req.url, 'http://stub');
     fs.appendFileSync(logFile, `${JSON.stringify({ method: req.method, path: pathname })}\n`);
     const send = (status, headers = {}, body = '') => {
       res.writeHead(status, { ...CORS, ...headers });
@@ -35,6 +57,11 @@ export function startStub({ root = STUB_FILES, logFile = STUB_LOG, port = STUB_P
     };
 
     if (req.method === 'OPTIONS') return send(204);
+    if (req.method === 'GET' && (pathname === '/v1/gifs/trending' || pathname === '/v1/gifs/search')) {
+      const search = pathname.endsWith('/search') ? (searchParams.get('q') ?? '') : '';
+      return send(200, { 'content-type': 'application/json' }, JSON.stringify(gifs(search, req.headers.host)));
+    }
+    if (req.method === 'GET' && pathname.startsWith('/thumb/')) return send(200, { 'content-type': 'image/gif' }, THUMBNAIL);
     if (req.method === 'PUT') {
       const chunks = [];
       req.on('data', (chunk) => chunks.push(chunk));

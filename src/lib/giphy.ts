@@ -1,4 +1,5 @@
-const API = "https://api.giphy.com/v1/gifs";
+// VITE_GIPHY_API_URL esiste solo nella build dei test E2E, che punta a uno stub locale: una release si ferma se lo trova.
+const API = import.meta.env.VITE_GIPHY_API_URL?.trim() || "https://api.giphy.com/v1/gifs";
 const LIMIT = 24;
 
 /** Chiave pubblica di GIPHY (va nel client: GIPHY richiede che le ricerche partano dall'app). */
