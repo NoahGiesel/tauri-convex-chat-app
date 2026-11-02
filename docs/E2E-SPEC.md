@@ -204,6 +204,7 @@ Every run has two Driven users, `alice` and `bob`. Single-user tests leave `bob`
 | `settingsOpen` | `friends` | `alice` in Settings, `bob` with the chat open | Name and bio seen live by Bob, set and remove an avatar, language, theme, sidebar side, accent colour, theme import, notify switch |
 
 - **Video:** a small real mp4 joins `e2e/`. A test sends it and checks that Bob's player loaded its metadata. WebView2's player reads the metadata of `e2e/assets/clip.mp4`: 2 s of H.264 Constrained Baseline, 160 by 120, no sound, `faststart`, 10 KB. It was made with `ffmpeg -f lavfi -i testsrc=size=160x120:rate=15:duration=2 -c:v libx264 -profile:v baseline -pix_fmt yuv420p -movflags +faststart -an`. WKWebView may need a specific codec.
+- **Profile:** the first settings test chooses a profile photo through `avatar-input`, so it also proves a file input in Settings takes the upload helper. In the main window a chat has no header, so Bob sees Alice's new name and bio on her profile, which he opens from her name on "Seeded hello" before she saves. That profile is named after her, so it shows the new name too. Its tab and its row in the list are checked as well.
 - **Language:** one test walks through all five languages, checks one label from each dictionary, then reloads and checks that the last choice stayed.
 - **Updates:** only the notify switch is tested. "Check for updates" would call the real endpoint.
 
@@ -351,6 +352,7 @@ These come from one machine with very little data. Treat them as orders of magni
 | Sending the 10 KB video, Fixture included | 2.4 s |
 | Three GIF tests, Fixtures included | 7.7 s |
 | Seven tests on the `media` Seed, Fixtures included, two with a second Reset | 10 s |
+| Four profile tests, Fixtures included | 10 s |
 
 **A full run should take about 7 minutes.** That is an estimate: 68 scenarios at about 5 s each, plus about 40 s to start.
 

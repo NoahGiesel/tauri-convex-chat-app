@@ -73,6 +73,13 @@ const gifResult = (title) => `//button[@title="${title}"]`;
 /** A GIF in a message, at any of these addresses. */
 const gifAt = (addresses) => `//img[@alt="${en['chat.gifAlt']}"][${addresses.map((address) => `@src="${address}"`).join(' or ')}]`;
 
+const AVATAR_INPUT = '//input[@data-testid="avatar-input"]';
+const CHANGE_PHOTO = `aria/${en['settings.profile.changePhoto']}`;
+/** What Settings says once a change is saved. */
+const settingsNotice = (key) => roleSelector('status', en[key]);
+/** A person's profile, which opens from their name on a message and is named after them. */
+const profileOf = (person) => `//*[@role="dialog"][@aria-label="${person}"]`;
+
 const LIGHTBOX = '//*[@role="dialog"][@aria-modal="true"]';
 const inLightbox = (file) => `//*[@role="dialog"][@aria-label="${file}"]`;
 const LIBRARY_BUTTON = `//button[@aria-label="${en['library.open']}"]`;
@@ -447,6 +454,26 @@ function drivenUser(name) {
         throw new Error(`${name} sees a preview card for ${link}`);
       }
     },
+    async openSettings() {
+      await press(SETTINGS);
+      await waitUntilShown(CHANGE_PHOTO, `${name} did not reach the profile in Settings`);
+    },
+    chooseProfilePhoto: (file) => upload(AVATAR_INPUT, [asset(file)]),
+    seesPhotoUpdated: () => waitUntilShown(settingsNotice('settings.profile.photoUpdated'), `${name} was not told the photo was updated`),
+    /** On the Settings button, where a person sees their own photo. */
+    seesOwnProfilePhoto: () => waitUntilLoaded(`//button[@aria-label="${en['nav.settings']}"]//img`, `${name} did not see their own profile photo load`),
+    removeProfilePhoto: () => press(`//button[normalize-space(.)="${en['settings.profile.removePhoto']}"]`),
+    seesPhotoRemoved: () => waitUntilShown(settingsNotice('settings.profile.photoRemoved'), `${name} was not told the photo was removed`),
+    setName: (newName) => fill(en['settings.account.name'], newName),
+    setBio: (bio) => fill(en['settings.profile.bio'], bio),
+    saveProfile: () => press(`aria/${en['settings.profile.save']}`),
+    seesProfileSaved: () => waitUntilShown(settingsNotice('settings.profile.saved'), `${name} was not told the profile was saved`),
+    async openProfileOf(person, message) {
+      await press(`${messageRow(message)}//strong[normalize-space(.)="${person}"]`);
+      await user.seesProfileOf(person);
+    },
+    seesProfileOf: (person) => waitUntilShown(profileOf(person), `${name} did not see the profile of ${person}`),
+    seesBio: (person, bio) => waitUntilShown(`${profileOf(person)}//p[normalize-space(.)="${bio}"]`, `${name} did not see "${bio}" on the profile of ${person}`),
     seesProfilePhotoOf: (person) => waitUntilLoaded(`${chatRow(person)}//img`, `${name} did not see ${person}'s profile photo load`),
     /** As from another device, through the public function. Settings, where a person does it, has its own tests. */
     removeProfilePhotoElsewhere: async () => (await scriptedUser(name)).removeProfilePhoto(),
@@ -692,6 +719,15 @@ function storageFromNow() {
         `storage was not asked to delete ${file}`,
       ),
   };
+}
+
+/** The `friends` Seed, with Alice on her profile in Settings and Bob in their chat. */
+export async function settingsOpen() {
+  await reset('friends');
+  const { alice, bob } = aliceAndBob();
+  await alice.openSettings();
+  await bob.openChat(USERS.alice.name);
+  return { alice, bob };
 }
 
 /** The `media` Seed: Alice sent Bob a photo, a video and a link with a Seeded preview, and has a profile photo. */
