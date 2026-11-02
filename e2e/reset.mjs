@@ -1,12 +1,11 @@
 // A Reset returns the Test backend to exactly one Seed. Fixtures own it, so it runs before every test.
 import fs from 'node:fs';
 import path from 'node:path';
-import { APP_URL, DRIVEN_USERS, FAILURES, INTERFACE_WAIT_MS, SESSIONS_FILE, TEST_RAN_FILE } from './config.mjs';
+import { APP_URL, DRIVEN_USERS, FAILURES, INTERFACE_WAIT_MS, MAIN_WINDOW, SESSIONS_FILE, TEST_RAN_FILE } from './config.mjs';
 import { confirmInstance } from './guards.mjs';
 import { screenshotName } from './report.mjs';
 import { importSeed } from './stage.mjs';
 
-const MAIN_WINDOW = 'main';
 const WAIT = { timeout: INTERFACE_WAIT_MS, interval: 50 };
 
 const instance = (name) => browser.getInstance(name);

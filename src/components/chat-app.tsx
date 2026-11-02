@@ -317,6 +317,7 @@ export function ChatApp({ onOpenSettings, onOpenReleaseNotes }: { onOpenSettings
                     return (
                       <div
                         key={side}
+                        data-testid={`tab-drop-${side}`}
                         onDragOver={(e) => {
                           e.preventDefault();
                           e.dataTransfer.dropEffect = "move";
