@@ -1,3 +1,4 @@
+import { invoke } from "@tauri-apps/api/core";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { de } from "./de";
 import { en, type MessageKey, type Messages } from "./en";
@@ -52,6 +53,13 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.documentElement.lang = language;
+  }, [language]);
+
+  // Menu dell'icona nell'area di notifica (Windows) nella stessa lingua dell'app.
+  useEffect(() => {
+    if (!("__TAURI_INTERNALS__" in window)) return;
+    const dict = DICTIONARIES[language];
+    invoke("set_tray_labels", { open: dict["tray.open"], quit: dict["tray.quit"] }).catch(() => {});
   }, [language]);
 
   const setLanguage = useCallback((next: Language) => {

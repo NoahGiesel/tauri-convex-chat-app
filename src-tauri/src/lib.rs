@@ -55,6 +55,129 @@ fn relaunch_app(app: tauri::AppHandle) {
     app.restart();
 }
 
+/// Icona nell'area di notifica di Windows: la X della finestra principale la nasconde lì invece di chiudere l'app,
+/// così le notifiche continuano ad arrivare. Si esce dal menu dell'icona.
+#[cfg(target_os = "windows")]
+mod tray {
+    use tauri::menu::{Menu, MenuItem};
+    use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+    use tauri::image::Image;
+    use tauri::{AppHandle, Manager, Window, WindowEvent, Wry};
+
+    /// Voci del menu, tenute per poterne cambiare il testo quando cambia la lingua, e le due versioni dell'icona.
+    pub struct Items {
+        open: MenuItem<Wry>,
+        quit: MenuItem<Wry>,
+        icon: Option<Image<'static>>,
+        unread_icon: Option<Image<'static>>,
+    }
+
+    /// L'icona con un bollino rosso senza numero in basso a destra, per i messaggi non letti.
+    fn with_unread_dot(icon: &Image<'_>) -> Image<'static> {
+        let (w, h) = (icon.width(), icon.height());
+        let mut rgba = icon.rgba().to_vec();
+        let r = w.min(h) as f32 * 0.24;
+        let (cx, cy) = (w as f32 - r - 0.5, h as f32 - r - 0.5);
+        const RED: [f32; 3] = [242.0, 63.0, 67.0];
+        for y in 0..h {
+            for x in 0..w {
+                let d = ((x as f32 + 0.5 - cx).powi(2) + (y as f32 + 0.5 - cy).powi(2)).sqrt();
+                // Bordo sfumato di un pixel.
+                let a = (r - d + 0.5).clamp(0.0, 1.0);
+                if a == 0.0 {
+                    continue;
+                }
+                let i = ((y * w + x) * 4) as usize;
+                for c in 0..3 {
+                    rgba[i + c] = (RED[c] * a + rgba[i + c] as f32 * (1.0 - a)).round() as u8;
+                }
+                rgba[i + 3] = (255.0 * a + rgba[i + 3] as f32 * (1.0 - a)).round() as u8;
+            }
+        }
+        Image::new_owned(rgba, w, h)
+    }
+
+    fn show_main(app: &AppHandle) {
+        if let Some(window) = app.get_webview_window("main") {
+            let _ = window.unminimize();
+            let _ = window.show();
+            let _ = window.set_focus();
+        }
+    }
+
+    pub fn create(app: &tauri::App) -> tauri::Result<()> {
+        // Testi in inglese finché il frontend non manda quelli della lingua scelta.
+        let open = MenuItem::with_id(app, "open", "Open Chat", true, None::<&str>)?;
+        let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+        let menu = Menu::with_items(app, &[&open, &quit])?;
+
+        let mut tray = TrayIconBuilder::with_id("main")
+            .tooltip("Chat")
+            .menu(&menu)
+            .show_menu_on_left_click(false)
+            .on_menu_event(|app, event| match event.id.as_ref() {
+                "open" => show_main(app),
+                "quit" => app.exit(0),
+                _ => {}
+            })
+            .on_tray_icon_event(|tray, event| {
+                if let TrayIconEvent::Click { button: MouseButton::Left, button_state: MouseButtonState::Up, .. } = event {
+                    show_main(tray.app_handle());
+                }
+            });
+        let icon = app.default_window_icon().map(|icon| icon.clone().to_owned());
+        let unread_icon = icon.as_ref().map(with_unread_dot);
+        if let Some(icon) = &icon {
+            tray = tray.icon(icon.clone());
+        }
+        tray.build(app)?;
+
+        app.manage(Items { open, quit, icon, unread_icon });
+        Ok(())
+    }
+
+    /// La X (e Alt+F4) sulla finestra principale la nasconde invece di chiuderla. Le finestre staccate si chiudono come sempre.
+    pub fn on_window_event(window: &Window, event: &WindowEvent) {
+        if let WindowEvent::CloseRequested { api, .. } = event {
+            if window.label() == "main" {
+                api.prevent_close();
+                let _ = window.hide();
+            }
+        }
+    }
+
+    pub fn set_labels(app: &AppHandle, open: &str, quit: &str) {
+        if let Some(items) = app.try_state::<Items>() {
+            let _ = items.open.set_text(open);
+            let _ = items.quit.set_text(quit);
+        }
+    }
+
+    pub fn set_unread(app: &AppHandle, unread: bool) {
+        let (Some(items), Some(tray)) = (app.try_state::<Items>(), app.tray_by_id("main")) else { return };
+        let icon = if unread { &items.unread_icon } else { &items.icon };
+        let _ = tray.set_icon(icon.clone());
+    }
+}
+
+/// Testi del menu dell'icona nell'area di notifica, nella lingua scelta nell'app. Fuori da Windows non fa nulla.
+#[tauri::command]
+fn set_tray_labels(app: tauri::AppHandle, open: String, quit: String) {
+    #[cfg(target_os = "windows")]
+    tray::set_labels(&app, &open, &quit);
+    #[cfg(not(target_os = "windows"))]
+    let _ = (app, open, quit);
+}
+
+/// Bollino rosso sull'icona nell'area di notifica se ci sono messaggi non letti. Fuori da Windows non fa nulla.
+#[tauri::command]
+fn set_tray_unread(app: tauri::AppHandle, unread: bool) {
+    #[cfg(target_os = "windows")]
+    tray::set_unread(&app, unread);
+    #[cfg(not(target_os = "windows"))]
+    let _ = (app, unread);
+}
+
 pub fn run() {
     #[cfg(target_os = "macos")]
     let _ = BUNDLE_PATH.set(bundle_path_at_launch());
@@ -69,8 +192,16 @@ pub fn run() {
     #[cfg(feature = "e2e")]
     let builder = builder.plugin(tauri_plugin_wdio_webdriver::init());
 
+    #[cfg(target_os = "windows")]
+    let builder = builder
+        .setup(|app| {
+            tray::create(app)?;
+            Ok(())
+        })
+        .on_window_event(tray::on_window_event);
+
     builder
-        .invoke_handler(tauri::generate_handler![ping, relaunch_app])
+        .invoke_handler(tauri::generate_handler![ping, relaunch_app, set_tray_labels, set_tray_unread])
         .run(tauri::generate_context!())
         .expect("errore durante l'avvio dell'applicazione");
 }

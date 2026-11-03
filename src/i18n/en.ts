@@ -475,6 +475,8 @@ export const en = {
   "settings.ping.composer": "Next to the paperclip",
   "settings.ping.off": "Hidden",
   "settings.ping.compact": "Show only the number (e.g. 42 ms)",
+  "tray.open": "Open Chat",
+  "tray.quit": "Quit",
 } as const;
 
 export type MessageKey = keyof typeof en;
