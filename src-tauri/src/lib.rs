@@ -61,12 +61,40 @@ fn relaunch_app(app: tauri::AppHandle) {
 mod tray {
     use tauri::menu::{Menu, MenuItem};
     use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+    use tauri::image::Image;
     use tauri::{AppHandle, Manager, Window, WindowEvent, Wry};
 
-    /// Voci del menu, tenute per poterne cambiare il testo quando cambia la lingua.
+    /// Voci del menu, tenute per poterne cambiare il testo quando cambia la lingua, e le due versioni dell'icona.
     pub struct Items {
         open: MenuItem<Wry>,
         quit: MenuItem<Wry>,
+        icon: Option<Image<'static>>,
+        unread_icon: Option<Image<'static>>,
+    }
+
+    /// L'icona con un bollino rosso senza numero in basso a destra, per i messaggi non letti.
+    fn with_unread_dot(icon: &Image<'_>) -> Image<'static> {
+        let (w, h) = (icon.width(), icon.height());
+        let mut rgba = icon.rgba().to_vec();
+        let r = w.min(h) as f32 * 0.24;
+        let (cx, cy) = (w as f32 - r - 0.5, h as f32 - r - 0.5);
+        const RED: [f32; 3] = [242.0, 63.0, 67.0];
+        for y in 0..h {
+            for x in 0..w {
+                let d = ((x as f32 + 0.5 - cx).powi(2) + (y as f32 + 0.5 - cy).powi(2)).sqrt();
+                // Bordo sfumato di un pixel.
+                let a = (r - d + 0.5).clamp(0.0, 1.0);
+                if a == 0.0 {
+                    continue;
+                }
+                let i = ((y * w + x) * 4) as usize;
+                for c in 0..3 {
+                    rgba[i + c] = (RED[c] * a + rgba[i + c] as f32 * (1.0 - a)).round() as u8;
+                }
+                rgba[i + 3] = (255.0 * a + rgba[i + 3] as f32 * (1.0 - a)).round() as u8;
+            }
+        }
+        Image::new_owned(rgba, w, h)
     }
 
     fn show_main(app: &AppHandle) {
@@ -97,12 +125,14 @@ mod tray {
                     show_main(tray.app_handle());
                 }
             });
-        if let Some(icon) = app.default_window_icon() {
+        let icon = app.default_window_icon().map(|icon| icon.clone().to_owned());
+        let unread_icon = icon.as_ref().map(with_unread_dot);
+        if let Some(icon) = &icon {
             tray = tray.icon(icon.clone());
         }
         tray.build(app)?;
 
-        app.manage(Items { open, quit });
+        app.manage(Items { open, quit, icon, unread_icon });
         Ok(())
     }
 
@@ -122,6 +152,12 @@ mod tray {
             let _ = items.quit.set_text(quit);
         }
     }
+
+    pub fn set_unread(app: &AppHandle, unread: bool) {
+        let (Some(items), Some(tray)) = (app.try_state::<Items>(), app.tray_by_id("main")) else { return };
+        let icon = if unread { &items.unread_icon } else { &items.icon };
+        let _ = tray.set_icon(icon.clone());
+    }
 }
 
 /// Testi del menu dell'icona nell'area di notifica, nella lingua scelta nell'app. Fuori da Windows non fa nulla.
@@ -131,6 +167,15 @@ fn set_tray_labels(app: tauri::AppHandle, open: String, quit: String) {
     tray::set_labels(&app, &open, &quit);
     #[cfg(not(target_os = "windows"))]
     let _ = (app, open, quit);
+}
+
+/// Bollino rosso sull'icona nell'area di notifica se ci sono messaggi non letti. Fuori da Windows non fa nulla.
+#[tauri::command]
+fn set_tray_unread(app: tauri::AppHandle, unread: bool) {
+    #[cfg(target_os = "windows")]
+    tray::set_unread(&app, unread);
+    #[cfg(not(target_os = "windows"))]
+    let _ = (app, unread);
 }
 
 pub fn run() {
@@ -156,7 +201,7 @@ pub fn run() {
         .on_window_event(tray::on_window_event);
 
     builder
-        .invoke_handler(tauri::generate_handler![ping, relaunch_app, set_tray_labels])
+        .invoke_handler(tauri::generate_handler![ping, relaunch_app, set_tray_labels, set_tray_unread])
         .run(tauri::generate_context!())
         .expect("errore durante l'avvio dell'applicazione");
 }

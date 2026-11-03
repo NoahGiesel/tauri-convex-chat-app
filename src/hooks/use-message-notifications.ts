@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow, UserAttentionType } from "@tauri-apps/api/window";
 import { isPermissionGranted, requestPermission, sendNotification } from "@tauri-apps/plugin-notification";
 import type { ConversationItem } from "@/components/chat-app";
@@ -63,6 +64,8 @@ export function useMessageNotifications(conversations: ConversationItem[] | null
     if (!isTauri()) return;
     const win = getCurrentWindow();
     if (isWindows) {
+      // Bollino senza numero anche sull'icona nell'area di notifica, visibile quando la finestra è nascosta.
+      invoke("set_tray_unread", { unread: totalUnread > 0 }).catch(() => undefined);
       // Windows non ha il numero sull'icona: si disegna un pallino rosso da sovrapporre all'icona nella barra delle applicazioni.
       void (async () => {
         try {
