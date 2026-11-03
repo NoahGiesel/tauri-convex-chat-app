@@ -115,13 +115,20 @@ export function Markdown({ text }: { text: string }) {
   );
 }
 
-/** Solo emoji (e spazi), al massimo 12: il messaggio si mostra più grande, come nelle altre chat. */
+/** Quante emoji ci sono se il messaggio è fatto solo di emoji (e spazi) e ne ha al massimo 12; altrimenti 0. */
 const EMOJI_ONLY = /^[\p{Extended_Pictographic}\p{Regional_Indicator}\u{1F3FB}-\u{1F3FF}\u200D\uFE0F\u20E3\s]+$/u;
-function isEmojiOnly(body: string): boolean {
+function emojiCount(body: string): number {
   const text = body.trim();
-  if (!text || !EMOJI_ONLY.test(text) || !/[\p{Extended_Pictographic}\p{Regional_Indicator}]/u.test(text)) return false;
-  const clusters = typeof Intl.Segmenter === "function" ? [...new Intl.Segmenter().segment(text.replace(/\s+/g, ""))].length : text.length;
-  return clusters <= 12;
+  if (!text || !EMOJI_ONLY.test(text) || !/[\p{Extended_Pictographic}\p{Regional_Indicator}]/u.test(text)) return 0;
+  const compact = text.replace(/\s+/g, "");
+  const count = typeof Intl.Segmenter === "function" ? [...new Intl.Segmenter().segment(compact)].length : compact.length;
+  return count <= 12 ? count : 0;
+}
+
+/** Una sola emoji: 4 volte il testo (60 px). Più emoji: 1,6 volte (24 px). */
+function emojiSize(body: string): string | false {
+  const n = emojiCount(body);
+  return n === 1 ? "text-[60px] leading-none" : n > 1 && "text-[24px] leading-tight";
 }
 
 function MessageBodyContent({ style, body, authorName, edited, className }: Props) {
@@ -190,7 +197,7 @@ function MessageBodyContent({ style, body, authorName, edited, className }: Prop
       );
     default:
       return (
-        <p className={cn(base, "whitespace-pre-wrap", isEmojiOnly(body) && "text-[24px] leading-tight", className)}>
+        <p className={cn(base, "whitespace-pre-wrap", emojiSize(body), className)}>
           <Linkified text={body} />
           {suffix}
         </p>

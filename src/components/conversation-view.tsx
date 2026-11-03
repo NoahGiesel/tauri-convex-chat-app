@@ -1040,7 +1040,7 @@ export function ConversationView({
                 tab={picker}
                 onTab={setPicker}
                 onEmoji={insertEmoji}
-                onGif={(url) => void submitGif(url)}
+                onGif={(url, query) => void submitGif(url, query)}
               />
             </div>
           )}

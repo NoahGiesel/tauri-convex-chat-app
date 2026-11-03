@@ -31,11 +31,11 @@ export const RELEASE_NOTES: ReleaseNote[] = [
     version: "0.1.22",
     items: {
       en: [
-        "Messages made only of emoji are shown 1.6× larger",
+        "Messages made only of emoji are shown larger: 1.6× for several, 4× for a single one",
         "On macOS, after an update the app reopens from the same place, so the Dock keeps a single icon",
       ],
       it: [
-        "I messaggi fatti solo di emoji si vedono 1,6 volte più grandi",
+        "I messaggi fatti solo di emoji si vedono più grandi: 1,6 volte se sono più d'una, 4 volte se è una sola",
         "Su macOS, dopo un aggiornamento l'app si riapre dallo stesso posto, così nel Dock resta una sola icona",
       ],
     },

@@ -57,7 +57,8 @@ export function EmojiGifPicker({
   tab: PickerTab;
   onTab: (tab: PickerTab) => void;
   onEmoji: (emoji: string) => void;
-  onGif: (url: string) => void;
+  /** `query` sono le parole cercate nel pannello, se ce ne sono: chi riceve la GIF vede cosa è stato cercato. */
+  onGif: (url: string, query?: string) => void;
 }) {
   const { t } = useI18n();
 
@@ -92,7 +93,7 @@ export function EmojiGifPicker({
   );
 }
 
-function GifTab({ onGif }: { onGif: (url: string) => void }) {
+function GifTab({ onGif }: { onGif: (url: string, query?: string) => void }) {
   const { t, language } = useI18n();
   const [query, setQuery] = useState("");
   const [state, setState] = useState<{ status: "loading" | "ready" | "error"; gifs: GifResult[] }>({
@@ -148,7 +149,7 @@ function GifTab({ onGif }: { onGif: (url: string) => void }) {
                 key={g.id}
                 type="button"
                 title={g.title}
-                onClick={() => onGif(g.url)}
+                onClick={() => onGif(g.url, query.trim() || undefined)}
                 className="mb-1.5 block w-full overflow-hidden rounded-lg bg-app-field hover:ring-2 hover:ring-app-accent"
               >
                 <img
