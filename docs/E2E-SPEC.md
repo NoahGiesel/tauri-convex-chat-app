@@ -361,7 +361,7 @@ These come from one machine with very little data. Treat them as orders of magni
 
 ## Release process
 
-`pnpm e2e` becomes a blocking step before anything reaches production, and the Manual smoke runs on a draft release, so a failure never reaches users.
+`pnpm e2e` becomes a blocking step before anything reaches production, and the Manual smoke runs on a draft release, so a failure never reaches users. [`DEPLOY.md`](DEPLOY.md) holds the working checklist.
 
 | Step | What happens |
 |---|---|
@@ -377,7 +377,7 @@ These come from one machine with very little data. Treat them as orders of magni
 - **`pnpm e2e` runs on every release, with no exceptions.** If it fails, there is no deploy and no tag.
 - **If the code changes after a run, it runs again,** because `pnpm e2e` tests the working tree.
 - **It runs on Windows** until a Mac is verified. Someone releasing from a Mac asks the other dev for the run.
-- **`release.yml` changes to `releaseDraft: true`.** Today `latest.json` goes public when the build ends.
+- **`release.yml` makes a draft release** (`releaseDraft: true`). Before, `latest.json` went public when the build ended.
 - **An agent may run `pnpm e2e`,** but it stops before step 5 and hands the smoke to a person. It runs step 6 only when asked.
 
 **Full Manual smoke,** on the releaser's system, with the app installed from the draft:

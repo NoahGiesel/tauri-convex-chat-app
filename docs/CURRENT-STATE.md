@@ -36,7 +36,7 @@ src-tauri/
   src/lib.rs                  registers the updater, process and notification plugins
   Cargo.toml / Cargo.lock
   icons/                      generated from app-icon.png with `tauri icon`
-.github/workflows/release.yml builds and publishes a release when a `v*` tag is pushed
+.github/workflows/release.yml builds a draft release when a `v*` tag is pushed
 app-icon.png                  icon source (1024×1024)
 ```
 
