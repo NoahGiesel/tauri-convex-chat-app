@@ -87,14 +87,20 @@ const profileOf = (person) => `//*[@role="dialog"][@aria-label="${person}"]`;
 
 /** Each language by the name its option shows, with its dictionary. */
 const DICTIONARIES = { English: en, Deutsch: de, Italiano: italian, Română: ro, Español: es };
+/** By its options, because its name changes with the language it is set to. */
 const LANGUAGE_SELECT = '//select[option[@value="de"]][option[@value="ro"]]';
 const THEME_INPUT = '//input[@data-testid="theme-import-input"]';
 /** The presets, and the theme in `e2e/assets` that a test imports. */
 const THEMES = [...PRESETS, JSON.parse(fs.readFileSync(path.join(ASSETS, 'harbour-theme.json'), 'utf8'))];
+function themeBackground(themeName) {
+  const theme = THEMES.find(({ name }) => name === themeName);
+  if (!theme) throw new Error(`no preset or test theme is called ${themeName}`);
+  return theme.colors.bg;
+}
 const themeCard = (themeName) => `//button[.//span[normalize-space(.)="${themeName}"]]`;
 /** One of the buttons in a group such as Mode or Sidebar position. */
 const groupOption = (groupKey, optionKey) => `//*[@role="group"][@aria-label="${en[groupKey]}"]/button[normalize-space(.)="${en[optionKey]}"]`;
-const UPDATE_NOTICES = `//*[@role="switch"][@aria-label="${en['settings.updates.notifyTitle']}"]`;
+const UPDATE_NOTICES_SWITCH = `//*[@role="switch"][@aria-label="${en['settings.updates.notifyTitle']}"]`;
 
 const LIGHTBOX = '//*[@role="dialog"][@aria-modal="true"]';
 const inLightbox = (file) => `//*[@role="dialog"][@aria-label="${file}"]`;
@@ -180,10 +186,10 @@ function chooseFiles(input, files) {
 const hasLoaded = (img) => img.complete && img.naturalWidth > 0;
 /** Runs in the page. A colour the theme set on the page, such as `--app-bg`. */
 const themeColour = (name) => document.documentElement.style.getPropertyValue(name).trim().toLowerCase();
-/** Runs in the page. Which half of the window an element's middle is in. */
-const sideOf = (element) => {
+/** Runs in the page. Whether an element's middle is in that half of the window. */
+const isOnSide = (element, side) => {
   const { left, width } = element.getBoundingClientRect();
-  return left + width / 2 > window.innerWidth / 2 ? 'right' : 'left';
+  return (left + width / 2 > window.innerWidth / 2 ? 'right' : 'left') === side;
 };
 /**
  * Runs in the page. A colour picker or a select cannot be typed into, so its value is set the way React reads it:
@@ -271,9 +277,20 @@ function drivenUser(name) {
     await b.execute(chooseFiles, await b.$(input), files);
   };
 
-  /** `isReady` runs in the page, on the element: an image has loaded, or a player has read its video. */
-  const waitUntilLoaded = (selector, timeoutMsg, isReady = hasLoaded) =>
-    b.waitUntil(async () => (await b.$(selector).isExisting()) && b.execute(isReady, await b.$(selector)), { ...WAIT, timeoutMsg });
+  /** For a colour picker or a select, which cannot be typed into. `eventType` is the one React reads. */
+  const setControl = async (selector, value, eventType) => {
+    await waitUntilExists(selector, `${name} has no ${selector}`);
+    await b.execute(setControlValue, await b.$(selector), value, eventType);
+  };
+
+  const waitUntilTrue = (check, timeoutMsg) => b.waitUntil(check, { ...WAIT, timeoutMsg });
+
+  /**
+   * `isReady` runs in the page, on the element and `args`: an image has loaded, a player has read its video,
+   * or an element is on one side.
+   */
+  const waitUntilLoaded = (selector, timeoutMsg, isReady = hasLoaded, ...args) =>
+    waitUntilTrue(async () => (await b.$(selector).isExisting()) && b.execute(isReady, await b.$(selector), ...args), timeoutMsg);
 
   /** A field that opens focused, with its text chosen, so typing replaces it. */
   const typeInFocused = async (selector, text) => {
@@ -507,41 +524,34 @@ function drivenUser(name) {
     },
     backToChats: () => press(`aria/${en['settings.back']}`),
     chooseLightMode: () => press(groupOption('settings.appearance.mode', 'settings.appearance.modeLight')),
-    seesLightMode: () =>
-      b.waitUntil(() => b.execute(() => !document.documentElement.classList.contains('dark')), { ...WAIT, timeoutMsg: `${name} is not in light mode` }),
+    seesLightMode: () => waitUntilTrue(() => b.execute(() => !document.documentElement.classList.contains('dark')), `${name} is not in light mode`),
     chooseTheme: (themeName) => press(themeCard(themeName)),
     /** Marked as in use, and its background is the page's. */
     async seesThemeInUse(themeName) {
       await waitUntilShown(`${themeCard(themeName)}//span[normalize-space(.)="${en['settings.appearance.inUse']}"]`, `${name} does not see ${themeName} in use`);
-      await user.seesColour('--app-bg', THEMES.find((theme) => theme.name === themeName).colors.bg);
+      await user.seesColour('--app-bg', themeBackground(themeName));
     },
     seesColour: (variable, hex) =>
-      b.waitUntil(async () => (await b.execute(themeColour, variable)) === hex, { ...WAIT, timeoutMsg: `${name} does not see ${variable} as ${hex}` }),
-    async chooseAccent(hex) {
-      const picker = `aria/${en['settings.appearance.customAccent']}`;
-      await waitUntilExists(picker, `${name} has no custom accent`);
-      await b.execute(setControlValue, await b.$(picker), hex, 'input');
-    },
+      waitUntilTrue(async () => (await b.execute(themeColour, variable)) === hex, `${name} does not see ${variable} as ${hex}`),
+    chooseAccent: (hex) => setControl(`aria/${en['settings.appearance.customAccent']}`, hex, 'input'),
     placeSidebar: (side) => press(groupOption('settings.appearance.sidebarPosition', `settings.appearance.${side}`)),
     /** By the Settings button, which sits in the sidebar. */
-    seesSidebarOn: (side) =>
-      b.waitUntil(async () => (await b.$(SETTINGS).isExisting()) && (await b.execute(sideOf, await b.$(SETTINGS))) === side, {
-        ...WAIT,
-        timeoutMsg: `${name} does not see the sidebar on the ${side}`,
-      }),
+    seesSidebarOn: (side) => waitUntilLoaded(SETTINGS, `${name} does not see the sidebar on the ${side}`, isOnSide, side),
     importTheme: (file) => upload(THEME_INPUT, [asset(file)]),
     seesThemeRefused: () => waitUntilShown(roleSelector('alert', en['settings.appearance.importInvalidJson']), `${name} was not told the file is not a theme`),
-    toggleUpdateNotices: () => press(UPDATE_NOTICES),
+    toggleUpdateNotices: () => press(UPDATE_NOTICES_SWITCH),
     seesUpdateNotices: (on) =>
-      waitUntilShown(`${UPDATE_NOTICES}[@aria-checked="${on}"]`, `${name} does not see update notices switched ${on ? 'on' : 'off'}`),
+      waitUntilShown(`${UPDATE_NOTICES_SWITCH}[@aria-checked="${on}"]`, `${name} does not see update notices switched ${on ? 'on' : 'off'}`),
     async chooseLanguage(language) {
       await waitUntilExists(LANGUAGE_SELECT, `${name} has no language list`);
       const code = await b.$(`${LANGUAGE_SELECT}/option[normalize-space(.)="${language}"]`).getAttribute('value');
-      await b.execute(setControlValue, await b.$(LANGUAGE_SELECT), code, 'change');
+      await setControl(LANGUAGE_SELECT, code, 'change');
     },
     /** The language list is named in the language it is set to, from that language's dictionary. */
-    seesWordsOf: (language) => waitUntilShown(`aria/${DICTIONARIES[language]['auth.language']}`, `${name} does not see the app in ${language}`),
-    seesChatsIn: (language) => waitUntilShown(`aria/${DICTIONARIES[language]['nav.settings']}`, `${name} does not see the chats in ${language}`),
+    seesLanguageListIn: (language) =>
+      waitUntilShown(`${LANGUAGE_SELECT}[@aria-label="${DICTIONARIES[language]['auth.language']}"]`, `${name} does not see the language list named in ${language}`),
+    seesSettingsButtonIn: (language) =>
+      waitUntilShown(`aria/${DICTIONARIES[language]['nav.settings']}`, `${name} does not see the Settings button named in ${language}`),
     async openProfileOf(person, message) {
       await press(`${messageRow(message)}//strong[normalize-space(.)="${person}"]`);
       await user.seesProfileOf(person);

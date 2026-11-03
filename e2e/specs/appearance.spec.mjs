@@ -79,14 +79,15 @@ describe('language settings', () => {
   it('each of the five languages shows its own words, and the last one stays after a reload', async () => {
     const { alice } = await settingsOpen();
     await alice.showSettings('preferences');
-    await alice.seesWordsOf('English');
+    await alice.seesLanguageListIn('English');
 
-    for (const language of ['Deutsch', 'Italiano', 'Română', 'Español']) {
+    // Back to English on the way, so that switching back is covered too. Spanish comes last, and must stay.
+    for (const language of ['Deutsch', 'Italiano', 'Română', 'English', 'Español']) {
       await alice.chooseLanguage(language);
-      await alice.seesWordsOf(language);
+      await alice.seesLanguageListIn(language);
     }
     await alice.reload();
 
-    await alice.seesChatsIn('Español');
+    await alice.seesSettingsButtonIn('Español');
   });
 });
