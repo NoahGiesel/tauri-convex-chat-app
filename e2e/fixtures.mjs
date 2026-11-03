@@ -75,8 +75,8 @@ const gifAt = (addresses) => `//img[@alt="${en['chat.gifAlt']}"][${addresses.map
 
 const AVATAR_INPUT = '//input[@data-testid="avatar-input"]';
 const CHANGE_PHOTO = `aria/${en['settings.profile.changePhoto']}`;
-/** What Settings says once a change is saved. */
-const settingsNotice = (key) => roleSelector('status', en[key]);
+/** What the app says once something went through. */
+const notice = (text) => roleSelector('status', text);
 /** A person's profile, which opens from their name on a message and is named after them. */
 const profileOf = (person) => `//*[@role="dialog"][@aria-label="${person}"]`;
 
@@ -459,15 +459,15 @@ function drivenUser(name) {
       await waitUntilShown(CHANGE_PHOTO, `${name} did not reach the profile in Settings`);
     },
     chooseProfilePhoto: (file) => upload(AVATAR_INPUT, [asset(file)]),
-    seesPhotoUpdated: () => waitUntilShown(settingsNotice('settings.profile.photoUpdated'), `${name} was not told the photo was updated`),
+    seesPhotoUpdated: () => waitUntilShown(notice(en['settings.profile.photoUpdated']), `${name} was not told the photo was updated`),
     /** On the Settings button, where a person sees their own photo. */
     seesOwnProfilePhoto: () => waitUntilLoaded(`//button[@aria-label="${en['nav.settings']}"]//img`, `${name} did not see their own profile photo load`),
     removeProfilePhoto: () => press(`//button[normalize-space(.)="${en['settings.profile.removePhoto']}"]`),
-    seesPhotoRemoved: () => waitUntilShown(settingsNotice('settings.profile.photoRemoved'), `${name} was not told the photo was removed`),
+    seesPhotoRemoved: () => waitUntilShown(notice(en['settings.profile.photoRemoved']), `${name} was not told the photo was removed`),
     setName: (newName) => fill(en['settings.account.name'], newName),
     setBio: (bio) => fill(en['settings.profile.bio'], bio),
     saveProfile: () => press(`aria/${en['settings.profile.save']}`),
-    seesProfileSaved: () => waitUntilShown(settingsNotice('settings.profile.saved'), `${name} was not told the profile was saved`),
+    seesProfileSaved: () => waitUntilShown(notice(en['settings.profile.saved']), `${name} was not told the profile was saved`),
     async openProfileOf(person, message) {
       await press(`${messageRow(message)}//strong[normalize-space(.)="${person}"]`);
       await user.seesProfileOf(person);
@@ -605,8 +605,8 @@ function drivenUser(name) {
     seesAcceptInBothLists: (person) =>
       waitUntilShown(`(//button[@aria-label="${named('people.acceptRequest', person)}"])[2]`, `${name} has no Accept for ${person} in both lists`),
     seesFriend: (person) => waitUntilShown(`aria/${named('people.removePerson', person)}`, `${name} is not friends with ${person}`),
-    seesRequestSent: () => waitUntilShown(roleSelector('status', en['people.redeemRequested']), `${name} was not told the request went`),
-    seesNowFriends: () => waitUntilShown(roleSelector('status', en['people.redeemAccepted']), `${name} was not told they are friends`),
+    seesRequestSent: () => waitUntilShown(notice(en['people.redeemRequested']), `${name} was not told the request went`),
+    seesNowFriends: () => waitUntilShown(notice(en['people.redeemAccepted']), `${name} was not told they are friends`),
     seesInviteRefused: () => waitUntilShown(roleSelector('alert', en['error.invalid_invite']), `${name} was not refused`),
     seesOwnInviteRefused: () => waitUntilShown(roleSelector('alert', en['error.own_invite']), `${name} was not refused`),
 
