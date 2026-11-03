@@ -409,7 +409,7 @@ After a failed smoke the backend stays on production, because an old app keeps w
 
 ## macOS
 
-No macOS code is written until someone can run it. Until then the suite runs on Windows only. Whoever verifies on a Mac must:
+The macOS code is written (issue #49) and has not been run on a Mac yet: `pnpm e2e` accepts macOS, and the first run there decides what is left. Whoever verifies on a Mac must:
 
 - **Isolate instances.** macOS has no environment override, and `data_directory` is unsupported. Behind `e2e`, the app passes a `dataStoreIdentifier` for every window, popouts included.
 - **Refuse to run below macOS 14.** Older versions silently fall back to a shared store.

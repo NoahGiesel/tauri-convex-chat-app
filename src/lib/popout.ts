@@ -1,4 +1,4 @@
-import { isTauri } from "@tauri-apps/api/core";
+import { invoke, isTauri } from "@tauri-apps/api/core";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 
 /** Parametro URL che trasforma l'app in una finestra con una sola chat. */
@@ -24,6 +24,9 @@ export async function openChatWindow(conversationId: string, title: string): Pro
       await existing.setFocus();
       return true;
     }
+    // Solo nella build di test su macOS: la finestra staccata deve usare gli stessi dati dell'istanza che la apre.
+    const dataStoreIdentifier =
+      import.meta.env.VITE_E2E === "1" ? await invoke<number[] | null>("e2e_store_id_command").catch(() => null) : null;
     const created = new WebviewWindow(label, {
       url: `index.html?${POPOUT_PARAM}=${conversationId}`,
       title,
@@ -32,6 +35,7 @@ export async function openChatWindow(conversationId: string, title: string): Pro
       minWidth: 420,
       minHeight: 360,
       dragDropEnabled: false,
+      ...(dataStoreIdentifier ? { dataStoreIdentifier } : {}),
     });
     return await new Promise<boolean>((resolve) => {
       void created.once("tauri://created", () => resolve(true));

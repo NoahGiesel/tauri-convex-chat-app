@@ -178,6 +178,32 @@ fn set_tray_unread(app: tauri::AppHandle, unread: bool) {
     let _ = (app, unread);
 }
 
+/// 16 byte stabili ricavati dal nome dell'istanza di test (`E2E_INSTANCE`): su macOS è ciò che separa i dati delle due app.
+/// Solo nella build di test su macOS; altrove non c'è nulla da separare.
+#[cfg(all(feature = "e2e", target_os = "macos"))]
+fn e2e_store_id() -> Option<[u8; 16]> {
+    let name = std::env::var("E2E_INSTANCE").ok().filter(|n| !n.is_empty())?;
+    // FNV-1a a 64 bit con due partenze diverse: bastano a dare a ogni nome un identificatore diverso.
+    let fnv = |seed: u64| name.bytes().fold(seed, |h, b| (h ^ b as u64).wrapping_mul(0x0000_0100_0000_01b3));
+    let (a, b) = (fnv(0xcbf2_9ce4_8422_2325), fnv(0x84222325_cbf29ce4));
+    let mut id = [0u8; 16];
+    id[..8].copy_from_slice(&a.to_be_bytes());
+    id[8..].copy_from_slice(&b.to_be_bytes());
+    Some(id)
+}
+
+/// Dice al frontend l'identificatore dei dati di questa istanza, perché le finestre staccate usino lo stesso.
+/// `None` fuori dalla build di test su macOS.
+#[tauri::command]
+fn e2e_store_id_command() -> Option<Vec<u8>> {
+    #[cfg(all(feature = "e2e", target_os = "macos"))]
+    {
+        return e2e_store_id().map(|id| id.to_vec());
+    }
+    #[cfg(not(all(feature = "e2e", target_os = "macos")))]
+    None
+}
+
 pub fn run() {
     #[cfg(target_os = "macos")]
     let _ = BUNDLE_PATH.set(bundle_path_at_launch());
@@ -200,8 +226,19 @@ pub fn run() {
         })
         .on_window_event(tray::on_window_event);
 
+    // Build di test su macOS: niente cartella dati per istanza, quindi la finestra principale (creata qui e non dalla
+    // configurazione, che la lascia con `create: false`) riceve un identificatore dei dati diverso per ogni istanza.
+    #[cfg(all(feature = "e2e", target_os = "macos"))]
+    let builder = builder.setup(|app| {
+        let id = e2e_store_id().ok_or("E2E_INSTANCE is not set: the Test build needs a name for its data")?;
+        for config in app.config().app.windows.iter().filter(|w| !w.create) {
+            tauri::WebviewWindowBuilder::from_config(app, config)?.data_store_identifier(id).build()?;
+        }
+        Ok(())
+    });
+
     builder
-        .invoke_handler(tauri::generate_handler![ping, relaunch_app, set_tray_labels, set_tray_unread])
+        .invoke_handler(tauri::generate_handler![ping, relaunch_app, set_tray_labels, set_tray_unread, e2e_store_id_command])
         .run(tauri::generate_context!())
         .expect("errore durante l'avvio dell'applicazione");
 }

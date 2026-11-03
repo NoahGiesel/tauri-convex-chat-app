@@ -19,7 +19,8 @@ export const STUB_FILES = path.join(STAGE, 'stub');
 export const STUB_LOG = path.join(STAGE, 'stub-log.jsonl');
 /** Outside the stage, so that the pictures of a failed run outlive it until the next run. */
 export const FAILURES = path.join(E2E_DIR, '.failures');
-export const EXE = path.join(ROOT, 'src-tauri', 'target', 'debug', 'tauri-convex-chat.exe');
+export const IS_MAC = process.platform === 'darwin';
+export const EXE = path.join(ROOT, 'src-tauri', 'target', 'debug', IS_MAC ? 'tauri-convex-chat' : 'tauri-convex-chat.exe');
 
 export const CONVEX_PORT = 3310;
 export const SITE_PORT = 3311;
@@ -39,7 +40,8 @@ export const TEST_LIMIT_MS = 30_000;
 /** In this order: `alice` gets 4540 and `bob` gets 4541. */
 export const DRIVEN_USERS = ['alice', 'bob'];
 
-export const APP_ORIGIN = 'http://tauri.localhost';
+/** What the app's pages come from: WebView2 serves them over http, WKWebView over its own scheme. */
+export const APP_ORIGIN = IS_MAC ? 'tauri://localhost' : 'http://tauri.localhost';
 /** The main window's handle, which is its Tauri label. A popout's holds its conversation ID, so no test names one. */
 export const MAIN_WINDOW = 'main';
 export const APP_URL = `${APP_ORIGIN}/`;

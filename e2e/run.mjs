@@ -3,8 +3,8 @@
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { DRIVEN_USERS, E2E_DIR, EXE, FAILURES, IDENTIFIER, PORTS, PROFILES, ROOT, SITE_URL, STAGE, STUB_URL, TEST_RAN_FILE, TEST_SECRET } from './config.mjs';
-import { buildEnv, commandEnv, confirmStage, findBusyPorts, parseRunArgs } from './guards.mjs';
+import { DRIVEN_USERS, E2E_DIR, EXE, FAILURES, IDENTIFIER, IS_MAC, PORTS, PROFILES, ROOT, SITE_URL, STAGE, STUB_URL, TEST_RAN_FILE, TEST_SECRET } from './config.mjs';
+import { buildEnv, commandEnv, confirmStage, findBusyPorts, macVersionProblem, parseRunArgs } from './guards.mjs';
 import { timingReport } from './report.mjs';
 import { buildSeeds } from './seeds.mjs';
 import { convexInStage, prepareStage, startBackend } from './stage.mjs';
@@ -17,10 +17,18 @@ try {
   console.error(err.message);
   process.exit(1);
 }
-if (process.platform !== 'win32') {
-  // Instances are kept apart by a WebView2 setting, which does nothing elsewhere.
-  console.error('pnpm e2e runs on Windows only until a Mac is verified. See docs/E2E-SPEC.md.');
+if (process.platform !== 'win32' && !IS_MAC) {
+  // Instances are kept apart by a WebView2 setting on Windows and a WKWebView data store on macOS. Nothing does it elsewhere.
+  console.error('pnpm e2e runs on Windows and macOS only. See docs/E2E-SPEC.md.');
   process.exit(1);
+}
+if (IS_MAC) {
+  const version = spawnSync('sw_vers', ['-productVersion'], { encoding: 'utf8' }).stdout.trim();
+  const problem = macVersionProblem(version);
+  if (problem) {
+    console.error(problem);
+    process.exit(1);
+  }
 }
 
 const log = (message) => console.log(`[e2e] ${message}`);
@@ -33,13 +41,52 @@ function track(child) {
   return child;
 }
 
+/** Every process with its parent and command line, on macOS. */
+function processTable() {
+  const out = spawnSync('ps', ['-Ao', 'pid=,ppid=,command='], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }).stdout;
+  return out
+    .split('\n')
+    .map((line) => /^\s*(\d+)\s+(\d+)\s+(.*)$/.exec(line))
+    .filter(Boolean)
+    .map(([, pid, ppid, command]) => ({ pid: Number(pid), ppid: Number(ppid), command }));
+}
+
+/** On macOS the children of a killed process are not killed with it either: walk down from it and stop them all. */
+function killTreeOnMac(rootPid) {
+  const table = processTable();
+  const doomed = [rootPid];
+  for (let i = 0; i < doomed.length; i++) for (const p of table) if (p.ppid === doomed[i] && !doomed.includes(p.pid)) doomed.push(p.pid);
+  for (const pid of doomed.reverse()) {
+    try {
+      process.kill(pid, 'SIGKILL');
+    } catch {
+      // Already gone.
+    }
+  }
+}
+
 /** On Windows, killing a process leaves its children alive, and they would keep the ports. */
 function stopRunning() {
-  for (const { pid } of running) spawnSync('taskkill', ['/pid', String(pid), '/T', '/F'], { env: commandEnv(), stdio: 'ignore' });
+  for (const { pid } of running) {
+    if (IS_MAC) killTreeOnMac(pid);
+    else spawnSync('taskkill', ['/pid', String(pid), '/T', '/F'], { env: commandEnv(), stdio: 'ignore' });
+  }
 }
 
 /** Stops what a killed parent left behind, chosen by path so that an installed Chat is never touched. */
 function stopLeftovers() {
+  if (IS_MAC) {
+    for (const { pid, command } of processTable()) {
+      if (pid !== process.pid && (command.startsWith(EXE) || command.includes(STAGE))) {
+        try {
+          process.kill(pid, 'SIGKILL');
+        } catch {
+          // Already gone.
+        }
+      }
+    }
+    return;
+  }
   const script = `
     Get-CimInstance Win32_Process |
       Where-Object { $_.ProcessId -ne $PID -and ($_.ExecutablePath -eq $env:E2E_EXE -or ($_.CommandLine -and $_.CommandLine.Contains($env:E2E_STAGE))) } |
@@ -69,7 +116,10 @@ async function waitFor(what, check, timeoutMs = 120_000) {
 
 async function buildTestBuild() {
   const tauri = path.join(ROOT, 'node_modules', '@tauri-apps', 'cli', 'tauri.js');
-  const config = JSON.stringify({ identifier: IDENTIFIER });
+  // On macOS the main window is not created from the configuration: the app builds it with a data store of its own per instance.
+  // An array in a config patch replaces the whole array, so the window is repeated here with `create: false`.
+  const windows = JSON.parse(fs.readFileSync(path.join(ROOT, 'src-tauri', 'tauri.conf.json'), 'utf8')).app.windows;
+  const config = JSON.stringify({ identifier: IDENTIFIER, ...(IS_MAC ? { app: { windows: windows.map((w) => ({ ...w, create: false })) } } : {}) });
   await runToEnd(process.execPath, [tauri, 'build', '--debug', '--no-bundle', '--features', 'e2e', '--config', config], {
     cwd: ROOT,
     env: buildEnv(),
@@ -122,7 +172,7 @@ async function removeWithRetries(target) {
       fs.rmSync(target, { recursive: true, force: true });
       return;
     } catch {
-      // WebView2 outlives the app by a moment and holds its folder until it exits.
+      // WebView2 outlives the app by a moment and holds its folder until it exits (macOS: the WebKit processes).
       await sleep(250);
     }
   }

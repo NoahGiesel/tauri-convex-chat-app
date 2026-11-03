@@ -87,14 +87,22 @@ export function confirmInstance(name, report) {
 }
 
 /** A Test build with no profile of its own could reach a real session, so the folder must already exist. */
-export function instanceCapability(name, profiles = PROFILES) {
+export function instanceCapability(name, profiles = PROFILES, platform = process.platform) {
   const profile = path.join(profiles, name);
   if (!fs.existsSync(profile)) throw new Error(`no profile for ${name} at ${profile}. Start the suite with pnpm e2e`);
   return {
     capabilities: {
       browserName: 'tauri',
       'tauri:options': { application: EXE },
-      'wdio:tauriServiceOptions': { env: { WEBVIEW2_USER_DATA_FOLDER: profile } },
+      // WebView2 takes a folder. WKWebView has none, so the app derives its data store from the instance's name.
+      'wdio:tauriServiceOptions': { env: platform === 'darwin' ? { E2E_INSTANCE: name } : { WEBVIEW2_USER_DATA_FOLDER: profile } },
     },
   };
+}
+
+/** Older macOS versions silently fall back to one shared store, so two instances would share a session. */
+export function macVersionProblem(version) {
+  const major = Number.parseInt(String(version).split('.')[0], 10);
+  if (!Number.isFinite(major)) return `could not read the macOS version (${JSON.stringify(version)})`;
+  return major < 14 ? `pnpm e2e needs macOS 14 or newer, and this is ${version}: older versions share one data store between instances` : null;
 }

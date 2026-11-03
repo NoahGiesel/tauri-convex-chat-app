@@ -7,7 +7,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { after, afterEach, beforeEach, describe, it } from 'node:test';
 import { ROOT } from './config.mjs';
-import { buildEnv, commandEnv, confirmCleanEnv, confirmStage, findBusyPorts, confirmInstance, instanceCapability, parseRunArgs } from './guards.mjs';
+import { buildEnv, commandEnv, confirmCleanEnv, confirmStage, findBusyPorts, confirmInstance, instanceCapability, macVersionProblem, parseRunArgs } from './guards.mjs';
 import { prepareStage } from './stage.mjs';
 
 // What the CLI really writes, comment and blank lines included.
@@ -246,11 +246,33 @@ describe('an instance profile', () => {
   });
 
   it('becomes the WebView2 folder of that instance', () => {
-    const cap = instanceCapability('alice', profiles);
+    const cap = instanceCapability('alice', profiles, 'win32');
     assert.equal(cap.capabilities['wdio:tauriServiceOptions'].env.WEBVIEW2_USER_DATA_FOLDER, path.join(profiles, 'alice'));
+  });
+
+  it('becomes the instance name that the app turns into a data store, on macOS', () => {
+    const cap = instanceCapability('alice', profiles, 'darwin');
+    assert.deepEqual(cap.capabilities['wdio:tauriServiceOptions'].env, { E2E_INSTANCE: 'alice' });
   });
 
   it('is required: an instance with none refuses to start', () => {
     assert.throws(() => instanceCapability('bob', profiles), /no profile for bob/);
+  });
+});
+
+describe('the macOS version', () => {
+  it('is refused below 14, where instances would share one store', () => {
+    assert.match(macVersionProblem('13.6.1'), /macOS 14 or newer/);
+    assert.match(macVersionProblem('12.7'), /macOS 14 or newer/);
+  });
+
+  it('is accepted from 14 on', () => {
+    assert.equal(macVersionProblem('14.0'), null);
+    assert.equal(macVersionProblem('15.2.1'), null);
+    assert.equal(macVersionProblem('26.1'), null);
+  });
+
+  it('is refused when it cannot be read', () => {
+    assert.match(macVersionProblem(''), /could not read/);
   });
 });
