@@ -1,7 +1,12 @@
 // What a test works with: domain actions per user. Selectors and waits live here, never in a test.
 import fs from 'node:fs';
 import path from 'node:path';
+import { de } from '../src/i18n/de.ts';
 import { en } from '../src/i18n/en.ts';
+import { es } from '../src/i18n/es.ts';
+import { it as italian } from '../src/i18n/it.ts';
+import { ro } from '../src/i18n/ro.ts';
+import PRESETS from '../src/themes/presets.json' with { type: 'json' };
 import { ASSET_TYPES, ASSETS, EXPIRED_INVITE_TOKEN, INTERFACE_WAIT_MS, MAIN_WINDOW, PASSWORD, POLL_MS, USERS } from './config.mjs';
 import { reset } from './reset.mjs';
 import { scriptedUser } from './scripted-user.mjs';
@@ -79,6 +84,17 @@ const CHANGE_PHOTO = `aria/${en['settings.profile.changePhoto']}`;
 const notice = (text) => roleSelector('status', text);
 /** A person's profile, which opens from their name on a message and is named after them. */
 const profileOf = (person) => `//*[@role="dialog"][@aria-label="${person}"]`;
+
+/** Each language by the name its option shows, with its dictionary. */
+const DICTIONARIES = { English: en, Deutsch: de, Italiano: italian, Română: ro, Español: es };
+const LANGUAGE_SELECT = '//select[option[@value="de"]][option[@value="ro"]]';
+const THEME_INPUT = '//input[@data-testid="theme-import-input"]';
+/** The presets, and the theme in `e2e/assets` that a test imports. */
+const THEMES = [...PRESETS, JSON.parse(fs.readFileSync(path.join(ASSETS, 'harbour-theme.json'), 'utf8'))];
+const themeCard = (themeName) => `//button[.//span[normalize-space(.)="${themeName}"]]`;
+/** One of the buttons in a group such as Mode or Sidebar position. */
+const groupOption = (groupKey, optionKey) => `//*[@role="group"][@aria-label="${en[groupKey]}"]/button[normalize-space(.)="${en[optionKey]}"]`;
+const UPDATE_NOTICES = `//*[@role="switch"][@aria-label="${en['settings.updates.notifyTitle']}"]`;
 
 const LIGHTBOX = '//*[@role="dialog"][@aria-modal="true"]';
 const inLightbox = (file) => `//*[@role="dialog"][@aria-label="${file}"]`;
@@ -162,6 +178,22 @@ function chooseFiles(input, files) {
 
 /** Runs in the page. Whether an image has really loaded, not only been placed. */
 const hasLoaded = (img) => img.complete && img.naturalWidth > 0;
+/** Runs in the page. A colour the theme set on the page, such as `--app-bg`. */
+const themeColour = (name) => document.documentElement.style.getPropertyValue(name).trim().toLowerCase();
+/** Runs in the page. Which half of the window an element's middle is in. */
+const sideOf = (element) => {
+  const { left, width } = element.getBoundingClientRect();
+  return left + width / 2 > window.innerWidth / 2 ? 'right' : 'left';
+};
+/**
+ * Runs in the page. A colour picker or a select cannot be typed into, so its value is set the way React reads it:
+ * through the native setter, then the event React listens for.
+ */
+const setControlValue = (control, value, eventType) => {
+  const proto = control instanceof HTMLSelectElement ? HTMLSelectElement.prototype : HTMLInputElement.prototype;
+  Object.getOwnPropertyDescriptor(proto, 'value').set.call(control, value);
+  control.dispatchEvent(new Event(eventType, { bubbles: true }));
+};
 /** Runs in the page. Whether a player has read the video's metadata, so it could play it. */
 const hasMetadata = (video) => video.readyState >= HTMLMediaElement.HAVE_METADATA && video.duration > 0;
 
@@ -468,6 +500,48 @@ function drivenUser(name) {
     setBio: (bio) => fill(en['settings.profile.bio'], bio),
     saveProfile: () => press(`aria/${en['settings.profile.save']}`),
     seesProfileSaved: () => waitUntilShown(notice(en['settings.profile.saved']), `${name} was not told the profile was saved`),
+    async showSettings(section) {
+      const label = en[`settings.nav.${section}`];
+      await press(`//nav[@aria-label="${en['settings.title']}"]//button[normalize-space(.)="${label}"]`);
+      await waitUntilShown(`//h1[normalize-space(.)="${label}"]`, `${name} did not reach ${label} in Settings`);
+    },
+    backToChats: () => press(`aria/${en['settings.back']}`),
+    chooseLightMode: () => press(groupOption('settings.appearance.mode', 'settings.appearance.modeLight')),
+    seesLightMode: () =>
+      b.waitUntil(() => b.execute(() => !document.documentElement.classList.contains('dark')), { ...WAIT, timeoutMsg: `${name} is not in light mode` }),
+    chooseTheme: (themeName) => press(themeCard(themeName)),
+    /** Marked as in use, and its background is the page's. */
+    async seesThemeInUse(themeName) {
+      await waitUntilShown(`${themeCard(themeName)}//span[normalize-space(.)="${en['settings.appearance.inUse']}"]`, `${name} does not see ${themeName} in use`);
+      await user.seesColour('--app-bg', THEMES.find((theme) => theme.name === themeName).colors.bg);
+    },
+    seesColour: (variable, hex) =>
+      b.waitUntil(async () => (await b.execute(themeColour, variable)) === hex, { ...WAIT, timeoutMsg: `${name} does not see ${variable} as ${hex}` }),
+    async chooseAccent(hex) {
+      const picker = `aria/${en['settings.appearance.customAccent']}`;
+      await waitUntilExists(picker, `${name} has no custom accent`);
+      await b.execute(setControlValue, await b.$(picker), hex, 'input');
+    },
+    placeSidebar: (side) => press(groupOption('settings.appearance.sidebarPosition', `settings.appearance.${side}`)),
+    /** By the Settings button, which sits in the sidebar. */
+    seesSidebarOn: (side) =>
+      b.waitUntil(async () => (await b.$(SETTINGS).isExisting()) && (await b.execute(sideOf, await b.$(SETTINGS))) === side, {
+        ...WAIT,
+        timeoutMsg: `${name} does not see the sidebar on the ${side}`,
+      }),
+    importTheme: (file) => upload(THEME_INPUT, [asset(file)]),
+    seesThemeRefused: () => waitUntilShown(roleSelector('alert', en['settings.appearance.importInvalidJson']), `${name} was not told the file is not a theme`),
+    toggleUpdateNotices: () => press(UPDATE_NOTICES),
+    seesUpdateNotices: (on) =>
+      waitUntilShown(`${UPDATE_NOTICES}[@aria-checked="${on}"]`, `${name} does not see update notices switched ${on ? 'on' : 'off'}`),
+    async chooseLanguage(language) {
+      await waitUntilExists(LANGUAGE_SELECT, `${name} has no language list`);
+      const code = await b.$(`${LANGUAGE_SELECT}/option[normalize-space(.)="${language}"]`).getAttribute('value');
+      await b.execute(setControlValue, await b.$(LANGUAGE_SELECT), code, 'change');
+    },
+    /** The language list is named in the language it is set to, from that language's dictionary. */
+    seesWordsOf: (language) => waitUntilShown(`aria/${DICTIONARIES[language]['auth.language']}`, `${name} does not see the app in ${language}`),
+    seesChatsIn: (language) => waitUntilShown(`aria/${DICTIONARIES[language]['nav.settings']}`, `${name} does not see the chats in ${language}`),
     async openProfileOf(person, message) {
       await press(`${messageRow(message)}//strong[normalize-space(.)="${person}"]`);
       await user.seesProfileOf(person);

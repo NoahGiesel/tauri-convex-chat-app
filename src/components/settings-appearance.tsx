@@ -234,6 +234,7 @@ export function SettingsAppearance() {
             ref={fileInput}
             type="file"
             accept="application/json,.json"
+            data-testid="theme-import-input"
             className="hidden"
             onChange={(e) => {
               void onImportFile(e.target.files?.[0]);
