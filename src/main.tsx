@@ -17,7 +17,12 @@ const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 // La suite E2E legge da qui gli indirizzi della build. In release il blocco sparisce.
 if (import.meta.env.VITE_E2E) {
   Object.assign(window, {
-    __E2E__: { convexUrl: import.meta.env.VITE_CONVEX_URL, siteUrl: import.meta.env.VITE_CONVEX_SITE_URL },
+    __E2E__: {
+      convexUrl: import.meta.env.VITE_CONVEX_URL,
+      siteUrl: import.meta.env.VITE_CONVEX_SITE_URL,
+      // macOS: the suite cannot leave the page for about:blank and come back, so it stops the app's live traffic with this instead.
+      stop: () => convex.close(),
+    },
   });
 }
 

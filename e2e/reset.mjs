@@ -1,7 +1,7 @@
 // A Reset returns the Test backend to exactly one Seed. Fixtures own it, so it runs before every test.
 import fs from 'node:fs';
 import path from 'node:path';
-import { APP_URL, DRIVEN_USERS, FAILURES, INTERFACE_WAIT_MS, MAIN_WINDOW, SESSIONS_FILE, TEST_RAN_FILE } from './config.mjs';
+import { APP_URL, DRIVEN_USERS, IS_MAC, FAILURES, INTERFACE_WAIT_MS, MAIN_WINDOW, SESSIONS_FILE, TEST_RAN_FILE } from './config.mjs';
 import { confirmInstance } from './guards.mjs';
 import { screenshotName } from './report.mjs';
 import { importSeed } from './stage.mjs';
@@ -83,6 +83,17 @@ const prepareStorage = (b, name, signedIn) => {
 
 /** Live apps write into fresh data through `heartbeat` and `markRead`. `url()` returns before the navigation ends. */
 async function leaveApp(b, name) {
+  if (IS_MAC) {
+    // WKWebView does not come back from about:blank to the app's own scheme through WebDriver, so the page stays and the app is stopped.
+    await b.executeAsync((done) => {
+      try {
+        window.__E2E__.stop().then(() => done(), () => done());
+      } catch {
+        done();
+      }
+    });
+    return;
+  }
   await b.url('about:blank');
   await b.waitUntil(async () => (await b.execute(() => location.href)) === 'about:blank', {
     ...WAIT,
@@ -91,7 +102,19 @@ async function leaveApp(b, name) {
 }
 
 async function loadApp(b, name) {
-  await b.url(APP_URL);
+  if (IS_MAC) {
+    // `reload()` returns before the page is gone, so the old page is marked and the wait is for one without the mark.
+    await b.execute(() => {
+      window.notReloadedYet = true;
+      location.reload();
+    });
+    await b.waitUntil(() => b.execute(() => !window.notReloadedYet && document.readyState === 'complete'), {
+      ...WAIT,
+      timeoutMsg: `${name} did not reload the app`,
+    });
+  } else {
+    await b.url(APP_URL);
+  }
   await confirmLoadedApp(b, name);
 }
 
