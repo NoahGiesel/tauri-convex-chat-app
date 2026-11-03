@@ -17,6 +17,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
         "New “Games” tab in the chat's media with results and statistics",
         "On macOS, after an update the app reopens from the same place, so the Dock keeps a single icon",
         "Ping indicator next to your status, under your avatar, next to the paperclip or at the bottom left or right of the sidebar (green under 100 ms, orange up to 350 ms, red above); choose where to show it, or hide it, in Preferences",
+        "On Windows, the X hides the window in the notification area instead of closing the app, so messages keep coming in; click the icon to reopen it, or choose “Quit” from its menu to close the app",
       ],
       it: [
         "I link di YouTube e Spotify si riproducono direttamente in chat, e il player si ridimensiona trascinando l'angolo; anche il codice «Incorpora» incollato da Spotify o YouTube mostra il player",
@@ -26,6 +27,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
         "Nuova scheda «Giochi» nei media della chat con risultati e statistiche",
         "Su macOS, dopo un aggiornamento l'app si riapre dallo stesso posto, così nel Dock resta una sola icona",
         "Indicatore del ping accanto allo stato, sotto l'avatar, accanto alla graffetta o in fondo alla sidebar a sinistra o a destra (verde sotto 100 ms, arancione fino a 350 ms, rosso oltre); dalle Preferenze scegli dove mostrarlo o nasconderlo",
+        "Su Windows la X nasconde la finestra nell'area di notifica invece di chiudere l'app, così i messaggi continuano ad arrivare; clic sull'icona per riaprirla, «Esci» dal suo menu per chiudere l'app",
       ],
     },
   },

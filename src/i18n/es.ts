@@ -475,4 +475,6 @@ export const es: Messages = {
   "settings.ping.composer": "Junto al clip",
   "settings.ping.off": "Oculto",
   "settings.ping.compact": "Mostrar solo el número (p. ej. 42 ms)",
+  "tray.open": "Abrir Chat",
+  "tray.quit": "Salir",
 };

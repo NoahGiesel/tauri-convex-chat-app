@@ -475,4 +475,6 @@ export const it: Messages = {
   "settings.ping.composer": "Accanto alla graffetta",
   "settings.ping.off": "Nascosto",
   "settings.ping.compact": "Mostra solo il numero (es. 42 ms)",
+  "tray.open": "Apri Chat",
+  "tray.quit": "Esci",
 };

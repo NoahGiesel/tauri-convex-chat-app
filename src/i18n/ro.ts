@@ -475,4 +475,6 @@ export const ro: Messages = {
   "settings.ping.composer": "Lângă agrafă",
   "settings.ping.off": "Ascuns",
   "settings.ping.compact": "Afișează doar numărul (ex. 42 ms)",
+  "tray.open": "Deschide Chat",
+  "tray.quit": "Ieșire",
 };

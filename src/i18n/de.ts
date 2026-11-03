@@ -475,4 +475,6 @@ export const de: Messages = {
   "settings.ping.composer": "Neben der Büroklammer",
   "settings.ping.off": "Ausgeblendet",
   "settings.ping.compact": "Nur die Zahl anzeigen (z. B. 42 ms)",
+  "tray.open": "Chat öffnen",
+  "tray.quit": "Beenden",
 };
