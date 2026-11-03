@@ -115,6 +115,7 @@ export function ProfileEditor() {
           type="file"
           accept={IMAGE_ACCEPT}
           hidden
+          data-testid="avatar-input"
           onChange={(e) => {
             const file = e.target.files?.[0];
             e.target.value = ""; // permette di scegliere di nuovo lo stesso file

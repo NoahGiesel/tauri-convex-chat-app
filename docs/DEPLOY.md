@@ -9,22 +9,25 @@ user explicitly asked for it.**
 | Part | Where it lives | How it ships |
 |------|----------------|--------------|
 | Backend (`convex/`) | Convex **production** deployment | `npx convex deploy` (manual, from a developer machine) |
-| Desktop app (`src/`, `src-tauri/`) | GitHub Releases (macOS universal + Windows) | Push a `v*` tag → `.github/workflows/release.yml` builds and publishes |
+| Desktop app (`src/`, `src-tauri/`) | GitHub Releases (macOS universal + Windows) | Push a `v*` tag → `.github/workflows/release.yml` builds a **draft** release; a person publishes it after the Manual smoke |
 | Media files (photos/videos) | Cloudflare R2 bucket (private) | Uploaded by clients through presigned URLs created by Convex |
-| Auto-update | `latest.json` on the latest GitHub Release | Installed apps check on start, every 30 min and on window focus (not in `tauri dev`) |
+| Auto-update | `latest.json` on the latest **published** GitHub Release | Installed apps check on start, every 30 min and on window focus (not in `tauri dev`). A draft reaches no one |
 
 There are **two Convex deployments**: *dev* (`npx convex dev`, `CONVEX_DEPLOYMENT=dev:…` in `.env.local`)
 and *prod* (`--prod`). Release builds must talk to **prod**.
 
 ## Release checklist (in this order)
 
-The backend goes first: a new app version may call functions or read fields that the old backend
-does not have, while an old app keeps working against a newer backend.
+`pnpm e2e` blocks everything that reaches production, and the Manual smoke runs on a draft release,
+so a failure never reaches users. The backend goes before the app: a new app version may call
+functions or read fields that the old backend does not have, while an old app keeps working against
+a newer backend.
 
 ```bash
-# 0. Sanity checks (both must print nothing)
+# 0. Checks, on Windows. Both tsc commands must print nothing, and pnpm e2e must pass.
 node_modules/.bin/tsc -p tsconfig.json --noEmit
 node_modules/.bin/tsc -p convex/tsconfig.json --noEmit
+pnpm e2e
 
 # 1. Backend → production Convex
 npx convex deploy
@@ -38,12 +41,71 @@ git push
 pnpm version patch            # or minor / major
 git push --follow-tags
 
-# 4. Watch the build
+# 4. Watch the build until the draft release is ready
 gh run watch
+
+# 5. The Manual smoke, on the app installed from the draft (see below). A person does this step.
+
+# 6. Publish the draft. Only now does latest.json reach installed apps.
+gh release edit v<version> --draft=false
+
+# 7. Check that the previous version updates
 ```
 
 `package.json` is the single source of truth for the version (`src-tauri/tauri.conf.json` reads it).
 The tag **must** equal `v<package.json version>`. `pnpm version` requires a clean working tree, so commit first.
+
+- **`pnpm e2e` runs on every release, with no exceptions.** If it fails, there is no deploy and no tag.
+- **If the code changes after a run, run it again,** because `pnpm e2e` tests the working tree.
+- **It runs on Windows** until the suite is verified on a Mac. Someone releasing from a Mac asks the other dev for the run.
+- **During the transition,** a person still tests the whole app by hand on every release, until the
+  suite has 10 full green runs in a row. An area stops being tested by hand only once its phase is
+  written and trusted (`docs/E2E-SPEC.md`).
+
+### If you are an agent
+
+You may run steps 0 to 4, when the user asked for a release. **Stop before step 5** and hand the
+Manual smoke to a person: tell them the draft is ready and give its URL (`gh release view v<version> --web`
+or the Releases page). **Run step 6 only when the user asks you to publish.** Step 7 is a person's too.
+
+### Manual smoke
+
+Install the app from the draft's installers. Notifications, the Dock badge and updates only work in
+an installed build, never in `tauri dev`. The first install is unsigned: macOS needs right-click → Open,
+Windows SmartScreen needs "Run anyway". Later updates do not warn.
+
+**Full Manual smoke,** on the releaser's system:
+
+1. Install, open and sign in.
+2. Send a photo through the real file picker.
+3. Send a GIF.
+4. Send a link and see its preview.
+5. Drag a chat into a folder.
+6. Drag a tab into a split view.
+7. Drag a tab out of the window.
+8. Hover a message and see its actions.
+9. Get a system notification.
+10. See the Dock badge, on macOS.
+
+**Short Manual smoke,** on the other system: install, open, get a system notification, and see the
+Dock badge if that system is macOS. A releaser without access to the other system says so in the
+release notes.
+
+**Step 7** needs a published release. The smoke replaces the installed version, so step 7 needs the
+previous version on the other system, or a reinstall of it. Then wait for the update notification,
+or use Settings → Updates → check manually.
+
+### When a step fails
+
+| Failure | What to do |
+|---------|------------|
+| `pnpm e2e` | Stop. Fix it and run it again. No deploy, no tag |
+| Release build (step 4) | Nothing is public. Fix it and redo the release with the same version (below) |
+| Manual smoke | Do not publish. Delete the draft and its tag, fix the problem, and redo the release with the same version (below) |
+| Updater, after step 6 | The release is public. Ship a new patch |
+
+After a failed Manual smoke the backend stays on production, because an old app keeps working against a
+newer backend.
 
 ### One-off data migrations
 Some releases add data that older documents lack. Run the migration against prod right after
@@ -51,9 +113,13 @@ Some releases add data that older documents lack. Run the migration against prod
 "Media" link list; only needed again for future migrations that say so).
 
 ### Redoing a failed release with the same version
+Only while the release is still a draft. A published version is never reused: ship a new patch.
 ```bash
-git tag -d v<version> && git push --delete origin v<version>
-# fix the problem, commit, push, then:
+# Delete the draft, if the build made one, and the tag on GitHub
+gh release delete v<version> --cleanup-tag --yes
+git tag -d v<version>
+git push --delete origin v<version>   # only if the tag is still on GitHub
+# fix the problem, run pnpm e2e again, commit, push, then:
 git tag v<version> && git push origin v<version>
 ```
 
@@ -103,10 +169,12 @@ The repository must stay **public** so the updater can download `latest.json` wi
 
 ## Verifying a release
 
-- GitHub → Actions: the `Release` workflow must be green for macOS and Windows; the Release must contain installers and `latest.json`.
-- Install the previous version, wait for the update notification (or Settings → Updates → check manually). `tauri dev` never finds updates.
-- Notifications, the Dock badge and updates only work in an installed build, not in `tauri dev` on macOS.
-- First install is unsigned: macOS needs right-click → Open, Windows SmartScreen "Run anyway". Later updates don't warn.
+- GitHub → Actions: the `Release` workflow must be green for macOS and Windows.
+- **One** draft release for the tag must hold the installers for both systems and a `latest.json`
+  that names both (`gh release view v<version>`). Every URL in `latest.json` must contain `v<version>`,
+  not `untagged-`. Check this before the Manual smoke.
+- After step 6 the release is no longer a draft and is marked *Latest*: the updater reads
+  `releases/latest/download/latest.json`, which never points at a draft. `tauri dev` never finds updates.
 
 ## Troubleshooting
 
@@ -118,6 +186,8 @@ The repository must stay **public** so the updater can download `latest.json` wi
 | App shows another environment's data | Release built with dev `VITE_CONVEX_URL` — fix the GitHub secrets and re-release |
 | CI: `ERR_PNPM_OUTDATED_LOCKFILE` | `pnpm-lock.yaml` not committed after a dependency change |
 | CI: `tsc` errors | Run both `tsc` commands from step 0 locally; they are the same checks CI runs via `pnpm build` |
+| Two drafts for the same tag, each with one system's files | The two builds both made a draft. Delete both on the Releases page, and the tag, then redo the release with the same version |
+| Published, but installed apps find no update | The release is still a draft or not marked *Latest*, or `latest.json` is missing from it |
 | CI: `Release guard: …` | The build would ship the Test build's WebDriver server or its variables. Remove what it names. Run `node e2e/release-guard.mjs` locally to check, with no tag |
 | Notifications missing on macOS | System Settings → Notifications → allow the app (the permission prompt appears only once) |
 | Convex types missing (`api.xxx does not exist`) | `npx convex dev` regenerates `convex/_generated/`; run it once after adding backend files |

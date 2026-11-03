@@ -129,11 +129,17 @@ describe('a release build', () => {
 describe('the release workflow', () => {
   const workflow = fs.readFileSync(path.join(ROOT, WORKFLOW), 'utf8');
 
-  it('runs the guard before the step that builds and publishes', () => {
+  it('runs the guard before the step that builds the release', () => {
     const guard = workflow.indexOf('node e2e/release-guard.mjs');
     assert.ok(guard > 0, 'the guard is not in the workflow');
     assert.ok(guard < workflow.indexOf('tauri-apps/tauri-action'));
     assert.ok(guard > workflow.indexOf('pnpm install'), 'the guard needs Vite');
+  });
+
+  // The updater reads only the latest published release.
+  it('makes a draft release, which a person publishes after the Manual smoke', () => {
+    const drafts = [...workflow.matchAll(/^\s*releaseDraft:\s*(\S+)\s*$/gm)].map(([, value]) => value);
+    assert.deepEqual(drafts, ['true']);
   });
 });
 

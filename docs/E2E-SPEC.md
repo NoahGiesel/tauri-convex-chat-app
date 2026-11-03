@@ -204,8 +204,11 @@ Every run has two Driven users, `alice` and `bob`. Single-user tests leave `bob`
 | `settingsOpen` | `friends` | `alice` in Settings, `bob` with the chat open | Name and bio seen live by Bob, set and remove an avatar, language, theme, sidebar side, accent colour, theme import, notify switch |
 
 - **Video:** a small real mp4 joins `e2e/`. A test sends it and checks that Bob's player loaded its metadata. WebView2's player reads the metadata of `e2e/assets/clip.mp4`: 2 s of H.264 Constrained Baseline, 160 by 120, no sound, `faststart`, 10 KB. It was made with `ffmpeg -f lavfi -i testsrc=size=160x120:rate=15:duration=2 -c:v libx264 -profile:v baseline -pix_fmt yuv420p -movflags +faststart -an`. WKWebView may need a specific codec.
-- **Language:** one test walks through all five languages, checks one label from each dictionary, then reloads and checks that the last choice stayed.
-- **Updates:** only the notify switch is tested. "Check for updates" would call the real endpoint.
+- **Profile:** the first settings test chooses a profile photo through `avatar-input`, so it also proves a file input in Settings takes the upload helper. In the main window a chat has no header, so Bob sees Alice's new name and bio on her profile, which he opens from her name on "Seeded hello" before she saves. That profile is named after her, so it shows the new name too. Its tab and its row in the list are checked as well. The sender's name on a message opens the profile, but it is a `<strong>` with a click handler, not a button, so it has no role and the Fixture finds it by its tag. Making it a button is an app change for its own ticket.
+- **Language:** one test walks through all five languages, checks one label from each dictionary, then reloads and checks that the last choice stayed. The label is the language list's own name, `auth.language`, and after the reload the Settings button's. The Fixtures import all five dictionaries for this. The language list itself is found by its options, because its name changes with every choice. A `<select>` cannot be typed into, so a Fixture sets its value through the native setter and fires `change`, which is what React reads. The custom accent's colour picker is set the same way, with `input`.
+- **Appearance:** tests choose a preset, light mode, a custom accent and the sidebar side. A theme counts as applied once its card says "In use" and its background is the page's `--app-bg`. The sidebar counts as moved once the Settings button, which sits in it, is in the right half of the window.
+- **Theme import:** a synthetic `change` works. A test imports `e2e/assets/harbour-theme.json` through `theme-import-input`, the third of the file inputs, and sees it in use. Another imports `note.txt` and is told it is not valid JSON.
+- **Updates:** only the notify switch is tested, off and still off after a reload. "Check for updates" would call the real endpoint. Opening Settings › Updates checks nothing, because the Test build turns automatic checks off.
 
 ## Driving the app
 
@@ -351,12 +354,14 @@ These come from one machine with very little data. Treat them as orders of magni
 | Sending the 10 KB video, Fixture included | 2.4 s |
 | Three GIF tests, Fixtures included | 7.7 s |
 | Seven tests on the `media` Seed, Fixtures included, two with a second Reset | 10 s |
+| Four profile tests, Fixtures included | 10 s |
+| Seven appearance tests and the language walk, Fixtures included | 24 s |
 
 **A full run should take about 7 minutes.** That is an estimate: 68 scenarios at about 5 s each, plus about 40 s to start.
 
 ## Release process
 
-`pnpm e2e` becomes a blocking step before anything reaches production, and the Manual smoke runs on a draft release, so a failure never reaches users.
+`pnpm e2e` becomes a blocking step before anything reaches production, and the Manual smoke runs on a draft release, so a failure never reaches users. [`DEPLOY.md`](DEPLOY.md) holds the working checklist.
 
 | Step | What happens |
 |---|---|
@@ -372,7 +377,7 @@ These come from one machine with very little data. Treat them as orders of magni
 - **`pnpm e2e` runs on every release, with no exceptions.** If it fails, there is no deploy and no tag.
 - **If the code changes after a run, it runs again,** because `pnpm e2e` tests the working tree.
 - **It runs on Windows** until a Mac is verified. Someone releasing from a Mac asks the other dev for the run.
-- **`release.yml` changes to `releaseDraft: true`.** Today `latest.json` goes public when the build ends.
+- **`release.yml` makes a draft release** (`releaseDraft: true`). Before, `latest.json` went public when the build ended.
 - **An agent may run `pnpm e2e`,** but it stops before step 5 and hands the smoke to a person. It runs step 6 only when asked.
 
 **Full Manual smoke,** on the releaser's system, with the app installed from the draft:
@@ -418,7 +423,6 @@ No macOS code is written until someone can run it. Until then the suite runs on 
 **Not built or not run anywhere:**
 
 - The release guard and `releaseDraft: true` with two platforms. Tags must not be pushed to test it, so the first real release is the test.
-- The five-language test.
 - A `media` Seed with a video and a link message. The prototype's had neither.
 - A real video anywhere but WebView2.
 - Whether the resolver asked about a `.invalid` host sends the question out. RFC 6761 tells resolvers to answer it themselves.
@@ -430,7 +434,6 @@ No macOS code is written until someone can run it. Until then the suite runs on 
 - A crashed popout.
 - An app that hangs without exiting. The ping and each request have limits, but only a killed app was tried.
 - Accessible names on the other modals. Only an open chat, two Settings screens, the auth screen and the friend screens were checked.
-- Whether a theme import accepts a synthetic `change` event.
 - A large Seed. Reset time was measured on very little data.
 - Windows Firewall prompts, locked or minimised windows, and Seeds across a backend upgrade.
 - Real system notifications may appear during a run, because `use-message-notifications.ts` is not gated. They are harmless to tests.

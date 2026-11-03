@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "id": "e2e-harbour",
+  "name": "Harbour Test",
+  "description": "A light theme that only the E2E suite imports.",
+  "mode": "light",
+  "colors": {
+    "bg": "#e4eef3",
+    "sidebar": "#f6f7fa",
+    "panel": "#ffffff",
+    "field": "#eceef3",
+    "raised": "#e4e7ee",
+    "border": "#dfe2e9",
+    "borderStrong": "#c9ced9",
+    "text": "#1d2129",
+    "textStrong": "#0b0e14",
+    "textSoft": "#3a404c",
+    "textMuted": "#5d6573",
+    "textDim": "#667085",
+    "accent": "#1b6d8f",
+    "accentFg": "#ffffff",
+    "online": "#14805a",
+    "offline": "#9aa1ae",
+    "ai": "#0e7c97",
+    "upload": "#a8650a",
+    "avatars": [
+      "#4a6a96",
+      "#9a603a",
+      "#4a7a66"
+    ],
+    "art": [
+      "#1b3a78",
+      "#2a58b8",
+      "#4a82e0",
+      "#233f80",
+      "#16306a",
+      "#0e2150"
+    ]
+  }
+}
