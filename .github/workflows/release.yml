@@ -58,7 +58,8 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: "Chat ${{ github.ref_name }}"
           releaseBody: "Vedi i commit per le novità di questa versione."
-          releaseDraft: false
+          # A draft reaches no installed app: a person publishes it after the Manual smoke (docs/DEPLOY.md).
+          releaseDraft: true
           prerelease: false
           uploadUpdaterJson: true
           args: ${{ matrix.args }}

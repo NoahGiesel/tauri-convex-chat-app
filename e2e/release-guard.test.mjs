@@ -135,6 +135,12 @@ describe('the release workflow', () => {
     assert.ok(guard < workflow.indexOf('tauri-apps/tauri-action'));
     assert.ok(guard > workflow.indexOf('pnpm install'), 'the guard needs Vite');
   });
+
+  // Installed apps update from the latest published release, so a draft reaches nobody before the Manual smoke.
+  it('makes a draft release, which a person publishes after the Manual smoke', () => {
+    const drafts = [...workflow.matchAll(/^\s*releaseDraft:\s*(\S+)\s*$/gm)].map(([, value]) => value);
+    assert.deepEqual(drafts, ['true']);
+  });
 });
 
 describe('the guard as a command', () => {

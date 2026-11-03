@@ -41,7 +41,8 @@ pnpm tauri dev
 
 ```bash
 pnpm version patch         # aggiorna package.json (tauri.conf.json la legge da lì) e crea il tag
-git push --follow-tags     # la CI compila macOS + Windows e pubblica la Release con latest.json
+git push --follow-tags     # la CI compila macOS + Windows e crea una Release in bozza con latest.json
+gh release edit v<versione> --draft=false   # dopo lo smoke manuale: solo ora le app installate la vedono
 ```
 
 Le app installate controllano all'avvio, ogni 30 minuti e quando la finestra torna in primo piano.
