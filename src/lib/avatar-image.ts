@@ -9,7 +9,7 @@ export const IMAGE_ACCEPT = ".webp,.png,.jpg,.jpeg,.gif," + ALLOWED_IMAGE_TYPES.
  * Ritaglia l'immagine al centro in un quadrato e la riduce (default 256 px), così il file caricato
  * pesa pochi KB (di una GIF resta il primo fotogramma). Lancia `image_type`, `image_too_large` o `invalid_image`.
  */
-export async function squareThumbnail(file: File, size = 256): Promise<Blob> {
+export async function squareThumbnail(file: File, size = 512): Promise<Blob> {
   if (!ALLOWED_IMAGE_TYPES.includes(file.type)) throw new Error("image_type");
   if (file.size > MAX_SOURCE_BYTES) throw new Error("image_too_large");
 

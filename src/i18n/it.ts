@@ -300,6 +300,7 @@ export const it: Messages = {
   "profile.notFound": "Questo profilo non è più disponibile.",
   "profile.joined": "Iscritto dal {date}",
   "profile.noBio": "Nessuna descrizione.",
+  "profile.viewPhoto": "Vedi la foto in grande",
   "chat.typing.one": "{name} sta scrivendo…",
   "chat.typing.two": "{a} e {b} stanno scrivendo…",
   "chat.typing.many": "Più persone stanno scrivendo…",

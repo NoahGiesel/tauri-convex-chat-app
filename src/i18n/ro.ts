@@ -300,6 +300,7 @@ export const ro: Messages = {
   "profile.notFound": "Acest profil nu mai este disponibil.",
   "profile.joined": "Membru din {date}",
   "profile.noBio": "Nicio descriere încă.",
+  "profile.viewPhoto": "Vezi poza mare",
   "chat.typing.one": "{name} scrie…",
   "chat.typing.two": "{a} și {b} scriu…",
   "chat.typing.many": "Mai multe persoane scriu…",

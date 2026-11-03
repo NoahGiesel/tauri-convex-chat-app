@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation } from "convex/react";
-import { Pencil, SmilePlus, Trash2 } from "lucide-react";
+import { Loader2, Pencil, Sparkles, SmilePlus, Trash2 } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { EmojiPanel } from "@/components/emoji-gif-picker";
@@ -69,6 +69,7 @@ export function ReactionToolbar({
   onError,
   onEdit,
   onDelete,
+  onSummarize,
 }: {
   messageId: Id<"messages">;
   onError: (text: string) => void;
@@ -76,6 +77,8 @@ export function ReactionToolbar({
   onEdit?: () => void;
   /** Presente sui propri messaggi di testo e GIF; chiede conferma prima di eliminare. */
   onDelete?: () => void;
+  /** Presente quando il messaggio si può riassumere con l'AI. */
+  onSummarize?: { busy: boolean; onClick: () => void };
 }) {
   const { t } = useI18n();
   const react = useToggleReaction(messageId, onError);
@@ -159,6 +162,18 @@ export function ReactionToolbar({
               <Trash2 className="size-4" strokeWidth={1.9} />
             </button>
           ))}
+        {onSummarize && (
+          <button
+            type="button"
+            aria-label={t("chat.summarize")}
+            title={onSummarize.busy ? t("chat.summarizing") : t("chat.summarize")}
+            disabled={onSummarize.busy}
+            onClick={onSummarize.onClick}
+            className="flex size-7 items-center justify-center rounded-md text-app-ai hover:bg-app-field disabled:opacity-60"
+          >
+            {onSummarize.busy ? <Loader2 className="size-4 animate-spin" strokeWidth={2.2} /> : <Sparkles className="size-4" strokeWidth={2} />}
+          </button>
+        )}
         <button
           type="button"
           aria-label={t("reactions.add")}

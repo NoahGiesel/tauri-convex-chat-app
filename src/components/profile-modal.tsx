@@ -4,6 +4,7 @@ import { Camera, Trash2 } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { Avatar } from "@/components/avatar";
+import { MediaLightbox } from "@/components/media-lightbox";
 import { Modal } from "@/components/modal";
 import type { MessageKey } from "@/i18n/en";
 import { useI18n } from "@/i18n/i18n-provider";
@@ -35,6 +36,7 @@ export function ProfileModal({ profileId, onClose }: { profileId: Id<"profiles">
   const removeAvatar = useMutation(api.users.removeAvatar);
   const fileInput = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [zoomed, setZoomed] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [notice, setNotice] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
 
@@ -92,7 +94,19 @@ export function ProfileModal({ profileId, onClose }: { profileId: Id<"profiles">
   return (
     <Modal title={profile.isMe ? t("profile.mine") : profile.name} onClose={onClose}>
       <div className="flex items-center gap-4">
-        <Avatar name={profile.name} index={profile.avatarIndex} src={profile.avatarUrl} size={88} accent={profile.isMe} />
+        {profile.avatarUrl ? (
+          <button
+            type="button"
+            aria-label={t("profile.viewPhoto")}
+            title={t("profile.viewPhoto")}
+            onClick={() => setZoomed(true)}
+            className="shrink-0 cursor-zoom-in rounded-[calc(16px*var(--radius-scale))] transition-opacity hover:opacity-90"
+          >
+            <Avatar name={profile.name} index={profile.avatarIndex} src={profile.avatarUrl} size={88} accent={profile.isMe} />
+          </button>
+        ) : (
+          <Avatar name={profile.name} index={profile.avatarIndex} src={profile.avatarUrl} size={88} accent={profile.isMe} />
+        )}
         <div className="min-w-0">
           <div className="truncate text-xl font-extrabold text-app-text-strong">{profile.name}</div>
           <div className={cn("mt-0.5 flex items-center gap-1.5 text-sm", status.online ? "font-semibold text-app-online" : "text-app-text-dim")}>
@@ -172,6 +186,9 @@ export function ProfileModal({ profileId, onClose }: { profileId: Id<"profiles">
             {profile.bio || t("profile.noBio")}
           </p>
         </div>
+      )}
+      {zoomed && profile.avatarUrl && (
+        <MediaLightbox item={{ url: profile.avatarUrl, type: "image", name: profile.name, enlarge: true }} onClose={() => setZoomed(false)} />
       )}
     </Modal>
   );

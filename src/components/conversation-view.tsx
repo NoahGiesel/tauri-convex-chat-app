@@ -735,13 +735,16 @@ export function ConversationView({
           </div>
         )}
         <div ref={contentRef}>
-        {status === "CanLoadMore" && (
+        {(status === "CanLoadMore" || status === "LoadingMore") && (
           <div className="flex justify-center pb-3">
             <button
               type="button"
               onClick={loadOlder}
-              className="rounded-lg px-3 py-1.5 text-[13px] font-semibold text-app-accent-text hover:bg-app-field"
+              disabled={status === "LoadingMore"}
+              aria-busy={status === "LoadingMore"}
+              className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-[13px] font-semibold text-app-accent-text hover:bg-app-field disabled:cursor-default disabled:opacity-70 disabled:hover:bg-transparent"
             >
+              {status === "LoadingMore" && <Loader2 className="size-3.5 animate-spin" strokeWidth={2.2} />}
               {t("chat.loadOlder")}
             </button>
           </div>
@@ -798,12 +801,17 @@ export function ConversationView({
                   onError={setError}
                   onEdit={m.mine && m.kind === "text" && isEditableStyle(m.style) ? () => setEditingId(m._id) : undefined}
                   onDelete={m.mine && m.kind !== "ai" && m.kind !== "game" ? () => void deleteMessage(m._id) : undefined}
+                  onSummarize={
+                    m.summarizable && !m.summarized && !m.summaryBlocked && !firstEmbedLink(m.body)
+                      ? { busy: summarizing.has(m._id), onClick: () => void summarize(m._id) }
+                      : undefined
+                  }
                 />
               )}
               <div className="min-w-0 flex-1">
                 {row.head && (
                   <div className="text-sm">
-                    <strong onClick={() => !isAi && m.authorId && setProfileId(m.authorId)} className={cn(!isAi && "cursor-pointer hover:underline", isAi ? "text-app-ai" : m.mine || presence.person(lastSeenByProfile.get(m.authorId ?? "")).online ? "text-app-accent-text" : "text-app-accent-text/55")}>
+                    <strong onClick={() => !isAi && m.authorId && setProfileId(m.authorId)} className={cn(!isAi && "cursor-pointer hover:underline", isAi ? "text-app-ai" : m.mine || presence.person(lastSeenByProfile.get(m.authorId ?? "")).online ? "text-app-accent-text" : "text-app-text-muted/80")}>
                       {isAi ? t("chat.aiName") : m.authorName}
                     </strong>
                     <span className="ml-1.5 text-xs text-app-text-dim">{time(m._creationTime)}</span>
@@ -833,14 +841,16 @@ export function ConversationView({
                         const single = m.attachments.length === 1;
                         return a.type === "image" ? (
                           <MinimizableMedia key={i}>
-                          <img
-                            src={a.url}
-                            alt={a.name}
-                            loading="lazy"
-                            onLoad={keepBottom}
-                            onClick={() => setLightbox({ url: a.url, type: "image", name: a.name })}
-                            className={cn("cursor-zoom-in rounded-xl", single ? "max-h-80 max-w-[min(420px,100%)]" : "max-h-52 max-w-[min(260px,100%)]")}
-                          />
+                          <div className={cn("w-fit overflow-hidden rounded-xl border-2 border-app-text-dim/45 bg-app-field p-1 shadow-md", single ? "max-w-[min(420px,100%)]" : "max-w-[min(260px,100%)]")}>
+                            <img
+                              src={a.url}
+                              alt={a.name}
+                              loading="lazy"
+                              onLoad={keepBottom}
+                              onClick={() => setLightbox({ url: a.url, type: "image", name: a.name })}
+                              className={cn("block max-w-full cursor-zoom-in rounded-lg", single ? "max-h-80" : "max-h-52")}
+                            />
+                          </div>
                           </MinimizableMedia>
                         ) : (
                           <div key={i} className={cn("group/video relative w-fit", single ? "max-w-[min(420px,100%)]" : "max-w-[min(260px,100%)]")}>
@@ -918,16 +928,11 @@ export function ConversationView({
                 {editingId !== m._id && m.kind === "text" && m.style === null && htmlEmbed(m.body) && (
                   <EmbedPlayer embed={htmlEmbed(m.body)!.embed} url={htmlEmbed(m.body)!.url} onLayout={keepBottom} />
                 )}
-                {m.summarizable && !m.summarized && !m.summaryBlocked && editingId !== m._id && !firstEmbedLink(m.body) && (
-                  <button
-                    type="button"
-                    disabled={summarizing.has(m._id)}
-                    onClick={() => void summarize(m._id)}
-                    className="mt-1.5 flex w-fit items-center gap-1.5 rounded-lg border border-app-ai-border bg-app-ai-bg px-2.5 py-1 text-[13px] font-semibold text-app-ai hover:opacity-80 disabled:opacity-60"
-                  >
-                    {summarizing.has(m._id) ? <Loader2 className="size-3.5 animate-spin" strokeWidth={2.2} /> : <Sparkles className="size-3.5" strokeWidth={2} />}
-                    {summarizing.has(m._id) ? t("chat.summarizing") : t("chat.summarize")}
-                  </button>
+                {summarizing.has(m._id) && editingId !== m._id && !firstEmbedLink(m.body) && (
+                  <p className="mt-1.5 flex w-fit items-center gap-1.5 text-[13px] font-semibold text-app-ai">
+                    <Loader2 className="size-3.5 animate-spin" strokeWidth={2.2} />
+                    {t("chat.summarizing")}
+                  </p>
                 )}
                 {m.summaryBlocked && editingId !== m._id && (
                   <p className="mt-1.5 flex w-fit items-center gap-1.5 text-[13px] text-app-text-dim" title={t(`error.${m.summaryBlocked}` as MessageKey)}>

@@ -299,6 +299,7 @@ export const en = {
   "profile.notFound": "This profile is no longer available.",
   "profile.joined": "Member since {date}",
   "profile.noBio": "No description yet.",
+  "profile.viewPhoto": "View photo",
   "chat.typing.one": "{name} is typing…",
   "chat.typing.two": "{a} and {b} are typing…",
   "chat.typing.many": "Several people are typing…",
