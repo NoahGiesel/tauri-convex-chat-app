@@ -115,6 +115,15 @@ export function Markdown({ text }: { text: string }) {
   );
 }
 
+/** Solo emoji (e spazi), al massimo 12: il messaggio si mostra più grande, come nelle altre chat. */
+const EMOJI_ONLY = /^[\p{Extended_Pictographic}\p{Regional_Indicator}\u{1F3FB}-\u{1F3FF}\u200D\uFE0F\u20E3\s]+$/u;
+function isEmojiOnly(body: string): boolean {
+  const text = body.trim();
+  if (!text || !EMOJI_ONLY.test(text) || !/[\p{Extended_Pictographic}\p{Regional_Indicator}]/u.test(text)) return false;
+  const clusters = typeof Intl.Segmenter === "function" ? [...new Intl.Segmenter().segment(text.replace(/\s+/g, ""))].length : text.length;
+  return clusters <= 12;
+}
+
 function MessageBodyContent({ style, body, authorName, edited, className }: Props) {
   const { t } = useI18n();
   const suffix: ReactNode = edited ? <span className="ml-1.5 font-sans text-xs text-app-text-dim not-italic">{t("chat.edited")}</span> : null;
@@ -181,7 +190,7 @@ function MessageBodyContent({ style, body, authorName, edited, className }: Prop
       );
     default:
       return (
-        <p className={cn(base, "whitespace-pre-wrap", className)}>
+        <p className={cn(base, "whitespace-pre-wrap", isEmojiOnly(body) && "text-[24px] leading-tight", className)}>
           <Linkified text={body} />
           {suffix}
         </p>
