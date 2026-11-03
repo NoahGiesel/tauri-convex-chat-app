@@ -9,7 +9,7 @@ export const SNAPSHOTS = path.join(STAGE, 'snapshots');
 /** Photos, a video and other files that tests and the `media` Seed upload. */
 export const ASSETS = path.join(E2E_DIR, 'assets');
 /** Each asset's type, by extension, as a file picker reports it. */
-export const ASSET_TYPES = { '.png': 'image/png', '.mp4': 'video/mp4', '.txt': 'text/plain' };
+export const ASSET_TYPES = { '.png': 'image/png', '.mp4': 'video/mp4', '.txt': 'text/plain', '.json': 'application/json' };
 export const SESSIONS_FILE = path.join(STAGE, 'sessions.json');
 /** Written once a test has ended. The stage starts empty, so a run that leaves none matched no test. */
 export const TEST_RAN_FILE = path.join(STAGE, 'a-test-ran');
