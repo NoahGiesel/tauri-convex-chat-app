@@ -58,8 +58,9 @@ The tag **must** equal `v<package.json version>`. `pnpm version` requires a clea
 - **`pnpm e2e` runs on every release, with no exceptions.** If it fails, there is no deploy and no tag.
 - **If the code changes after a run, run it again,** because `pnpm e2e` tests the working tree.
 - **It runs on Windows** until the suite is verified on a Mac. Someone releasing from a Mac asks the other dev for the run.
-- **During the transition,** the full manual QA stays until the suite has 10 full green runs in a row.
-  An area leaves manual QA only once its phase is written and trusted (`docs/E2E-SPEC.md`).
+- **During the transition,** a person still tests the whole app by hand on every release, until the
+  suite has 10 full green runs in a row. An area stops being tested by hand only once its phase is
+  written and trusted (`docs/E2E-SPEC.md`).
 
 ### If you are an agent
 
@@ -103,7 +104,7 @@ or use Settings → Updates → check manually.
 | Manual smoke | Do not publish. Delete the draft and its tag, fix the problem, and redo the release with the same version (below) |
 | Updater, after step 6 | The release is public. Ship a new patch |
 
-After a failed smoke the backend stays on production, because an old app keeps working against a
+After a failed Manual smoke the backend stays on production, because an old app keeps working against a
 newer backend.
 
 ### One-off data migrations
@@ -117,7 +118,7 @@ Only while the release is still a draft. A published version is never reused: sh
 # Delete the draft, if the build made one, and the tag on GitHub
 gh release delete v<version> --cleanup-tag --yes
 git tag -d v<version>
-git push --delete origin v<version>   # only if the tag is still there (no draft was made)
+git push --delete origin v<version>   # only if the tag is still on GitHub
 # fix the problem, run pnpm e2e again, commit, push, then:
 git tag v<version> && git push origin v<version>
 ```
@@ -170,7 +171,8 @@ The repository must stay **public** so the updater can download `latest.json` wi
 
 - GitHub → Actions: the `Release` workflow must be green for macOS and Windows.
 - **One** draft release for the tag must hold the installers for both systems and a `latest.json`
-  that names both (`gh release view v<version>`). Check this before the Manual smoke.
+  that names both (`gh release view v<version>`). Every URL in `latest.json` must contain `v<version>`,
+  not `untagged-`. Check this before the Manual smoke.
 - After step 6 the release is no longer a draft and is marked *Latest*: the updater reads
   `releases/latest/download/latest.json`, which never points at a draft. `tauri dev` never finds updates.
 
