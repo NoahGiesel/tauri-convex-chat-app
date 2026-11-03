@@ -8,6 +8,49 @@ export interface ReleaseNote {
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
     version: "next",
+    items: { en: [], it: [] },
+  },
+  {
+    version: "0.1.23",
+    items: {
+      en: [
+        "“Get summary” moves into the hover toolbar next to the add-reaction smile (YouTube and Spotify cards keep their own icon)",
+        "Uploaded images sit in a small bordered card; a spinner shows while older messages load",
+        "Click a profile picture in someone's profile to see it large; new profile pictures are saved in higher quality",
+        "On Windows, the X hides the window in the notification area instead of closing the app, so messages keep coming in; the icon shows a red dot when there are unread messages; click it to reopen the window, or choose “Quit” from its menu to close the app",
+      ],
+      it: [
+        "«Ottieni riassunto» passa nella barra al passaggio del mouse, accanto alla faccina delle reazioni (le card di YouTube e Spotify mantengono la loro icona)",
+        "Le immagini caricate stanno in una piccola card con bordo; uno spinner compare mentre si caricano i messaggi più vecchi",
+        "Clicca la foto nel profilo di qualcuno per vederla in grande; le nuove foto profilo vengono salvate in qualità migliore",
+        "Su Windows la X nasconde la finestra nell'area di notifica invece di chiudere l'app, così i messaggi continuano ad arrivare; l'icona mostra un bollino rosso se ci sono messaggi non letti; clic sull'icona per riaprire la finestra, «Esci» dal suo menu per chiudere l'app",
+      ],
+    },
+  },
+  {
+    version: "0.1.22",
+    items: {
+      en: [
+        "On macOS, after an update the app reopens from the same place, so the Dock keeps a single icon",
+      ],
+      it: [
+        "Su macOS, dopo un aggiornamento l'app si riapre dallo stesso posto, così nel Dock resta una sola icona",
+      ],
+    },
+  },
+  {
+    version: "0.1.21",
+    items: {
+      en: [
+        "Ping indicator next to your status, under your avatar, next to the paperclip or at the bottom left or right of the sidebar (green under 100 ms, orange up to 350 ms, red above); choose where to show it, or hide it, in Preferences",
+      ],
+      it: [
+        "Indicatore del ping accanto allo stato, sotto l'avatar, accanto alla graffetta o in fondo alla sidebar a sinistra o a destra (verde sotto 100 ms, arancione fino a 350 ms, rosso oltre); dalle Preferenze scegli dove mostrarlo o nasconderlo",
+      ],
+    },
+  },
+  {
+    version: "0.1.17",
     items: {
       en: [
         "YouTube and Spotify links play right inside the chat, and the player can be resized by dragging its corner; pasted “Embed” code from Spotify or YouTube shows the player too",
@@ -15,12 +58,6 @@ export const RELEASE_NOTES: ReleaseNote[] = [
         "New game: /stone-paper-scissors challenges the other person in a direct chat to a best-of-3 with a countdown every round",
         "New game: /quiz3 and /quiz5 — each player picks 3 or 5 topics (or “Random”), the AI writes one question per topic, and you both answer against a countdown; the right answer turns green and the score updates",
         "New “Games” tab in the chat's media with results and statistics",
-        "“Get summary” moves into the hover toolbar next to the add-reaction smile (YouTube and Spotify cards keep their own icon)",
-        "Uploaded images sit in a small bordered card; a spinner shows while older messages load",
-        "Click a profile picture in someone's profile to see it large; new profile pictures are saved in higher quality",
-        "On macOS, after an update the app reopens from the same place, so the Dock keeps a single icon",
-        "Ping indicator next to your status, under your avatar, next to the paperclip or at the bottom left or right of the sidebar (green under 100 ms, orange up to 350 ms, red above); choose where to show it, or hide it, in Preferences",
-        "On Windows, the X hides the window in the notification area instead of closing the app, so messages keep coming in; the icon shows a red dot when there are unread messages; click it to reopen the window, or choose “Quit” from its menu to close the app",
       ],
       it: [
         "I link di YouTube e Spotify si riproducono direttamente in chat, e il player si ridimensiona trascinando l'angolo; anche il codice «Incorpora» incollato da Spotify o YouTube mostra il player",
@@ -28,12 +65,6 @@ export const RELEASE_NOTES: ReleaseNote[] = [
         "Nuovo gioco: /stone-paper-scissors sfida l'altra persona in una chat diretta a una partita al meglio di 3, con un conto alla rovescia a ogni round",
         "Nuovo gioco: /quiz3 e /quiz5 — ognuno sceglie 3 o 5 argomenti (o «Casuale»), l'AI scrive una domanda per argomento e rispondete a tempo; la risposta giusta diventa verde e il punteggio si aggiorna",
         "Nuova scheda «Giochi» nei media della chat con risultati e statistiche",
-        "«Ottieni riassunto» passa nella barra al passaggio del mouse, accanto alla faccina delle reazioni (le card di YouTube e Spotify mantengono la loro icona)",
-        "Le immagini caricate stanno in una piccola card con bordo; uno spinner compare mentre si caricano i messaggi più vecchi",
-        "Clicca la foto nel profilo di qualcuno per vederla in grande; le nuove foto profilo vengono salvate in qualità migliore",
-        "Su macOS, dopo un aggiornamento l'app si riapre dallo stesso posto, così nel Dock resta una sola icona",
-        "Indicatore del ping accanto allo stato, sotto l'avatar, accanto alla graffetta o in fondo alla sidebar a sinistra o a destra (verde sotto 100 ms, arancione fino a 350 ms, rosso oltre); dalle Preferenze scegli dove mostrarlo o nasconderlo",
-        "Su Windows la X nasconde la finestra nell'area di notifica invece di chiudere l'app, così i messaggi continuano ad arrivare; l'icona mostra un bollino rosso se ci sono messaggi non letti; clic sull'icona per riaprire la finestra, «Esci» dal suo menu per chiudere l'app",
       ],
     },
   },

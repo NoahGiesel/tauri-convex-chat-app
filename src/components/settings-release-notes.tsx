@@ -16,6 +16,7 @@ export function SettingsReleaseNotes() {
 
       {RELEASE_NOTES.map((release) => {
         const items = (language === "it" ? release.items.it : undefined) ?? release.items.en;
+        if (items.length === 0) return null; // "next" vuoto subito dopo un rilascio
         const isCurrent = release.version === current;
         return (
           <section
