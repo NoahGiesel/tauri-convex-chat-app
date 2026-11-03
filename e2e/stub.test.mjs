@@ -34,6 +34,27 @@ describe('the stub', () => {
     assert.equal(await res.text(), 'photo bytes');
   });
 
+  it('answers a range request with the part asked for, which WebKit needs to read a video', async () => {
+    await put('chat/clip.mp4', '0123456789', 'video/mp4');
+    const url = `${base}/e2e/chat/clip.mp4?X-Amz-Signature=any`;
+
+    const first = await fetch(url, { headers: { range: 'bytes=0-3' } });
+    assert.equal(first.status, 206);
+    assert.equal(first.headers.get('content-range'), 'bytes 0-3/10');
+    assert.equal(first.headers.get('accept-ranges'), 'bytes');
+    assert.equal(await first.text(), '0123');
+
+    const rest = await fetch(url, { headers: { range: 'bytes=7-' } });
+    assert.equal(rest.status, 206);
+    assert.equal(await rest.text(), '789');
+
+    const last = await fetch(url, { headers: { range: 'bytes=-2' } });
+    assert.equal(await last.text(), '89');
+
+    assert.equal((await fetch(url, { headers: { range: 'bytes=50-' } })).status, 416);
+    assert.equal(await (await fetch(url)).text(), '0123456789');
+  });
+
   it('answers a browser preflight for an upload', async () => {
     const res = await fetch(`${base}/e2e/chat/a.jpg`, {
       method: 'OPTIONS',

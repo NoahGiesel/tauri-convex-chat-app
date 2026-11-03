@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
-import { CONVEX_URL, DEPLOYMENT, EXE, PROFILES, SITE_URL, STUB_URL } from './config.mjs';
+import { CONVEX_URL, DEPLOYMENT, DRIVEN_USERS, EXE, PROFILES, SITE_URL, STUB_URL } from './config.mjs';
 
 const namesATarget = (key) => /^(CONVEX_|VITE_)/i.test(key);
 
@@ -95,7 +95,7 @@ export function instanceCapability(name, profiles = PROFILES, platform = process
       browserName: 'tauri',
       'tauri:options': { application: EXE },
       // WebView2 takes a folder. WKWebView has none, so the app derives its data store from the instance's name.
-      'wdio:tauriServiceOptions': { env: platform === 'darwin' ? { E2E_INSTANCE: name } : { WEBVIEW2_USER_DATA_FOLDER: profile } },
+      'wdio:tauriServiceOptions': { env: platform === 'darwin' ? { E2E_INSTANCE: name, E2E_OFFSET: String(Math.max(DRIVEN_USERS.indexOf(name), 0) * 120) } : { WEBVIEW2_USER_DATA_FOLDER: profile } },
     },
   };
 }

@@ -74,7 +74,17 @@ export function startStub({ root = STUB_FILES, logFile = STUB_LOG, port = STUB_P
     }
     if (req.method === 'GET') {
       if (!fs.existsSync(fileFor(pathname))) return send(404);
-      return send(200, { 'content-type': fs.readFileSync(`${fileFor(pathname)}.type`, 'utf8') }, fs.readFileSync(fileFor(pathname)));
+      const type = fs.readFileSync(`${fileFor(pathname)}.type`, 'utf8');
+      const body = fs.readFileSync(fileFor(pathname));
+      // WebKit reads a video's length only through partial responses, and R2 gives them, so the stub does too.
+      const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range ?? '');
+      if (range && (range[1] || range[2])) {
+        const start = range[1] ? Number(range[1]) : Math.max(body.length - Number(range[2]), 0);
+        const end = range[1] && range[2] ? Math.min(Number(range[2]), body.length - 1) : body.length - 1;
+        if (start >= body.length || start > end) return send(416, { 'content-range': `bytes */${body.length}` });
+        return send(206, { 'content-type': type, 'accept-ranges': 'bytes', 'content-range': `bytes ${start}-${end}/${body.length}` }, body.subarray(start, end + 1));
+      }
+      return send(200, { 'content-type': type, 'accept-ranges': 'bytes' }, body);
     }
     // Only logged: a Reset can bring back a message whose file was deleted, and the file must still be there.
     if (req.method === 'DELETE') return send(204);

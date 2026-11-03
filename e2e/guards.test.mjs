@@ -252,7 +252,7 @@ describe('an instance profile', () => {
 
   it('becomes the instance name that the app turns into a data store, on macOS', () => {
     const cap = instanceCapability('alice', profiles, 'darwin');
-    assert.deepEqual(cap.capabilities['wdio:tauriServiceOptions'].env, { E2E_INSTANCE: 'alice' });
+    assert.deepEqual(cap.capabilities['wdio:tauriServiceOptions'].env, { E2E_INSTANCE: 'alice', E2E_OFFSET: '0' });
   });
 
   it('is required: an instance with none refuses to start', () => {

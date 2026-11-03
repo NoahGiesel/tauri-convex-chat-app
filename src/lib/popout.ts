@@ -24,9 +24,12 @@ export async function openChatWindow(conversationId: string, title: string): Pro
       await existing.setFocus();
       return true;
     }
-    // Solo nella build di test su macOS: la finestra staccata deve usare gli stessi dati dell'istanza che la apre.
-    const dataStoreIdentifier =
-      import.meta.env.VITE_E2E === "1" ? await invoke<number[] | null>("e2e_store_id_command").catch(() => null) : null;
+    // Solo la build di test su macOS: la finestra staccata deve usare gli stessi dati dell'istanza che la apre,
+    // e questo lo sa fare solo il lato nativo. Altrove il comando risponde con un errore e vale la strada normale.
+    if (import.meta.env.VITE_E2E === "1") {
+      const url = `index.html?${POPOUT_PARAM}=${conversationId}`;
+      if (await invoke("e2e_create_popout", { label, url, title }).then(() => true, () => false)) return true;
+    }
     const created = new WebviewWindow(label, {
       url: `index.html?${POPOUT_PARAM}=${conversationId}`,
       title,
@@ -35,7 +38,6 @@ export async function openChatWindow(conversationId: string, title: string): Pro
       minWidth: 420,
       minHeight: 360,
       dragDropEnabled: false,
-      ...(dataStoreIdentifier ? { dataStoreIdentifier } : {}),
     });
     return await new Promise<boolean>((resolve) => {
       void created.once("tauri://created", () => resolve(true));

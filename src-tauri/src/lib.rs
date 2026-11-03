@@ -192,16 +192,28 @@ fn e2e_store_id() -> Option<[u8; 16]> {
     Some(id)
 }
 
-/// Dice al frontend l'identificatore dei dati di questa istanza, perché le finestre staccate usino lo stesso.
-/// `None` fuori dalla build di test su macOS.
+/// Apre una finestra staccata con l'identificatore dei dati di questa istanza, così resta nella stessa sessione.
+/// Solo la build di test su macOS; altrove risponde con un errore e il frontend usa la strada normale.
 #[tauri::command]
-fn e2e_store_id_command() -> Option<Vec<u8>> {
+async fn e2e_create_popout(app: tauri::AppHandle, label: String, url: String, title: String) -> Result<(), String> {
     #[cfg(all(feature = "e2e", target_os = "macos"))]
     {
-        return e2e_store_id().map(|id| id.to_vec());
+        let id = e2e_store_id().ok_or("E2E_INSTANCE is not set")?;
+        tauri::WebviewWindowBuilder::new(&app, label, tauri::WebviewUrl::App(url.into()))
+            .title(title)
+            .inner_size(720.0, 720.0)
+            .min_inner_size(420.0, 360.0)
+            .disable_drag_drop_handler()
+            .data_store_identifier(id)
+            .build()
+            .map_err(|e| e.to_string())?;
+        return Ok(());
     }
     #[cfg(not(all(feature = "e2e", target_os = "macos")))]
-    None
+    {
+        let _ = (app, label, url, title);
+        Err("only the macOS Test build opens windows this way".into())
+    }
 }
 
 pub fn run() {
@@ -232,13 +244,19 @@ pub fn run() {
     let builder = builder.setup(|app| {
         let id = e2e_store_id().ok_or("E2E_INSTANCE is not set: the Test build needs a name for its data")?;
         for config in app.config().app.windows.iter().filter(|w| !w.create) {
-            tauri::WebviewWindowBuilder::from_config(app, config)?.data_store_identifier(id).build()?;
+            // Each instance is shifted a little: a window completely covered by the other counts as hidden, and the app
+            // then stops its presence heartbeat, so the friend would show as offline.
+            let shift: f64 = std::env::var("E2E_OFFSET").ok().and_then(|v| v.parse().ok()).unwrap_or(0.0);
+            tauri::WebviewWindowBuilder::from_config(app, config)?
+                .data_store_identifier(id)
+                .position(40.0 + shift, 60.0 + shift)
+                .build()?;
         }
         Ok(())
     });
 
     builder
-        .invoke_handler(tauri::generate_handler![ping, relaunch_app, set_tray_labels, set_tray_unread, e2e_store_id_command])
+        .invoke_handler(tauri::generate_handler![ping, relaunch_app, set_tray_labels, set_tray_unread, e2e_create_popout])
         .run(tauri::generate_context!())
         .expect("errore durante l'avvio dell'applicazione");
 }
