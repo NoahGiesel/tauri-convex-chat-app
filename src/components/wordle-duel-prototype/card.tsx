@@ -156,8 +156,8 @@ function ClosedBody({ duel }: { duel: Duel }) {
         </div>
       </div>
       <div className="flex items-stretch gap-2">
-        <ResultColumn name={`${ME} (you)`} run={duel.me} timer={duel.timer} winner={o.winner === "me"} />
-        <ResultColumn name={THEM} run={o.reason === "forfeit" && o.winner === "me" ? undefined : duel.them} timer={duel.timer} winner={o.winner === "them"} />
+        <ResultColumn name={`${ME} (you)`} run={duel.me.state === "finished" ? duel.me : undefined} timer={duel.timer} winner={o.winner === "me"} />
+        <ResultColumn name={THEM} run={duel.them.state === "finished" ? duel.them : undefined} timer={duel.timer} winner={o.winner === "them"} />
       </div>
       <div className="flex flex-col items-center gap-2 border-t border-app-border pt-3">
         <div className="text-center text-[15px] font-extrabold text-app-text-strong">{winnerName ? `🏆 ${winnerName} wins` : "Draw: neither guessed the word"}</div>
@@ -179,11 +179,11 @@ function ResultColumn({ name, run, timer, winner }: { name: string; run?: Run; t
           <Grid guesses={run.guesses} size="sm" rows={Math.max(run.guesses.length, 1)} />
           <span className="text-xs font-bold text-app-text-strong">
             {run.solved ? `${run.guesses.length}/6` : "X/6"} · {fmt(runMs(run, timer as 1 | 5 | 10))}
-            {run.timedOut ? " (time out)" : ""}
+            {run.timedOut ? " (time out)" : run.gaveUp ? " (gave up)" : ""}
           </span>
         </>
       ) : (
-        <span className="py-4 text-xs font-semibold text-app-text-dim">Did not play</span>
+        <span className="py-4 text-xs font-semibold text-app-text-dim">Did not finish in time</span>
       )}
     </div>
   );

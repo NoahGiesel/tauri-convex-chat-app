@@ -1,8 +1,9 @@
 // PROTOTYPE, throwaway. Wordle Duel UI prototype for wayfinder ticket #75 "What do the Wordle Duel card and Run screen look like?".
-// Three variants of where the Run opens (and, to match, where the `/wordle` setup lives), switchable via `?variant=`:
-//   A: inside the chat card · B: a dialog over the chat · C: a side panel next to the chat.
+// Variants of where the Run opens (and, to match, where the `/wordle` setup lives), switchable via `?variant=`:
+//   D: an external window (the driving dev's pick) · A: inside the chat card · B: a dialog over the chat · C: a side panel.
+// In D the Run window is a real browser popup (a Tauri WebviewWindow in the app, like the chat popout); the two windows sync over a BroadcastChannel.
 // A mock chat column stands in for conversation-view.tsx, which needs a signed-in Convex session. All state is in memory.
-import { useEffect, useState, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/themes/theme-provider";
 import { PrototypeSwitcher, useVariant } from "@/components/prototype-switcher";
@@ -11,7 +12,11 @@ import { RunSurface, type ItKeyboard, type SubmitResult } from "./run";
 import { SetupDialog, SetupInline, SetupPopover } from "./setup";
 import { HOUR, ME, SCENARIOS, SOLUTIONS, THEM, WORDS, cannedRun, decide, score, type Duel, type Lang, type Timer } from "./model";
 
+const CHANNEL = "wordle-duel-prototype";
+type Msg = { type: "hello" } | { type: "guess"; word: string } | { type: "giveUp" } | { type: "closed" } | { type: "state"; duel: Duel | null; itMode: ItKeyboard };
+
 const VARIANTS = [
+  { key: "D", name: "Run in an external window" },
   { key: "A", name: "Run inside the card" },
   { key: "B", name: "Run in a dialog" },
   { key: "C", name: "Run in a side panel" },
@@ -23,6 +28,59 @@ const MESSAGES = [
 ];
 
 export function WordleDuelPrototype() {
+  return new URLSearchParams(location.search).get("window") === "run" ? <RunWindow /> : <ChatPrototype />;
+}
+
+/** The external Run window of variant D. It owns no state: the chat window sends the Duel, this sends guesses back. */
+function RunWindow() {
+  const [duel, setDuel] = useState<Duel | null>(null);
+  const [itMode, setItMode] = useState<ItKeyboard>("hide");
+  const now = useNow(250);
+  const ch = useMemo(() => new BroadcastChannel(CHANNEL), []);
+  useEffect(() => {
+    document.title = `Wordle Duel · ${THEM}`;
+    ch.onmessage = (e: MessageEvent<Msg>) => {
+      if (e.data.type === "state") {
+        setDuel(e.data.duel);
+        setItMode(e.data.itMode);
+      }
+    };
+    ch.postMessage({ type: "hello" } satisfies Msg);
+    const bye = () => ch.postMessage({ type: "closed" } satisfies Msg);
+    window.addEventListener("beforeunload", bye);
+    return () => window.removeEventListener("beforeunload", bye);
+  }, [ch]);
+
+  if (!duel) return <div className="flex h-screen items-center justify-center bg-app-panel text-sm text-app-text-muted">Waiting for the chat window…</div>;
+  const noop = () => {};
+  return (
+    <div className="flex min-h-screen flex-col items-center gap-4 bg-app-panel p-5 text-app-text">
+      <div className="flex w-full items-center gap-2">
+        <span className="text-lg font-extrabold text-app-text-strong">Wordle Duel with {THEM}</span>
+        <span className="ml-auto rounded-md bg-app-field px-2 py-0.5 text-[11px] font-bold text-app-text-muted">⏱ {duel.timer} min</span>
+      </div>
+      {duel.status === "open" ? (
+        <RunSurface
+          duel={duel}
+          now={now}
+          itMode={itMode}
+          onGuess={(w) => {
+            if (w.length < 5) return "short";
+            if (!WORDS[duel.lang].has(w)) return "invalid";
+            ch.postMessage({ type: "guess", word: w } satisfies Msg);
+            return "ok";
+          }}
+          onGiveUp={() => ch.postMessage({ type: "giveUp" } satisfies Msg)}
+          onClose={() => window.close()}
+        />
+      ) : (
+        <DuelCard duel={duel} now={now} onAccept={noop} onDecline={noop} onWithdraw={noop} onOpenRun={noop} />
+      )}
+    </div>
+  );
+}
+
+function ChatPrototype() {
   const [variant, setVariant] = useVariant(VARIANTS.map((v) => v.key));
   const [duel, setDuel] = useState<Duel | null>(null);
   const [scenario, setScenario] = useState("none");
@@ -33,6 +91,22 @@ export function WordleDuelPrototype() {
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
   const now = useNow(250);
+
+  // Variant D: talk to the external Run window.
+  const ch = useMemo(() => new BroadcastChannel(CHANNEL), []);
+  const onMsg = useRef<(m: Msg) => void>(() => {});
+  onMsg.current = (m) => {
+    if (m.type === "hello") ch.postMessage({ type: "state", duel, itMode } satisfies Msg);
+    if (m.type === "guess") guess(m.word);
+    if (m.type === "giveUp") giveUp();
+    if (m.type === "closed") setRunOpen(false);
+  };
+  useEffect(() => {
+    ch.onmessage = (e: MessageEvent<Msg>) => onMsg.current(e.data);
+  }, [ch]);
+  useEffect(() => {
+    ch.postMessage({ type: "state", duel, itMode } satisfies Msg);
+  }, [ch, duel, itMode]);
 
   // The Run timer is server-side and never pauses: here it runs out even with the Run closed.
   useEffect(() => {
@@ -66,8 +140,19 @@ export function WordleDuelPrototype() {
     return "ok";
   }
 
+  function giveUp() {
+    if (!duel || duel.me.state !== "playing") return;
+    setDuel(finishMe({ ...duel, me: { ...duel.me, state: "finished", solved: false, gaveUp: true, endedAt: Date.now() } }));
+  }
+
   function openRun() {
     if (!duel) return;
+    if (variant === "D") {
+      // Same window name: a second click brings the open window to the front instead of opening another.
+      const w = window.open("/?prototype=wordle-duel&window=run", "wordle-duel-run", "popup,width=480,height=820");
+      if (!w) return setError("The browser blocked the popup: allow popups for localhost:1431.");
+      w.focus();
+    }
     if (duel.me.state === "toPlay") setDuel({ ...duel, me: { ...duel.me, state: "playing", startedAt: Date.now() } });
     setRunOpen(true);
   }
@@ -96,6 +181,7 @@ export function WordleDuelPrototype() {
     accept: () => duel && setDuel({ ...duel, status: "open", acceptedAt: Date.now() }),
     themStart: () => duel && setDuel({ ...duel, them: { ...duel.them, state: "playing", startedAt: Date.now() } }),
     themFinish: () => duel && setDuel(finishMe({ ...duel, them: cannedRun(duel.word, duel.lang, ["?", "?", "?", "*"], 95_000, Date.now()) })),
+    themGiveUp: () => duel && setDuel(finishMe({ ...duel, them: { ...cannedRun(duel.word, duel.lang, ["?", "?"], 50_000, Date.now()), timedOut: false, gaveUp: true } })),
     skipTimer: () => duel?.me.startedAt !== undefined && setDuel({ ...duel, me: { ...duel.me, startedAt: Date.now() - duel.timer * 60_000 + 10_000 } }),
     deadline: () => {
       if (!duel) return;
@@ -110,7 +196,7 @@ export function WordleDuelPrototype() {
   };
 
   const surface = duel && runOpen && duel.status === "open" && (
-    <RunSurface duel={duel} now={now} onGuess={guess} itMode={itMode} compact={variant === "A"} onClose={() => setRunOpen(false)} />
+    <RunSurface duel={duel} now={now} onGuess={guess} onGiveUp={giveUp} itMode={itMode} compact={variant === "A"} onClose={() => setRunOpen(false)} />
   );
 
   const slash = /^\/\w*$/.test(draft) && "/wordle".startsWith(draft);
@@ -154,7 +240,7 @@ export function WordleDuelPrototype() {
                 </button>
               </div>
             )}
-            {setupOpen && variant === "A" && <SetupPopover onSend={send} onCancel={() => setSetupOpen(false)} />}
+            {setupOpen && (variant === "A" || variant === "D") && <SetupPopover onSend={send} onCancel={() => setSetupOpen(false)} />}
             {setupOpen && variant === "C" ? (
               <SetupInline onSend={send} onCancel={() => setSetupOpen(false)} />
             ) : (
@@ -260,7 +346,7 @@ function DevPanel({
   onLang: (l: Lang) => void;
   itMode: ItKeyboard;
   onItMode: (m: ItKeyboard) => void;
-  dev: Record<"accept" | "themStart" | "themFinish" | "skipTimer" | "deadline", () => unknown>;
+  dev: Record<"accept" | "themStart" | "themFinish" | "themGiveUp" | "skipTimer" | "deadline", () => unknown>;
   duel: Duel | null;
   runOpen: boolean;
 }) {
@@ -336,6 +422,9 @@ function DevPanel({
             </button>
             <button type="button" className={btn} disabled={duel?.status !== "open" || duel.them.state === "finished"} onClick={dev.themFinish}>
               Marco finishes (4 guesses)
+            </button>
+            <button type="button" className={btn} disabled={duel?.status !== "open" || duel.them.state === "finished"} onClick={dev.themGiveUp}>
+              Marco gives up
             </button>
             <button type="button" className={btn} disabled={duel?.me.state !== "playing"} onClick={dev.skipTimer}>
               Skip my Run to last 10 s

@@ -111,10 +111,12 @@ export function RunSurface({
   itMode,
   compact,
   onClose,
+  onGiveUp,
 }: {
   duel: Duel;
   now: number;
   onGuess: (word: string) => SubmitResult;
+  onGiveUp: () => void;
   itMode: ItKeyboard;
   compact?: boolean;
   onClose?: () => void;
@@ -122,6 +124,7 @@ export function RunSurface({
   const [typed, setTyped] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [shake, setShake] = useState(0);
+  const [confirmGiveUp, setConfirmGiveUp] = useState(false);
   const me = duel.me;
   const playing = me.state === "playing";
   const left = me.startedAt !== undefined ? me.startedAt + duel.timer * 60_000 - now : duel.timer * 60_000;
@@ -190,11 +193,30 @@ export function RunSurface({
       <div className="h-5 text-center text-xs font-semibold text-destructive" aria-live="polite">{playing ? msg : null}</div>
 
       {playing ? (
-        <Keyboard lang={duel.lang} guesses={me.guesses} onKey={key} itMode={itMode} compact={compact} />
+        <>
+          <Keyboard lang={duel.lang} guesses={me.guesses} onKey={key} itMode={itMode} compact={compact} />
+          {confirmGiveUp ? (
+            <div className="flex w-full flex-col items-center gap-2 rounded-xl border border-destructive/40 bg-destructive/10 p-2.5 text-center">
+              <span className="text-sm font-semibold text-app-text-strong">Give up? Your Run ends now and counts as not guessed.</span>
+              <div className="flex gap-2">
+                <button type="button" onClick={onGiveUp} className="h-8 rounded-xl bg-destructive px-3 text-xs font-extrabold text-white hover:opacity-90">
+                  Yes, give up
+                </button>
+                <button type="button" onClick={() => setConfirmGiveUp(false)} className={cn(outlineButtonClass, "h-8 px-3 text-xs")}>
+                  Keep playing
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button type="button" onClick={() => setConfirmGiveUp(true)} className="text-xs font-bold text-app-text-muted underline-offset-2 hover:text-destructive hover:underline">
+              🏳 Give up
+            </button>
+          )}
+        </>
       ) : (
         <div className="flex w-full flex-col items-center gap-1.5 rounded-xl border border-app-border bg-app-bg p-3 text-center">
           <div className="text-[15px] font-extrabold text-app-text-strong">
-            {me.solved ? `Guessed in ${me.guesses.length} · ${fmt(runMs(me, duel.timer))}` : me.timedOut ? "Time's up: word not guessed" : "Six misses: word not guessed"}
+            {me.solved ? `Guessed in ${me.guesses.length} · ${fmt(runMs(me, duel.timer))}` : me.timedOut ? "Time's up: word not guessed" : me.gaveUp ? "You gave up: word not guessed" : "Six misses: word not guessed"}
           </div>
           {duel.status === "open" && duel.them.state !== "finished" && (
             <div className="text-sm text-app-text-muted">
