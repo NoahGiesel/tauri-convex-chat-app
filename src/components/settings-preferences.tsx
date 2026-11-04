@@ -1,3 +1,4 @@
+import { SettingsAutostart } from "@/components/settings-autostart";
 import { SettingsLanguage } from "@/components/settings-language";
 import { SettingsLinkBrowser } from "@/components/settings-link-browser";
 import { SettingsPing } from "@/components/settings-ping";
@@ -13,6 +14,7 @@ export function SettingsPreferences() {
         <p className="mt-2 text-[15px] text-app-text-muted">{t("settings.preferences.subtitle")}</p>
       </div>
       <SettingsLanguage />
+      <SettingsAutostart />
       <SettingsLinkBrowser />
       <SettingsPing />
     </div>
