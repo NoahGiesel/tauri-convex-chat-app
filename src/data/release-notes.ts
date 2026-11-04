@@ -11,9 +11,11 @@ export const RELEASE_NOTES: ReleaseNote[] = [
     items: {
       en: [
         "A team pinned while it is playing shows that match even when it is not in the team's own league, such as a national team in the Nations League or a club in a cup",
+        "New “Start at login” switch in Preferences, off by default: Chat starts by itself when you sign in to your computer; on Windows it starts hidden in the notification area",
       ],
       it: [
         "Una squadra pinnata mentre sta giocando mostra quella partita anche quando non è del suo campionato, come una nazionale in Nations League o un club in una coppa",
+        "Nuovo interruttore «Avvia all'accesso» nelle Preferenze, spento di default: Chat si avvia da sola quando accedi al computer; su Windows parte nascosta nell'area di notifica",
       ],
     },
   },
