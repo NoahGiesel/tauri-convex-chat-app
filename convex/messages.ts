@@ -113,8 +113,9 @@ export const list = query({
       // Link o testo molto lungo: si può chiedere un riassunto (una sola volta per messaggio).
       const summarizable =
         message.kind === "text" && message.style !== "random" && message.style !== "flip" && (message.hasLink === true || message.body.length >= SUMMARIZABLE_MIN_LENGTH);
+      const nowMs = Date.now();
       const summarized = summarizable
-        ? blocksNewSummary(await ctx.db.query("messages").withIndex("by_summaryOf", (q) => q.eq("summaryOf", message._id)).order("desc").first())
+        ? blocksNewSummary(await ctx.db.query("messages").withIndex("by_summaryOf", (q) => q.eq("summaryOf", message._id)).order("desc").first(), nowMs)
         : false;
 
       page.push({
@@ -139,8 +140,8 @@ export const list = query({
         summaryBlocked: message.summaryBlocked ?? null,
         summaryOf: message.summaryOf ?? null,
         summarySource,
-        summaryStatus: message.summaryOf ? summaryState(message) : null,
-        askStatus: message.askOf ? askState(message) : null,
+        summaryStatus: message.summaryOf ? summaryState(message, nowMs) : null,
+        askStatus: message.askOf ? askState(message, nowMs) : null,
         attachments: await Promise.all(
           (message.attachments ?? (message.media ? [{ ...message.media, name: message.body }] : [])).map(async (a) => ({
             url: await signedReadUrl(a.key),

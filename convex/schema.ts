@@ -131,8 +131,8 @@ export default defineSchema({
     body: v.string(),
     /** Per i riassunti: il messaggio (link o testo lungo) che è stato riassunto. */
     summaryOf: v.optional(v.id("messages")),
-    /** Per i riassunti: "pending" mentre il modello lavora (il testo è ancora vuoto), poi "done" (o "failed" se resta in corso oltre SUMMARY_STALE_MS). */
-    summaryStatus: v.optional(v.union(v.literal("pending"), v.literal("done"), v.literal("failed"))),
+    /** Per i riassunti: "pending" mentre il modello lavora (il testo è ancora vuoto), poi "done". */
+    summaryStatus: v.optional(v.union(v.literal("pending"), v.literal("done"))),
     /** Per `kind: "game"`: la partita mostrata dal messaggio. */
     gameId: v.optional(v.id("games")),
     /** Per `kind: "game"`: il quiz mostrato dal messaggio (al posto di `gameId`). */
@@ -141,8 +141,8 @@ export default defineSchema({
     summaryBlocked: v.optional(v.string()),
     /** Per le risposte di /ask: il messaggio con la domanda. */
     askOf: v.optional(v.id("messages")),
-    /** Per le risposte di /ask: "pending" finché il modello risponde (il testo è ancora vuoto), poi "done" (o "failed" se resta in corso oltre SUMMARY_STALE_MS). */
-    askStatus: v.optional(v.union(v.literal("pending"), v.literal("done"), v.literal("failed"))),
+    /** Per le risposte di /ask: "pending" finché il modello risponde (il testo è ancora vuoto), poi "done". */
+    askStatus: v.optional(v.union(v.literal("pending"), v.literal("done"))),
     /** Per `kind: "ai"`: chi ha lanciato `/ask`. */
     requestedBy: v.optional(v.id("profiles")),
     /** true se il messaggio contiene link (alimenta l'elenco "Media e link"); assente altrimenti. */

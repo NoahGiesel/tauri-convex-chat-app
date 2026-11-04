@@ -216,14 +216,6 @@ async fn e2e_create_popout(app: tauri::AppHandle, label: String, url: String, ti
     }
 }
 
-/// Argomento con cui il sistema avvia l'app all'accesso: è salvato insieme alla voce di avvio automatico.
-const AUTOSTART_ARG: &str = "--autostart";
-
-/// Vero se è il sistema ad aver avviato l'app all'accesso, non l'utente. `args` sono gli argomenti senza il nome del programma.
-fn launched_at_login(mut args: impl Iterator<Item = String>) -> bool {
-    args.any(|arg| arg == AUTOSTART_ARG)
-}
-
 pub fn run() {
     #[cfg(target_os = "macos")]
     let _ = BUNDLE_PATH.set(bundle_path_at_launch());
@@ -234,75 +226,37 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_opener::init());
 
-    // Avvio all'accesso, spento finché l'utente non lo accende dalle Preferenze: il plugin non registra nulla da solo.
-    #[cfg(desktop)]
-    let builder = {
-        let autostart = tauri_plugin_autostart::Builder::new().arg(AUTOSTART_ARG);
-        #[cfg(target_os = "macos")]
-        let autostart = autostart.macos_launcher(tauri_plugin_autostart::MacosLauncher::LaunchAgent);
-        builder.plugin(autostart.build())
-    };
-
     // Server WebDriver senza autenticazione: solo nella build di test, mai in una release.
     #[cfg(feature = "e2e")]
     let builder = builder.plugin(tauri_plugin_wdio_webdriver::init());
 
-    // Un solo `setup`: un secondo prenderebbe il posto del primo.
+    #[cfg(target_os = "windows")]
+    let builder = builder
+        .setup(|app| {
+            tray::create(app)?;
+            Ok(())
+        })
+        .on_window_event(tray::on_window_event);
+
+    // Build di test su macOS: niente cartella dati per istanza, quindi la finestra principale (creata qui e non dalla
+    // configurazione, che la lascia con `create: false`) riceve un identificatore dei dati diverso per ogni istanza.
+    #[cfg(all(feature = "e2e", target_os = "macos"))]
     let builder = builder.setup(|app| {
-        use tauri::Manager as _;
-        #[cfg(target_os = "windows")]
-        tray::create(app)?;
-        // Build di test su macOS: niente cartella dati per istanza, quindi la finestra principale (creata qui e non dalla
-        // configurazione, che la lascia con `create: false`) riceve un identificatore dei dati diverso per ogni istanza.
-        #[cfg(all(feature = "e2e", target_os = "macos"))]
-        {
-            let id = e2e_store_id().ok_or("E2E_INSTANCE is not set: the Test build needs a name for its data")?;
-            for config in app.config().app.windows.iter().filter(|w| !w.create) {
-                // Each instance is shifted a little: a window completely covered by the other counts as hidden, and the app
-                // then stops its presence heartbeat, so the friend would show as offline.
-                let shift: f64 = std::env::var("E2E_OFFSET").ok().and_then(|v| v.parse().ok()).unwrap_or(0.0);
-                tauri::WebviewWindowBuilder::from_config(app, config)?
-                    .data_store_identifier(id)
-                    .position(40.0 + shift, 60.0 + shift)
-                    .build()?;
-            }
-        }
-        // La finestra principale nasce nascosta (tauri.conf.json) e si mostra qui, così non lampeggia quando deve restare nascosta:
-        // su Windows, avviata all'accesso, l'app resta nell'area di notifica.
-        let stay_in_tray = cfg!(target_os = "windows") && launched_at_login(std::env::args().skip(1));
-        if !stay_in_tray {
-            if let Some(window) = app.get_webview_window("main") {
-                window.show()?;
-            }
+        let id = e2e_store_id().ok_or("E2E_INSTANCE is not set: the Test build needs a name for its data")?;
+        for config in app.config().app.windows.iter().filter(|w| !w.create) {
+            // Each instance is shifted a little: a window completely covered by the other counts as hidden, and the app
+            // then stops its presence heartbeat, so the friend would show as offline.
+            let shift: f64 = std::env::var("E2E_OFFSET").ok().and_then(|v| v.parse().ok()).unwrap_or(0.0);
+            tauri::WebviewWindowBuilder::from_config(app, config)?
+                .data_store_identifier(id)
+                .position(40.0 + shift, 60.0 + shift)
+                .build()?;
         }
         Ok(())
     });
-
-    #[cfg(target_os = "windows")]
-    let builder = builder.on_window_event(tray::on_window_event);
 
     builder
         .invoke_handler(tauri::generate_handler![ping, relaunch_app, set_tray_labels, set_tray_unread, e2e_create_popout])
         .run(tauri::generate_context!())
         .expect("errore durante l'avvio dell'applicazione");
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn args(list: &[&str]) -> impl Iterator<Item = String> {
-        list.iter().map(|a| a.to_string()).collect::<Vec<_>>().into_iter()
-    }
-
-    #[test]
-    fn a_launch_at_login_is_recognised() {
-        assert!(launched_at_login(args(&["--autostart"])));
-    }
-
-    #[test]
-    fn a_launch_by_the_user_is_not_a_launch_at_login() {
-        assert!(!launched_at_login(args(&[])));
-        assert!(!launched_at_login(args(&["--something-else"])));
-    }
 }

@@ -360,8 +360,6 @@ export const en = {
   "settings.linkBrowser.title": "Browser for links",
   "settings.linkBrowser.description": "Choose which browser opens links (e.g. the one where your tabs already are).",
   "settings.linkBrowser.system": "System default",
-  "settings.autostart.title": "Start at login",
-  "settings.autostart.description": "Start Chat automatically when you sign in to your computer.",
   "settings.nav.preferences": "Preferences",
   "settings.preferences.subtitle": "Language and general app behaviour.",
   "chat.copyLink": "Copy link",

@@ -105,6 +105,7 @@ export const ai = query({
     const me = await requireProfile(ctx);
     await requireMember(ctx, args.conversationId, me._id);
     const nameOf = nameLookup(ctx);
+    const now = Date.now();
 
     const result = await ctx.db
       .query("messages")
@@ -121,7 +122,7 @@ export const ai = query({
         _creationTime: m._creationTime,
         body: m.body,
         kind: m.askOf ? ("ask" as const) : ("summary" as const),
-        status: m.summaryOf ? summaryState(m) : m.askOf ? askState(m) : ("done" as const),
+        status: m.summaryOf ? summaryState(m, now) : m.askOf ? askState(m, now) : ("done" as const),
         requestedByName: await nameOf(m.requestedBy),
         // Cosa è stato trascritto: il link, oppure l'inizio del testo lungo.
         source: original ? (m.askOf ? original.body.replace(/^\/ask\s+/, "") : (link ?? original.body.slice(0, 120))) : null,

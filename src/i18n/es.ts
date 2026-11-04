@@ -361,8 +361,6 @@ export const es: Messages = {
   "settings.linkBrowser.title": "Navegador para enlaces",
   "settings.linkBrowser.description": "Elige qué navegador abre los enlaces (p. ej. el que ya tiene tus pestañas abiertas).",
   "settings.linkBrowser.system": "Predeterminado del sistema",
-  "settings.autostart.title": "Abrir al iniciar sesión",
-  "settings.autostart.description": "Inicia Chat automáticamente cuando inicias sesión en tu ordenador.",
   "settings.nav.preferences": "Preferencias",
   "settings.preferences.subtitle": "Idioma y comportamiento general de la aplicación.",
   "chat.copyLink": "Copiar enlace",
