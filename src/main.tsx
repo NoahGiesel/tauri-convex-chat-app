@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { ConvexReactClient } from "convex/react";
+import { ConvexQueryCacheProvider } from "convex-helpers/react/cache";
 import { ConvexBetterAuthProvider, type AuthClient } from "@convex-dev/better-auth/react";
 import "./index.css";
 import App from "./App";
@@ -32,9 +33,12 @@ createRoot(document.getElementById("root")!).render(
       <I18nProvider>
         {/* Il tipo inferito dei plugin (convex + crossDomain) non combacia con quello del provider, ma il client è lo stesso. */}
         <ConvexBetterAuthProvider client={convex} authClient={authClient as unknown as AuthClient}>
-          <UpdaterProvider>
-            <App />
-          </UpdaterProvider>
+          {/* Le query restano vive 5 minuti dopo l'ultimo uso: tornando a una chat appena chiusa i messaggi ci sono subito. */}
+          <ConvexQueryCacheProvider expiration={300_000}>
+            <UpdaterProvider>
+              <App />
+            </UpdaterProvider>
+          </ConvexQueryCacheProvider>
         </ConvexBetterAuthProvider>
       </I18nProvider>
     </ThemeProvider>

@@ -4,7 +4,7 @@ import { internal } from "./_generated/api";
 import { action, internalMutation, internalQuery } from "./_generated/server";
 import { extractLinks } from "./linkRules";
 import { fail, getProfile, requireMember } from "./model";
-import { blocksNewSummary } from "./summaryRules";
+import { blocksNewSummary, SUMMARY_STALE_MS } from "./summaryRules";
 import { fetchHtml, isPublicHttpUrl } from "./previews";
 import { aiModel, summaryPrompt } from "./summaryPrompt";
 
@@ -33,7 +33,7 @@ export const load = internalQuery({
     if (message.kind !== "text") throw fail("nothing_to_summarize");
     if (message.summaryBlocked) throw fail("summary_unavailable");
     const existing = await ctx.db.query("messages").withIndex("by_summaryOf", (q) => q.eq("summaryOf", message._id)).order("desc").first();
-    if (blocksNewSummary(existing, Date.now())) throw fail("already_summarized");
+    if (blocksNewSummary(existing)) throw fail("already_summarized");
     return { profileId: me._id, conversationId: message.conversationId, body: message.body };
   },
 });
@@ -44,7 +44,7 @@ export const begin = internalMutation({
   handler: async (ctx, args) => {
     const now = Date.now();
     const existing = await ctx.db.query("messages").withIndex("by_summaryOf", (q) => q.eq("summaryOf", args.summaryOf)).order("desc").first();
-    if (blocksNewSummary(existing, now)) throw fail("already_summarized");
+    if (blocksNewSummary(existing)) throw fail("already_summarized");
     if (existing) await ctx.db.delete("messages", existing._id); // tentativo fallito precedente
     const id = await ctx.db.insert("messages", {
       conversationId: args.conversationId,
@@ -54,12 +54,39 @@ export const begin = internalMutation({
       summaryOf: args.summaryOf,
       summaryStatus: "pending",
     });
+    await ctx.scheduler.runAfter(SUMMARY_STALE_MS, internal.summary.markStale, { messageId: id });
     await ctx.db.patch("conversations", args.conversationId, { lastMessageAt: now });
     const members = await ctx.db.query("members").withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId)).take(50);
     for (const m of members) {
       await ctx.db.patch("members", m._id, m.profileId === args.requestedBy ? { lastMessageAt: now, lastReadAt: now } : { lastMessageAt: now });
     }
     return id;
+  },
+});
+
+/** Se dopo SUMMARY_STALE_MS il riassunto è ancora "in corso" l'azione si è interrotta: lo segna fallito. */
+export const markStale = internalMutation({
+  args: { messageId: v.id("messages") },
+  handler: async (ctx, args) => {
+    const message = await ctx.db.get("messages", args.messageId);
+    if (message?.summaryStatus === "pending") await ctx.db.patch("messages", args.messageId, { summaryStatus: "failed" });
+  },
+});
+
+/** Una tantum, da lanciare dopo il deploy: segna "failed" i riassunti e le risposte /ask rimasti "in corso" da più di SUMMARY_STALE_MS. */
+export const failStalePending = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const cutoff = Date.now() - SUMMARY_STALE_MS;
+    let fixed = 0;
+    for await (const m of ctx.db.query("messages")) {
+      if (m._creationTime >= cutoff) continue;
+      if (m.summaryStatus === "pending") await ctx.db.patch("messages", m._id, { summaryStatus: "failed" });
+      else if (m.askStatus === "pending") await ctx.db.patch("messages", m._id, { askStatus: "failed" });
+      else continue;
+      fixed++;
+    }
+    return fixed;
   },
 });
 

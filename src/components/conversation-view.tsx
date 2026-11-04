@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { insertAtTop, useAction, useMutation, usePaginatedQuery, useQuery } from "convex/react";
+import { insertAtTop, useAction, useMutation } from "convex/react";
+import { usePaginatedQuery, useQuery } from "convex-helpers/react/cache";
 import type { OptimisticLocalStore } from "convex/browser";
 import { PingIndicator } from "@/components/ping-indicator";
 import { ArrowDown, Ban, Film, Images, Loader2, Maximize2, Paperclip, Send, Smile, Sparkles, X } from "lucide-react";
@@ -349,7 +350,9 @@ export function ConversationView({
 
   // Aprendo una chat la lista resta invisibile finché le foto e i video che si vedono in fondo non sono caricati
   // (al massimo 3 secondi); solo allora scorre all'ultimo messaggio e si mostra, senza salti visibili.
-  const [revealed, setRevealed] = useState(false);
+  // Se la prima pagina c'è già (viene dalla cache) non serve aspettare: si parte già scorsi in fondo e visibili.
+  const [revealed, setRevealed] = useState(status !== "LoadingFirstPage");
+  const revealedFromCache = useRef(revealed);
   const [awayFromBottom, setAwayFromBottom] = useState(false); // scrollato in alto: compare "vai all'ultimo messaggio"
   useEffect(() => {
     if (revealed || status === "LoadingFirstPage") return;
@@ -381,6 +384,13 @@ export function ConversationView({
       cancelled = true;
     };
   }, [status, revealed]);
+
+  useLayoutEffect(() => {
+    if (!revealedFromCache.current) return;
+    revealedFromCache.current = false;
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, []);
 
   // Un elemento nascosto (display: none) perde la posizione di scorrimento: la ricordiamo mentre l'elenco "Media e link" è aperto.
   const savedScrollTop = useRef(0);

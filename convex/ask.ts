@@ -4,6 +4,7 @@ import { action, internalMutation } from "./_generated/server";
 import { carriesLinks } from "./linkRules";
 import { fail, getProfile, requireMember } from "./model";
 import { aiModel } from "./summaryPrompt";
+import { SUMMARY_STALE_MS } from "./summaryRules";
 
 const MAX_PROMPT = 4000;
 const CONTEXT_MESSAGES = 12;
@@ -114,12 +115,22 @@ export const begin = internalMutation({
       askOf: questionId,
       askStatus: "pending",
     });
+    await ctx.scheduler.runAfter(SUMMARY_STALE_MS, internal.ask.markStale, { messageId: answerId });
     await ctx.db.patch("conversations", args.conversationId, { lastMessageAt: now });
     const members = await ctx.db.query("members").withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId)).take(50);
     for (const m of members) {
       await ctx.db.patch("members", m._id, m.profileId === me._id ? { lastMessageAt: now, lastReadAt: now } : { lastMessageAt: now });
     }
     return { answerId, prompt, context: context.join("\n"), name: me.name };
+  },
+});
+
+/** Se dopo SUMMARY_STALE_MS la risposta è ancora "in corso" l'azione si è interrotta: la segna fallita. */
+export const markStale = internalMutation({
+  args: { messageId: v.id("messages") },
+  handler: async (ctx, args) => {
+    const message = await ctx.db.get("messages", args.messageId);
+    if (message?.askStatus === "pending") await ctx.db.patch("messages", args.messageId, { askStatus: "failed" });
   },
 });
 
