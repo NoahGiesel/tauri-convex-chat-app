@@ -8,7 +8,14 @@ export interface ReleaseNote {
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
     version: "next",
-    items: { en: [], it: [] },
+    items: {
+      en: [
+        "New “Start at login” switch in Preferences, off by default: Chat starts by itself when you sign in to your computer; on Windows it starts hidden in the notification area",
+      ],
+      it: [
+        "Nuovo interruttore «Avvia all'accesso» nelle Preferenze, spento di default: Chat si avvia da sola quando accedi al computer; su Windows parte nascosta nell'area di notifica",
+      ],
+    },
   },
   {
     version: "0.1.23",

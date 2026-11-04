@@ -361,6 +361,8 @@ export const it: Messages = {
   "settings.linkBrowser.title": "Browser per i link",
   "settings.linkBrowser.description": "Scegli quale browser apre i link (es. quello dove hai già le tab aperte).",
   "settings.linkBrowser.system": "Predefinito di sistema",
+  "settings.autostart.title": "Avvia all'accesso",
+  "settings.autostart.description": "Avvia Chat automaticamente quando accedi al computer.",
   "settings.nav.preferences": "Preferenze",
   "settings.preferences.subtitle": "Lingua e comportamento generale dell'app.",
   "chat.copyLink": "Copia link",

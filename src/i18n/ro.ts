@@ -361,6 +361,8 @@ export const ro: Messages = {
   "settings.linkBrowser.title": "Browser pentru linkuri",
   "settings.linkBrowser.description": "Alege browserul în care se deschid linkurile (ex. cel cu filele deja deschise).",
   "settings.linkBrowser.system": "Implicit sistem",
+  "settings.autostart.title": "Pornire la autentificare",
+  "settings.autostart.description": "Pornește Chat automat când te autentifici pe calculator.",
   "settings.nav.preferences": "Preferințe",
   "settings.preferences.subtitle": "Limba și comportamentul general al aplicației.",
   "chat.copyLink": "Copiază linkul",
