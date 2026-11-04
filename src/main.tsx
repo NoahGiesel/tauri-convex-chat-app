@@ -12,6 +12,25 @@ import { ThemeProvider } from "@/themes/theme-provider";
 
 installAutoHideScrollbars();
 
+// PROTOTYPE, throwaway (wayfinder ticket #75): `pnpm prototype:wordle` opens the Wordle Duel UI prototype. Dev builds only.
+const prototype = import.meta.env.DEV ? new URLSearchParams(location.search).get("prototype") : null;
+if (prototype === "wordle-duel") {
+  void import("@/components/wordle-duel-prototype/page").then(({ WordleDuelPrototype }) =>
+    createRoot(document.getElementById("root")!).render(
+      <StrictMode>
+        <ThemeProvider>
+          <I18nProvider>
+            <WordleDuelPrototype />
+          </I18nProvider>
+        </ThemeProvider>
+      </StrictMode>,
+    ),
+  );
+} else {
+  renderApp();
+}
+
+function renderApp() {
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 
 // La suite E2E legge da qui gli indirizzi della build. In release il blocco sparisce.
@@ -40,3 +59,4 @@ createRoot(document.getElementById("root")!).render(
     </ThemeProvider>
   </StrictMode>,
 );
+}

@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prototype:wordle": "vite --port 1431 --open /?prototype=wordle-duel",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
