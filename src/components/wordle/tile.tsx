@@ -1,10 +1,10 @@
 import { cn } from "@/lib/utils";
 
-/** Colori delle caselle, dal tema: giusta = online, presente = upload, assente = raised; il testo usa lo sfondo. */
+/** Colori delle caselle, fissi e uguali in ogni tema: giusta verde, presente gialla, assente rossa, testo bianco. */
 export const TILE_CLASS = {
-  correct: "border-transparent bg-app-online text-app-bg",
-  present: "border-transparent bg-app-upload text-app-bg",
-  absent: "border-transparent bg-app-raised text-app-bg",
+  correct: "border-transparent bg-[#538d4e] text-white",
+  present: "border-transparent bg-[#b59f3b] text-white",
+  absent: "border-transparent bg-[#c0443a] text-white",
   empty: "border-app-border bg-transparent",
   typed: "border-app-border-strong bg-app-field text-app-text-strong",
 } as const;
