@@ -57,7 +57,7 @@ const COMMANDS = [
 ] as const;
 
 /** Comandi che si usano solo in una chat diretta (sono sfide 1 contro 1). */
-const DIRECT_ONLY = new Set<string>(["stone-paper-scissors", "quiz3", "quiz5", "wordle"]);
+const DIRECT_ONLY: ReadonlySet<string> = new Set<(typeof COMMANDS)[number]["name"]>(["stone-paper-scissors", "quiz3", "quiz5", "wordle"]);
 
 type TextStyle = "me" | "code" | "pre" | "spoiler" | "quote";
 const MAX_ATTACHMENTS = 10;
