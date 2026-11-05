@@ -174,7 +174,7 @@ export function WordleDuelCard({ duelId, onLayout }: { duelId: Id<"wordleDuels">
 
       {duel.status === "closed" && duel.result && <ClosedResult duel={duel} result={duel.result} />}
       {duel.canRematch && (
-        <button type="button" onClick={rematch} className={cn(primaryButtonClass, "h-9 self-center px-4 text-sm")}>
+        <button type="button" onClick={rematch} className={cn(outlineButtonClass, "h-9 self-center px-4 text-sm")}>
           {t("game.rematch")}
         </button>
       )}

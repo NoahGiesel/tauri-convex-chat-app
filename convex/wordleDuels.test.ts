@@ -697,20 +697,34 @@ describe("statistiche", () => {
 });
 
 describe("rivincita", () => {
-  /** Duel chiuso: entrambi si arrendono. */
-  async function closedDuel() {
-    const f = await openDuel("crane");
+  /** Accetta il Duel e lo chiude: entrambi si arrendono. */
+  async function closeByGivingUp(f: Duel) {
     await quit(f, "alice");
     await quit(f, "bob");
-    return f;
+  }
+
+  /** Duel da 5 minuti in italiano, già chiuso: impostazioni diverse da quelle degli altri test. */
+  async function closedDuel(): Promise<Duel> {
+    const f = await twoFriends();
+    const duelId = await challenge(f);
+    await f.bob.mutation(api.wordleDuels.respond, { duelId, action: "accept" });
+    const duel = { ...f, duelId };
+    await closeByGivingUp(duel);
+    return duel;
   }
 
   const canRematch = async (f: Duel, duelId: Id<"wordleDuels"> = f.duelId) =>
     (await f.alice.query(api.wordleDuels.get, { duelId }))!.canRematch;
 
-  /** La rivincita come la manda la scheda: la stessa mutazione di /wordle, con le impostazioni del Duel. */
-  const rematch = (f: Duel, who: Player) =>
-    f[who].mutation(api.wordleDuels.start, { conversationId: f.direct, runMinutes: 1, language: "en" });
+  /** La rivincita come la manda la scheda: la stessa mutazione di /wordle, con le impostazioni lette dalla scheda. */
+  async function rematch(f: Duel, who: Player, from: Id<"wordleDuels"> = f.duelId) {
+    const card = (await f[who].query(api.wordleDuels.get, { duelId: from }))!;
+    return await f[who].mutation(api.wordleDuels.start, {
+      conversationId: card.conversationId,
+      runMinutes: card.runMinutes,
+      language: card.language,
+    });
+  }
 
   it("compare sull'ultimo Duel chiuso della chat", async () => {
     const f = await closedDuel();
@@ -720,11 +734,12 @@ describe("rivincita", () => {
   it("non compare su un Duel aperto, rifiutato o scaduto", async () => {
     const f = await openDuel("crane");
     expect(await canRematch(f)).toBe(false);
+    await passDeadline(f); // nessuno ha giocato: scaduto
+    expect((await f.alice.query(api.wordleDuels.get, { duelId: f.duelId }))!.status).toBe("expired");
+    expect(await canRematch(f)).toBe(false);
 
-    const declined = await f.t.run(async (ctx) => {
-      await ctx.db.patch("wordleDuels", f.duelId, { status: "declined" });
-      return f.duelId;
-    });
+    const declined = await f.alice.mutation(api.wordleDuels.start, { conversationId: f.direct, runMinutes: 1, language: "en" });
+    await f.bob.mutation(api.wordleDuels.respond, { duelId: declined, action: "decline" });
     expect(await canRematch(f, declined)).toBe(false);
   });
 
@@ -732,8 +747,7 @@ describe("rivincita", () => {
     const f = await closedDuel();
     const newer = await rematch(f, "alice");
     await f.bob.mutation(api.wordleDuels.respond, { duelId: newer, action: "accept" });
-    await quit({ ...f, duelId: newer }, "alice");
-    await quit({ ...f, duelId: newer }, "bob");
+    await closeByGivingUp({ ...f, duelId: newer });
 
     expect(await canRematch(f)).toBe(false);
     expect(await canRematch(f, newer)).toBe(true);
@@ -745,6 +759,18 @@ describe("rivincita", () => {
     await f.bob.mutation(api.wordleDuels.respond, { duelId: declined, action: "decline" });
     const withdrawn = await rematch(f, "alice");
     await f.alice.mutation(api.wordleDuels.respond, { duelId: withdrawn, action: "withdraw" });
+
+    // Un invito senza risposta scade dopo 24 ore.
+    await rematch(f, "bob");
+    vi.advanceTimersByTime(INVITE_TTL_MS + 1_000);
+    await f.t.finishInProgressScheduledFunctions();
+
+    // Un Duel accettato in cui nessuno gioca scade alla Duel deadline.
+    const unplayed = await rematch(f, "bob");
+    await f.alice.mutation(api.wordleDuels.respond, { duelId: unplayed, action: "accept" });
+    await passDeadline({ ...f, duelId: unplayed });
+    expect((await f.alice.query(api.wordleDuels.get, { duelId: unplayed }))!.status).toBe("expired");
+
     expect(await canRematch(f)).toBe(true);
   });
 
@@ -760,7 +786,7 @@ describe("rivincita", () => {
     const f = await closedDuel();
     const next = await rematch(f, "bob");
     const card = (await f.alice.query(api.wordleDuels.get, { duelId: next }))!;
-    expect(card).toMatchObject({ status: "invite", mySide: "b", nameA: "bob", runMinutes: 1, language: "en" });
+    expect(card).toMatchObject({ status: "invite", mySide: "b", nameA: "bob", runMinutes: 5, language: "it" });
   });
 
   it("se la premono entrambi insieme, la seconda fallisce e la rivincita sparisce", async () => {
