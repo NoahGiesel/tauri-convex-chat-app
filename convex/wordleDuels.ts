@@ -129,6 +129,14 @@ async function activeDuel(ctx: QueryCtx, conversationId: Id<"conversations">): P
   return null;
 }
 
+/** I Duel chiusi di una chat, dal più recente. */
+function closedDuels(ctx: QueryCtx, conversationId: Id<"conversations">) {
+  return ctx.db
+    .query("wordleDuels")
+    .withIndex("by_conversation_and_status", (q) => q.eq("conversationId", conversationId).eq("status", "closed"))
+    .order("desc");
+}
+
 async function membersOf(ctx: QueryCtx, conversationId: Id<"conversations">) {
   return await ctx.db
     .query("members")
@@ -274,6 +282,16 @@ export async function wordleResultSummary(ctx: QueryCtx, duelId: Id<"wordleDuels
   return resultSummaryOf(duel, winner ? ((await ctx.db.get("profiles", winner))?.name ?? "?") : null);
 }
 
+/**
+ * La rivincita si offre solo sull'ultimo Duel chiuso della chat (un Duel più recente rifiutato, ritirato o
+ * scaduto non conta) e mai mentre nella chat c'è un invito o un Duel aperto.
+ */
+async function canRematch(ctx: QueryCtx, duel: Doc<"wordleDuels">): Promise<boolean> {
+  if (duel.status !== "closed") return false;
+  const latestClosed = await closedDuels(ctx, duel.conversationId).first();
+  return latestClosed?._id === duel._id && (await activeDuel(ctx, duel.conversationId)) === null;
+}
+
 /** La scheda del Duel per chi è nella chat. Finché il Duel non è chiuso non contiene mai la parola. */
 export const get = query({
   args: { duelId: v.id("wordleDuels") },
@@ -310,6 +328,8 @@ export const get = query({
       /** Lo stato di ogni Run: mai un risultato finché il Duel è aperto. */
       players: { a: runState(duel.runA), b: runState(duel.runB) },
       result: resultOf(duel),
+      /** Rivincita: un invito normale con lo stesso Run timer e la stessa lingua, da chiunque dei due la prema. */
+      canRematch: side !== null && (await canRematch(ctx, duel)),
       /** La riga di chiusura in breve, per il messaggio senza autore in chat. */
       summary: isOver(duel) ? resultSummaryOf(duel, { a: nameA, b: nameB, none: null }[winnerSideOf(duel) ?? "none"]) : null,
       /** Ora del server: la scheda corregge il proprio orologio per mostrare il tempo che resta (come `games.get`). */
@@ -429,11 +449,7 @@ export const history = query({
       .unique();
     if (!member) return null;
 
-    const closed = await ctx.db
-      .query("wordleDuels")
-      .withIndex("by_conversation_and_status", (q) => q.eq("conversationId", args.conversationId).eq("status", "closed"))
-      .order("desc")
-      .take(STATS_LIMIT);
+    const closed = await closedDuels(ctx, args.conversationId).take(STATS_LIMIT);
 
     const names = new Map<Id<"profiles">, string>();
     const nameOf = async (id: Id<"profiles">) => {
