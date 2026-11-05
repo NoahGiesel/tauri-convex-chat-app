@@ -44,7 +44,10 @@ export const setLastSeenAt = internalMutation({
   },
 });
 
-/** The server picks a Wordle Duel's word at random, so a test sets the open Duel's word after acceptance to one it knows. */
+/**
+ * The server picks a Wordle Duel's word at random, so a test sets the open Duel's word after acceptance to one it knows.
+ * A scan, because a test plays one Duel on a fresh Seed, and no index has the status alone.
+ */
 export const setWordleWord = internalMutation({
   args: { word: v.string() },
   handler: async (ctx, args) => {

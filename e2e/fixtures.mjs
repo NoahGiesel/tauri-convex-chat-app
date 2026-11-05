@@ -84,9 +84,13 @@ const WORDLE_CARD = '//*[@data-testid="wordle-duel-card"]';
 const WORDLE_SETUP = `//*[@role="dialog"][@aria-label="${en['wordle.setupTitle']}"]`;
 /** A choice in the setup popover, by its group's name and the text on it. */
 const setupChoice = (group, text) => `${WORDLE_SETUP}//*[@role="group"][@aria-label="${group}"]//button[normalize-space(.)="${text}"]`;
-/** The words before the first `{…}` of a string, for a button whose text holds a number or a time. */
-const textBefore = (key) => en[key].split('{')[0].trim();
+/** An English string with its `{…}` placeholders filled. */
+const filled = (key, vars) => Object.entries(vars).reduce((text, [k, value]) => text.replaceAll(`{${k}}`, value), en[key]);
+/** The words before the first `{…}` left in a string, for text that also holds a number or a time the test does not know. */
+const textBefore = (key, vars = {}) => filled(key, vars).split('{')[0].trim();
 const wordleCardButton = (key) => `${WORDLE_CARD}//button[starts-with(normalize-space(.), "${textBefore(key)}")]`;
+/** The line with no author that announces the result in the chat. */
+const WORDLE_RESULT_LINE = '//*[@data-testid="wordle-result-line"]';
 /** In the Run window: the Run timer shows only while the Run is being played. */
 const RUN_TIMER = '//*[@role="timer"]';
 /** A key of the on-screen keyboard, by its name. A row of the grid is named after its guess, so no key matches a row. */
@@ -260,6 +264,13 @@ function drivenUser(name) {
   const pressWithPointer = async (selector) => {
     await waitUntilClickable(selector);
     await b.action('pointer').move({ origin: await b.$(selector) }).down().up().perform();
+  };
+
+  /** A window opened by the last action, found as the one handle that was not there `before`. Its handle holds an ID. */
+  const switchToNewWindow = async (before, timeoutMsg) => {
+    let opened;
+    await b.waitUntil(async () => (opened = (await b.getWindowHandles()).find((handle) => !before.includes(handle))), { ...WAIT, timeoutMsg });
+    await b.switchToWindow(opened);
   };
 
   const waitUntilExists = (selector, timeoutMsg) => b.waitUntil(async () => b.$(selector).isExisting(), { ...WAIT, timeoutMsg });
@@ -613,20 +624,15 @@ function drivenUser(name) {
       await fireDrag(tab(title), 'dragstart');
       await b.execute(leaveWindowDragging);
       await fireDrag(tab(title), 'dragend', 'outside');
-      let popout;
-      await b.waitUntil(async () => (popout = (await b.getWindowHandles()).find((handle) => !before.includes(handle))), {
-        ...WAIT,
-        timeoutMsg: `${name} did not get a window for ${title}`,
-      });
-      await b.switchToWindow(popout);
+      await switchToNewWindow(before, `${name} did not get a window for ${title}`);
       await waitUntilShown(COMPOSER, `${name} has no composer in the window for ${title}`);
     },
     returnToMainWindow: () => b.switchToWindow(MAIN_WINDOW),
 
     /** `/wordle`, then the setup popover. `language` as its choice reads: English or Italiano. */
-    async challengeToWordle({ minutes, language }) {
+    async challengeToWordleDuel({ minutes, language }) {
       await user.sendCompleted('/wordle');
-      await press(setupChoice(en['wordle.runTimer'], en['wordle.minutes'].replace('{n}', minutes)));
+      await press(setupChoice(en['wordle.runTimer'], filled('wordle.minutes', { n: minutes })));
       await press(setupChoice(en['wordle.wordLanguage'], language));
       await press(`${WORDLE_SETUP}//button[normalize-space(.)="${en['wordle.send']}"]`);
       await waitUntilShown(wordleCardButton('wordle.withdraw'), `${name} did not send the Wordle Duel`);
@@ -644,12 +650,7 @@ function drivenUser(name) {
     async openWordleRun() {
       const before = await b.getWindowHandles();
       await press(wordleCardButton('wordle.startRun'));
-      let run;
-      await b.waitUntil(async () => (run = (await b.getWindowHandles()).find((handle) => !before.includes(handle))), {
-        ...WAIT,
-        timeoutMsg: `${name} did not get a window for the Run`,
-      });
-      await b.switchToWindow(run);
+      await switchToNewWindow(before, `${name} did not get a window for the Run`);
       await waitUntilShown(RUN_TIMER, `${name} has no Run timer in the Run window`);
     },
     /** Types on the on-screen keyboard, which works with the window in the background, then waits for the row. */
@@ -659,7 +660,7 @@ function drivenUser(name) {
       await waitUntilShown(guessRow(word), `${name}'s guess ${word} was not taken`);
     },
     seesRunSolvedIn: (guesses) =>
-      waitUntilShown(textSelector(textBefore('wordle.endSolved').concat(` ${guesses}`)), `${name} did not see the Run solved in ${guesses}`),
+      waitUntilShown(textSelector(textBefore('wordle.endSolved', { n: guesses })), `${name} did not see the Run solved in ${guesses}`),
     /** The closed card: the word, each player's grid with their guesses, and the winner. */
     async seesWordleResult({ word, guesses, winner }) {
       const wordWas = `${WORDLE_CARD}//div[span[normalize-space(.)="${en['wordle.wordWas']}"]]${guessRow(word)}`;
@@ -670,6 +671,11 @@ function drivenUser(name) {
         }
       }
       await waitUntilShown(`${WORDLE_CARD}//p[contains(normalize-space(.), "${named('wordle.wins', winner)}")]`, `${name} did not see ${winner} win`);
+    },
+    /** The result line in the chat, for a win in fewer guesses: the winner's guesses, then the other player's. */
+    seesWordleWonInFewerGuesses: (winner, [n, m]) => {
+      const line = filled('wordle.result.fewerGuesses', { name: winner, n, m });
+      return waitUntilShown(`${WORDLE_RESULT_LINE}[contains(normalize-space(.), "${line}")]`, `${name} did not see "${line}" in the chat`);
     },
     async seesOnlyMainWindow() {
       const handles = await b.getWindowHandles();
