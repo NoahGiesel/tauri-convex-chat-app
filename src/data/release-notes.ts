@@ -8,7 +8,14 @@ export interface ReleaseNote {
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
     version: "next",
-    items: { en: [], it: [] },
+    items: {
+      en: [
+        "Wordle Duel: type /wordle in a direct chat to challenge a friend on the same five-letter word, in Italian or English. Each of you plays a timed Run (1, 5 or 10 minutes) whenever you like within 24 hours, and the card shows the result once you have both finished, or when the Duel closes: fewer guesses wins, then the faster Run",
+      ],
+      it: [
+        "Wordle Duel: scrivi /wordle in una chat diretta per sfidare un amico sulla stessa parola di cinque lettere, in italiano o in inglese. Ognuno gioca quando vuole, entro 24 ore, una Run a tempo (1, 5 o 10 minuti), e la scheda mostra il risultato quando avete finito entrambi, o quando il Duel si chiude: vince chi usa meno tentativi, poi la Run più veloce",
+      ],
+    },
   },
   {
     version: "0.1.23",

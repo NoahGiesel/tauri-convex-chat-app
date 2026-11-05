@@ -173,6 +173,8 @@ The Run opens in its own app window, like the chat popout in `src/lib/popout.ts`
 
 ## Release gate
 
+_The Launch ticket (#87) removed the gate: `/wordle` now shows in every build, in direct chats only. What follows is how it worked until then._
+
 Implementation tickets merge into `master` one by one, and a release can be cut between them. So `/wordle` shows only when `import.meta.env.DEV` is true or `VITE_E2E` is `"1"`, until the Launch ticket removes the gate.
 
 - The Test build sets `VITE_E2E`, so the E2E scenario runs before Launch. The release guard already refuses `VITE_E2E` in a release, so production stays closed.

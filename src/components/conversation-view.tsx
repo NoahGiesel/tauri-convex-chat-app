@@ -13,7 +13,6 @@ import { QuizCard } from "@/components/quiz-card";
 import { WordleDuelCard } from "@/components/wordle/duel-card";
 import { WordleResultLine } from "@/components/wordle/result-line";
 import { WordleSetupPopover } from "@/components/wordle/setup-popover";
-import { WORDLE_ENABLED } from "@/lib/wordle";
 import { EmbedPlayer, LinkPreview } from "@/components/link-preview";
 import { embedFor, htmlEmbed } from "@/lib/embeds";
 import { MediaLibrary } from "@/components/media-library";
@@ -54,11 +53,11 @@ const COMMANDS = [
   { name: "stone-paper-scissors", description: "composer.cmdGame" },
   { name: "quiz3", description: "composer.cmdQuiz3" },
   { name: "quiz5", description: "composer.cmdQuiz5" },
-  ...(WORDLE_ENABLED ? ([{ name: "wordle", description: "composer.cmdWordle" }] as const) : []),
+  { name: "wordle", description: "composer.cmdWordle" },
 ] as const;
 
 /** Comandi che si usano solo in una chat diretta (sono sfide 1 contro 1). */
-const DIRECT_ONLY = new Set<string>(["stone-paper-scissors", "quiz3", "quiz5", ...(WORDLE_ENABLED ? ["wordle"] : [])]);
+const DIRECT_ONLY: ReadonlySet<string> = new Set<(typeof COMMANDS)[number]["name"]>(["stone-paper-scissors", "quiz3", "quiz5", "wordle"]);
 
 type TextStyle = "me" | "code" | "pre" | "spoiler" | "quote";
 const MAX_ATTACHMENTS = 10;
@@ -604,7 +603,7 @@ export function ConversationView({
       void startQuiz({ conversationId, size: name === "quiz3" ? 3 : 5, language }).catch((e) => setError(t(errorKey(e))));
       return;
     }
-    if (name === "wordle" && WORDLE_ENABLED) {
+    if (name === "wordle") {
       setDraft("");
       setError(null);
       setWordleSetup(true);
