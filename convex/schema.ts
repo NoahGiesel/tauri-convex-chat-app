@@ -1,6 +1,16 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
+/** Una Run del Wordle Duel: si salvano solo le parole, i colori li calcola il server dalla parola. */
+const wordleRun = v.object({
+  startedAt: v.number(),
+  /** `startedAt` più il Run timer: il tempo non si ferma mai. */
+  endsAt: v.number(),
+  guesses: v.array(v.string()),
+  endedAt: v.optional(v.number()),
+  endReason: v.optional(v.union(v.literal("solved"), v.literal("missed"), v.literal("timeout"), v.literal("gaveUp"))),
+});
+
 // Gli utenti veri (email, password, sessioni) vivono nel componente Better Auth.
 // Qui teniamo il profilo dell'app, collegato all'identità tramite `tokenIdentifier`.
 export default defineSchema({
@@ -137,6 +147,8 @@ export default defineSchema({
     gameId: v.optional(v.id("games")),
     /** Per `kind: "game"`: il quiz mostrato dal messaggio (al posto di `gameId`). */
     quizId: v.optional(v.id("quizzes")),
+    /** Per `kind: "game"`: il Wordle Duel mostrato dal messaggio (al posto di `gameId`). */
+    wordleDuelId: v.optional(v.id("wordleDuels")),
     /** Il riassunto di questo messaggio non è possibile (link illeggibile, video troppo lungo…): codice dell'errore, valido per tutti. */
     summaryBlocked: v.optional(v.string()),
     /** Per le risposte di /ask: il messaggio con la domanda. */
@@ -220,6 +232,48 @@ export default defineSchema({
     winnerId: v.optional(v.id("profiles")),
     finishedAt: v.optional(v.number()),
   }).index("by_conversation", ["conversationId"]),
+
+  /** Wordle Duel 1 contro 1 in una chat diretta: la stessa parola segreta, una Run a testa, in qualsiasi momento. */
+  wordleDuels: defineTable({
+    conversationId: v.id("conversations"),
+    /** Chi ha lanciato la sfida (A). */
+    playerA: v.id("profiles"),
+    playerB: v.id("profiles"),
+    /** Run timer, in minuti. */
+    runMinutes: v.union(v.literal(1), v.literal(5), v.literal(10)),
+    language: v.union(v.literal("it"), v.literal("en")),
+    /** La parola: nessuna query la restituisce finché il Duel non è chiuso. */
+    word: v.string(),
+    /** `expired` vale per l'invito senza risposta (senza `acceptedAt`) e per il Duel che nessuno ha finito (con `acceptedAt`). */
+    status: v.union(
+      v.literal("invite"),
+      v.literal("open"),
+      v.literal("closed"),
+      v.literal("declined"),
+      v.literal("withdrawn"),
+      v.literal("expired"),
+    ),
+    createdAt: v.number(),
+    acceptedAt: v.optional(v.number()),
+    finishedAt: v.optional(v.number()),
+    /** Esito del Duel chiuso: chi vince (assente = pareggio) e perché. */
+    outcome: v.optional(
+      v.object({
+        winner: v.optional(v.id("profiles")),
+        reason: v.union(
+          v.literal("fewerGuesses"),
+          v.literal("fasterRun"),
+          v.literal("onlyOneGuessed"),
+          v.literal("forfeit"),
+          v.literal("neitherGuessed"),
+        ),
+      }),
+    ),
+    runA: v.optional(wordleRun),
+    runB: v.optional(wordleRun),
+  })
+    .index("by_conversation_and_status", ["conversationId", "status"])
+    .index("by_conversation_and_language", ["conversationId", "language"]),
 
   /** Anteprime dei link (Open Graph), condivise da tutti: si scaricano una volta sola per indirizzo. */
   linkPreviews: defineTable({

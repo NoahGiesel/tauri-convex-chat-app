@@ -477,6 +477,27 @@ export const en = {
   "settings.ping.compact": "Show only the number (e.g. 42 ms)",
   "tray.open": "Open Chat",
   "tray.quit": "Quit",
+
+  "composer.cmdWordle": "Wordle Duel: the same word, each in your own Run",
+  "notif.wordle": "🟩 Wordle Duel challenge",
+  "error.wordle_in_progress": "There's already a Wordle Duel open in this chat.",
+  "wordle.title": "Wordle Duel",
+  "wordle.minutes": "{n} min",
+  "wordle.setupTitle": "Challenge to a Wordle Duel",
+  "wordle.runTimer": "Run timer",
+  "wordle.wordLanguage": "Word language",
+  "wordle.send": "Send challenge",
+  "wordle.cancel": "Cancel",
+  "wordle.challenge": "{name} challenges you: the same word, each in your own Run. Fewer guesses wins.",
+  "wordle.challengeSent": "You challenged {name}. Waiting for an answer.",
+  "wordle.withdraw": "Withdraw",
+  "wordle.expiresIn": "Expires in {time}",
+  "wordle.hoursMinutes": "{h} h {m} min",
+  "wordle.minutesOnly": "{m} min",
+  "wordle.declined": "{name} declined the Wordle Duel.",
+  "wordle.withdrawn": "{name} withdrew the Wordle Duel.",
+  "wordle.inviteExpired": "The invite expired: no answer within 24 h.",
+  "wordle.accepted": "Wordle Duel accepted.",
 } as const;
 
 export type MessageKey = keyof typeof en;

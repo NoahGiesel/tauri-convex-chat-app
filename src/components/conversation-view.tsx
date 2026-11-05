@@ -10,6 +10,9 @@ import { EmojiGifPicker, type PickerTab } from "@/components/emoji-gif-picker";
 import { MediaLightbox, type LightboxItem } from "@/components/media-lightbox";
 import { GameCard } from "@/components/game-card";
 import { QuizCard } from "@/components/quiz-card";
+import { WordleDuelCard } from "@/components/wordle/duel-card";
+import { WordleSetupPopover } from "@/components/wordle/setup-popover";
+import { WORDLE_ENABLED } from "@/lib/wordle";
 import { EmbedPlayer, LinkPreview } from "@/components/link-preview";
 import { embedFor, htmlEmbed } from "@/lib/embeds";
 import { MediaLibrary } from "@/components/media-library";
@@ -50,10 +53,11 @@ const COMMANDS = [
   { name: "stone-paper-scissors", description: "composer.cmdGame" },
   { name: "quiz3", description: "composer.cmdQuiz3" },
   { name: "quiz5", description: "composer.cmdQuiz5" },
+  ...(WORDLE_ENABLED ? ([{ name: "wordle", description: "composer.cmdWordle" }] as const) : []),
 ] as const;
 
 /** Comandi che si usano solo in una chat diretta (sono sfide 1 contro 1). */
-const DIRECT_ONLY = new Set<string>(["stone-paper-scissors", "quiz3", "quiz5"]);
+const DIRECT_ONLY = new Set<string>(["stone-paper-scissors", "quiz3", "quiz5", "wordle"]);
 
 type TextStyle = "me" | "code" | "pre" | "spoiler" | "quote";
 const MAX_ATTACHMENTS = 10;
@@ -139,6 +143,7 @@ export function ConversationView({
         gifQuery,
         gameId: null,
         quizId: null,
+        wordleDuelId: null,
         summarizable: false,
         summaryBlocked: null,
         summarized: false,
@@ -168,6 +173,8 @@ export function ConversationView({
   }, []);
   const startGame = useMutation(api.games.start);
   const startQuiz = useMutation(api.quizzes.start);
+  const startWordle = useMutation(api.wordleDuels.start);
+  const [wordleSetup, setWordleSetup] = useState(false);
   const rollDice = useMutation(api.messages.roll);
   const flipCoin = useMutation(api.messages.flip);
   const [picked, setPicked] = useState({ prefix: "", index: 0 });
@@ -583,6 +590,16 @@ export function ConversationView({
       void startQuiz({ conversationId, size: name === "quiz3" ? 3 : 5, language }).catch((e) => setError(t(errorKey(e))));
       return;
     }
+    if (name === "wordle" && WORDLE_ENABLED) {
+      if (isGroup) {
+        setError(t("error.game_direct_only"));
+        return;
+      }
+      setDraft("");
+      setError(null);
+      setWordleSetup(true);
+      return;
+    }
     if (name === "ask") {
       if (!arg) {
         setError(t("composer.commandNeedsText"));
@@ -831,6 +848,8 @@ export function ConversationView({
                   <GameCard gameId={m.gameId} onLayout={keepBottom} />
                 ) : m.kind === "game" && m.quizId ? (
                   <QuizCard quizId={m.quizId} onLayout={keepBottom} />
+                ) : m.kind === "game" && m.wordleDuelId ? (
+                  <WordleDuelCard duelId={m.wordleDuelId} onLayout={keepBottom} />
                 ) : m.kind === "media" && m.attachments.length > 0 ? (
                   <div>
                     {m.body && (
@@ -1033,6 +1052,20 @@ export function ConversationView({
                 </button>
               ))}
             </div>
+          )}
+          {wordleSetup && (
+            <WordleSetupPopover
+              onCancel={() => {
+                setWordleSetup(false);
+                composerRef.current?.focus();
+              }}
+              onSend={(runMinutes, wordLanguage) => {
+                setWordleSetup(false);
+                stickToBottom.current = true;
+                void startWordle({ conversationId, runMinutes, language: wordLanguage }).catch((e) => setError(t(errorKey(e))));
+                composerRef.current?.focus();
+              }}
+            />
           )}
           {picker && (
             <div ref={pickerBoxRef} className="absolute right-0 bottom-full z-40 mb-2">

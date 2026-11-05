@@ -97,7 +97,7 @@ export function useMessageNotifications(conversations: ConversationItem[] | null
     const preview = (l: Latest): string => {
       const caption = l.body.trim();
       if (l.kind === "gif") return "GIF";
-      if (l.kind === "game") return t(l.body === "quiz" ? "notif.quiz" : "notif.game");
+      if (l.kind === "game") return t(l.body === "quiz" ? "notif.quiz" : l.body === "wordle" ? "notif.wordle" : "notif.game");
       if (l.kind === "media") {
         const label = t(l.attachment === "video" ? "notif.video" : "notif.photo");
         return caption ? `${label} ${caption}` : label;

@@ -136,6 +136,7 @@ export const list = query({
         summarizable,
         gameId: message.gameId ?? null,
         quizId: message.quizId ?? null,
+        wordleDuelId: message.wordleDuelId ?? null,
         summarized,
         summaryBlocked: message.summaryBlocked ?? null,
         summaryOf: message.summaryOf ?? null,
