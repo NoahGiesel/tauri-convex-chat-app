@@ -43,3 +43,19 @@ export const setLastSeenAt = internalMutation({
     await ctx.db.patch("profiles", profile._id, { lastSeenAt: args.lastSeenAt });
   },
 });
+
+/**
+ * The server picks a Wordle Duel's word at random, so a test sets the open Duel's word after acceptance to one it knows.
+ * A scan, because a test plays one Duel on a fresh Seed, and no index has the status alone.
+ */
+export const setWordleWord = internalMutation({
+  args: { word: v.string() },
+  handler: async (ctx, args) => {
+    const open = [];
+    for await (const duel of ctx.db.query("wordleDuels")) {
+      if (duel.status === "open") open.push(duel);
+    }
+    if (open.length !== 1) throw new Error(`expected one open Wordle Duel, found ${open.length}`);
+    await ctx.db.patch("wordleDuels", open[0]._id, { word: args.word });
+  },
+});

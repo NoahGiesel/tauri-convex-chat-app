@@ -199,7 +199,7 @@ Every run has two Driven users, `alice` and `bob`. Single-user tests leave `bob`
 
 | Fixture | Seed | Hands to a test | Scenarios |
 |---|---|---|---|
-| `twoFriendsWithChatOpen` | `friends` | `alice`, `bob` with their chat open | Send a photo, send a video, caption, several files, remove a staged file, wrong type, too many files, GIF picker, `/giphy` |
+| `twoFriendsWithChatOpen` | `friends` | `alice`, `bob` with their chat open | Send a photo, send a video, caption, several files, remove a staged file, wrong type, too many files, GIF picker, `/giphy`, a Wordle Duel |
 | `mediaChatOpen` | `media` | `alice`, `bob` with their chat open, and `storage`, the stub's record of deletions from the Reset on | Seeded attachment, lightbox, media library, link library, Seeded preview card, delete an attachment, a `.invalid` link shows no card |
 | `settingsOpen` | `friends` | `alice` in Settings, `bob` with the chat open | Name and bio seen live by Bob, set and remove an avatar, language, theme, sidebar side, accent colour, theme import, notify switch |
 
@@ -208,6 +208,7 @@ Every run has two Driven users, `alice` and `bob`. Single-user tests leave `bob`
 - **Language:** one test walks through all five languages, checks one label from each dictionary, then reloads and checks that the last choice stayed. The label is the language list's own name, `auth.language`, and after the reload the Settings button's. The Fixtures import all five dictionaries for this. The language list itself is found by its options, because its name changes with every choice. A `<select>` cannot be typed into, so a Fixture sets its value through the native setter and fires `change`, which is what React reads. The custom accent's colour picker is set the same way, with `input`.
 - **Appearance:** tests choose a preset, light mode, a custom accent and the sidebar side. A theme counts as applied once its card says "In use" and its background is the page's `--app-bg`. The sidebar counts as moved once the Settings button, which sits in it, is in the right half of the window.
 - **Theme import:** a synthetic `change` works. A test imports `e2e/assets/harbour-theme.json` through `theme-import-input`, the third of the file inputs, and sees it in use. Another imports `note.txt` and is told it is not valid JSON.
+- **Wordle Duel:** one scenario plays the core flow: Alice challenges, Bob accepts, both play their Run, and both see the closed card and the result line. Alice solves in fewer guesses, so she wins every time. The server picks the word at random, so after Bob accepts, the Fixture runs `e2eSeed:setWordleWord`, a stage-only internal function in `e2e/stage-seed.ts` that sets the open Duel's word. The test then holds literal guesses. Each player opens their Run from the card, and the Run window is found as the one new window handle, as `popOut` finds a chat's window. Guesses go through the on-screen keyboard by each key's name, which works with the window in the background, where key events would need focus. The physical keyboard stays in the Manual smoke. Decline, withdraw, rejected guesses, giving up, See your Run, timeout, forfeit and expiry are left to the unit tests.
 - **Updates:** only the notify switch is tested, off and still off after a reload. "Check for updates" would call the real endpoint. Opening Settings › Updates checks nothing, because the Test build turns automatic checks off.
 
 ## Driving the app
@@ -390,8 +391,9 @@ These come from one machine with very little data. Treat them as orders of magni
 6. Drag a tab into a split view.
 7. Drag a tab out of the window.
 8. Hover a message and see its actions.
-9. Get a system notification.
-10. See the Dock badge, on macOS.
+9. Play a Wordle Run with the physical keyboard.
+10. Get a system notification.
+11. See the Dock badge, on macOS.
 
 **Short Manual smoke,** on the other system: install, open, a system notification, and the Dock badge if that system is macOS. A releaser without access to the other system says so in the release notes.
 
