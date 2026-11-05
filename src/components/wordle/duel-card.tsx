@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
+import type { FunctionReturnType } from "convex/server";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { useI18n } from "@/i18n/i18n-provider";
@@ -8,7 +9,27 @@ import { outlineButtonClass, primaryButtonClass } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 import { openRunWindow } from "@/lib/popout";
 import { WORDLE_LANGUAGE_NAME, formatHoursMinutes, formatMinutesSeconds } from "@/lib/wordle";
+import type { MessageKey } from "@/i18n/en";
+import { MAX_GUESSES, type OutcomeReason } from "../../../convex/wordleRules";
+import { Grid } from "./grid";
 import { Tile } from "./tile";
+
+type Card = NonNullable<FunctionReturnType<typeof api.wordleDuels.get>>;
+type Side = "a" | "b";
+
+const PLAYER_STATE: Record<Card["players"]["a"], MessageKey> = {
+  toPlay: "wordle.toPlay",
+  playing: "wordle.playing",
+  finished: "wordle.finished",
+};
+
+/** Perché ha vinto, sotto "🏆 Nome vince". */
+const WIN_REASON: Record<Exclude<OutcomeReason, "neitherGuessed">, MessageKey> = {
+  fewerGuesses: "wordle.reason.fewerGuesses",
+  fasterRun: "wordle.reason.fasterRun",
+  onlyOneGuessed: "wordle.reason.onlyOneGuessed",
+  forfeit: "wordle.reason.forfeit",
+};
 
 /** Ogni quanto si aggiorna la scheda: ogni secondo mentre la tua Run è in corso, altrimenti bastano ore e minuti. */
 const TICK_MS = 30_000;
@@ -36,7 +57,7 @@ export function WordleDuelCard({ duelId, onLayout }: { duelId: Id<"wordleDuels">
     if (duel) offset.current = duel.serverNow - Date.now();
   }, [duel]);
 
-  const layoutKey = `${duel?.status ?? ""}-${duel?.myRun?.state ?? ""}`;
+  const layoutKey = `${duel?.status ?? ""}-${duel?.players.a ?? ""}-${duel?.players.b ?? ""}`;
   useEffect(() => {
     onLayout?.();
   }, [layoutKey, onLayout]);
@@ -58,6 +79,7 @@ export function WordleDuelCard({ duelId, onLayout }: { duelId: Id<"wordleDuels">
   return (
     <div
       data-testid="wordle-duel-card"
+      data-wordle-duel={duelId}
       className="mt-1.5 flex w-[min(420px,100%)] flex-col gap-3 rounded-[calc(14px*var(--radius-scale))] border-2 border-app-border-strong bg-app-field/50 p-4"
     >
       <div className="flex items-center justify-between gap-2">
@@ -101,6 +123,19 @@ export function WordleDuelCard({ duelId, onLayout }: { duelId: Id<"wordleDuels">
         </>
       )}
 
+      {duel.status === "open" && (
+        <div className="grid grid-cols-2 gap-2">
+          {(["a", "b"] as const).map((side) => (
+            <div key={side} className="flex flex-col items-center gap-0.5 rounded-xl border border-app-border bg-app-bg px-2 py-2">
+              <span className="max-w-full truncate text-sm font-bold text-app-text-strong">{side === "a" ? duel.nameA : duel.nameB}</span>
+              <span className={cn("text-xs", duel.players[side] === "finished" ? "font-semibold text-app-online" : "text-app-text-muted")}>
+                {t(PLAYER_STATE[duel.players[side]])}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
       {duel.status === "open" && duel.myRun && (
         <div className="flex flex-col items-center gap-1.5">
           {duel.myRun.state === "toPlay" && (
@@ -123,11 +158,79 @@ export function WordleDuelCard({ duelId, onLayout }: { duelId: Id<"wordleDuels">
           )}
         </div>
       )}
+      {duel.status === "open" && duel.deadline !== null && (
+        <p className="text-center text-[11px] text-app-text-dim">
+          {t("wordle.hiddenUntilBoth", { time: formatHoursMinutes(duel.deadline - serverNow, t) })}
+        </p>
+      )}
+
+      {duel.status === "closed" && duel.result && <ClosedResult duel={duel} result={duel.result} />}
+
       {duel.status === "declined" && <p className="text-sm text-app-text-muted">{t("wordle.declined", { name: duel.nameB })}</p>}
       {duel.status === "withdrawn" && <p className="text-sm text-app-text-muted">{t("wordle.withdrawn", { name: duel.nameA })}</p>}
-      {duel.status === "expired" && duel.acceptedAt === null && <p className="text-sm text-app-text-muted">{t("wordle.inviteExpired")}</p>}
+      {duel.status === "expired" && (
+        <p className="text-sm text-app-text-muted">{t(duel.acceptedAt === null ? "wordle.inviteExpired" : "wordle.duelExpired")}</p>
+      )}
 
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
     </div>
+  );
+}
+
+/** La scheda chiusa: la parola, una colonna per giocatore e chi ha vinto. */
+function ClosedResult({ duel, result }: { duel: Card; result: NonNullable<Card["result"]> }) {
+  const { t } = useI18n();
+  const winner = result.outcome?.winner ?? null;
+  const name = (side: Side) => (side === "a" ? duel.nameA : duel.nameB);
+  return (
+    <>
+      <div className="flex flex-col items-center gap-1">
+        <span className="text-xs font-semibold text-app-text-muted">{t("wordle.wordWas")}</span>
+        <div className="flex gap-1" aria-label={result.word.toUpperCase()}>
+          {[...result.word].map((letter, i) => (
+            <Tile key={i} size="md" letter={letter} kind="correct" />
+          ))}
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {(["a", "b"] as const).map((side) => {
+          const run = result.runs[side];
+          return (
+            <div
+              key={side}
+              className={cn(
+                "flex flex-col items-center gap-1.5 rounded-xl border-2 bg-app-bg px-2 py-2",
+                winner === side ? "border-app-accent" : "border-app-border",
+              )}
+            >
+              <span className="max-w-full truncate text-sm font-bold text-app-text-strong">{name(side)}</span>
+              {run ? (
+                <>
+                  <Grid guesses={run.guesses} size="sm" />
+                  <span className="text-xs font-bold text-app-text-strong tabular-nums">
+                    {run.endReason === "solved" ? run.guesses.length : "X"}/{MAX_GUESSES} · {formatMinutesSeconds(run.timeMs)}
+                  </span>
+                  {(run.endReason === "timeout" || run.endReason === "gaveUp") && (
+                    <span className="text-[11px] text-app-text-dim">{t(run.endReason === "timeout" ? "wordle.timeOutNote" : "wordle.gaveUpNote")}</span>
+                  )}
+                </>
+              ) : (
+                <span className="py-4 text-center text-xs text-app-text-muted">{t("wordle.didNotFinish")}</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <p className="text-center text-sm font-bold text-app-text-strong">
+        {result.outcome && winner !== null && result.outcome.reason !== "neitherGuessed" ? (
+          <>
+            {t("wordle.wins", { name: name(winner) })}
+            <span className="block text-xs font-normal text-app-text-muted">{t(WIN_REASON[result.outcome.reason])}</span>
+          </>
+        ) : (
+          t(result.outcome?.reason === "neitherGuessed" ? "wordle.drawNeither" : "wordle.drawTie")
+        )}
+      </p>
+    </>
   );
 }

@@ -11,6 +11,7 @@ import { MediaLightbox, type LightboxItem } from "@/components/media-lightbox";
 import { GameCard } from "@/components/game-card";
 import { QuizCard } from "@/components/quiz-card";
 import { WordleDuelCard } from "@/components/wordle/duel-card";
+import { WordleResultLine } from "@/components/wordle/result-line";
 import { WordleSetupPopover } from "@/components/wordle/setup-popover";
 import { WORDLE_ENABLED } from "@/lib/wordle";
 import { EmbedPlayer, LinkPreview } from "@/components/link-preview";
@@ -778,6 +779,10 @@ export function ConversationView({
           }
 
           const m = row.message;
+          // Il messaggio di chiusura di un Wordle Duel non ha autore: è una riga al centro, non una risposta dell'AI.
+          if (m.kind === "game" && m.wordleDuelId && m.authorId === null) {
+            return <WordleResultLine key={m._id} duelId={m.wordleDuelId} />;
+          }
           const isAi = m.kind === "ai";
 
           return (

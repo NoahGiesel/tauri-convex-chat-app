@@ -1,5 +1,5 @@
 import type { MessageKey } from "@/i18n/en";
-import type { WordleLanguage } from "../../convex/wordleRules";
+import type { OutcomeReason, ResultSummary, WordleLanguage } from "../../convex/wordleRules";
 
 /** `/wordle` resta nascosto fino al rilascio: solo in sviluppo e nella build di test dell'E2E. */
 export const WORDLE_ENABLED = import.meta.env.DEV || import.meta.env.VITE_E2E === "1";
@@ -21,4 +21,20 @@ export function formatHoursMinutes(ms: number, t: Translate): string {
 export function formatMinutesSeconds(ms: number): string {
   const seconds = Math.max(0, Math.ceil(ms / 1000));
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+}
+
+/** La riga di chiusura di ogni esito con un vincitore; i pareggi e i Duel scaduti hanno la loro. */
+const RESULT_LINE: Record<OutcomeReason, MessageKey> = {
+  fewerGuesses: "wordle.result.fewerGuesses",
+  fasterRun: "wordle.result.fasterRun",
+  onlyOneGuessed: "wordle.result.onlyOneGuessed",
+  forfeit: "wordle.result.forfeit",
+  neitherGuessed: "wordle.result.draw",
+};
+
+/** La riga che annuncia la chiusura del Duel, in chat e nella notifica. */
+export function formatWordleResult(r: ResultSummary, t: Translate): string {
+  if (r.status === "expired" || r.reason === null) return t("wordle.duelExpired");
+  if (r.winnerName === null) return t(r.reason === "neitherGuessed" ? "wordle.result.draw" : "wordle.result.tie");
+  return t(RESULT_LINE[r.reason], { name: r.winnerName, n: r.winnerGuesses ?? 0, m: r.otherGuesses ?? 0 });
 }
