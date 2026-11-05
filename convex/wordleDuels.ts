@@ -3,11 +3,10 @@ import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { internalMutation, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import { fail, getProfile, requireMember, requireProfile } from "./model";
+import { wordleLanguage, wordleRunMinutes } from "./schema";
 import { INVITE_TTL_MS } from "./wordleRules";
 import { pickSolution } from "./wordleWords";
 
-const runMinutes = v.union(v.literal(1), v.literal(5), v.literal(10));
-const language = v.union(v.literal("it"), v.literal("en"));
 /** Parole dei Duel passati lette per non ripeterle: più di quante soluzioni ha una lista. */
 const USED_WORDS_LIMIT = 3000;
 
@@ -23,15 +22,18 @@ async function activeDuel(ctx: QueryCtx, conversationId: Id<"conversations">): P
   return null;
 }
 
-/** Aggiunge un messaggio alla chat e la fa salire nell'elenco; per chi scrive il messaggio è già letto. */
-async function postMessage(ctx: MutationCtx, message: Omit<Doc<"messages">, "_id" | "_creationTime">) {
+async function membersOf(ctx: QueryCtx, conversationId: Id<"conversations">) {
+  return await ctx.db
+    .query("members")
+    .withIndex("by_conversation", (q) => q.eq("conversationId", conversationId))
+    .take(5);
+}
+
+/** Aggiunge alla chat un messaggio del Duel e la fa salire nell'elenco; per chi scrive il messaggio è già letto. */
+async function postDuelMessage(ctx: MutationCtx, members: Doc<"members">[], message: Omit<Doc<"messages">, "_id" | "_creationTime">) {
   const now = Date.now();
   await ctx.db.insert("messages", message);
   await ctx.db.patch("conversations", message.conversationId, { lastMessageAt: now });
-  const members = await ctx.db
-    .query("members")
-    .withIndex("by_conversation", (q) => q.eq("conversationId", message.conversationId))
-    .take(5);
   for (const m of members) {
     await ctx.db.patch("members", m._id, m.profileId === message.authorId ? { lastMessageAt: now, lastReadAt: now } : { lastMessageAt: now });
   }
@@ -39,27 +41,24 @@ async function postMessage(ctx: MutationCtx, message: Omit<Doc<"messages">, "_id
 
 /** `/wordle`: sfida l'altra persona di una chat diretta a un Wordle Duel. La parola la sceglie il server. */
 export const start = mutation({
-  args: { conversationId: v.id("conversations"), runMinutes, language },
+  args: { conversationId: v.id("conversations"), runMinutes: wordleRunMinutes, language: wordleLanguage },
   handler: async (ctx, args) => {
     const me = await requireProfile(ctx);
     await requireMember(ctx, args.conversationId, me._id);
     const conversation = await ctx.db.get("conversations", args.conversationId);
     if (!conversation || conversation.kind !== "direct") throw fail("game_direct_only");
-    const members = await ctx.db
-      .query("members")
-      .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
-      .take(5);
+    const members = await membersOf(ctx, args.conversationId);
     const peer = members.find((m) => m.profileId !== me._id);
     if (!peer) throw fail("game_direct_only");
     if (await activeDuel(ctx, args.conversationId)) throw fail("wordle_in_progress");
 
-    // Niente parole già uscite in questa chat e lingua, finché ce ne sono di nuove.
+    // Niente parole già giocate in questa chat e lingua (Duel accettati), finché ce ne sono di nuove.
     const past = await ctx.db
       .query("wordleDuels")
       .withIndex("by_conversation_and_language", (q) => q.eq("conversationId", args.conversationId).eq("language", args.language))
       .order("desc")
       .take(USED_WORDS_LIMIT);
-    const word = pickSolution(args.language, new Set(past.map((d) => d.word)));
+    const word = pickSolution(args.language, new Set(past.flatMap((d) => (d.acceptedAt !== undefined ? [d.word] : []))));
 
     const createdAt = Date.now();
     const duelId = await ctx.db.insert("wordleDuels", {
@@ -72,7 +71,7 @@ export const start = mutation({
       status: "invite",
       createdAt,
     });
-    await postMessage(ctx, { conversationId: args.conversationId, authorId: me._id, kind: "game", body: "wordle", wordleDuelId: duelId });
+    await postDuelMessage(ctx, members, { conversationId: args.conversationId, authorId: me._id, kind: "game", body: "wordle", wordleDuelId: duelId });
     await ctx.scheduler.runAt(createdAt + INVITE_TTL_MS, internal.wordleDuels.expireInvite, { duelId });
     return duelId;
   },

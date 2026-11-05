@@ -130,6 +130,15 @@ describe("un solo Duel aperto per chat", () => {
     await challenge(g);
     await expect(g.alice.mutation(api.games.start, { conversationId: g.direct })).resolves.toBeDefined();
   });
+
+  it("convive con il quiz, in tutti e due i versi", async () => {
+    const f = await twoFriends();
+    await f.alice.mutation(api.quizzes.start, { conversationId: f.direct, size: 3, language: "it" });
+    await challenge(f);
+    const g = await twoFriends();
+    await challenge(g);
+    await expect(g.alice.mutation(api.quizzes.start, { conversationId: g.direct, size: 3, language: "it" })).resolves.toBeDefined();
+  });
 });
 
 describe("risposta all'invito", () => {
@@ -199,15 +208,29 @@ describe("scadenza dell'invito", () => {
 });
 
 describe("scelta della parola", () => {
-  it("non ripete una parola già usata nella chat e nella lingua", async () => {
+  async function wordOf(f: Awaited<ReturnType<typeof twoFriends>>, duelId: Id<"wordleDuels">) {
+    return await f.t.run(async (ctx) => (await ctx.db.get("wordleDuels", duelId))!.word);
+  }
+
+  it("non ripete una parola già giocata nella chat e nella lingua", async () => {
     const f = await twoFriends();
     vi.spyOn(Math, "random").mockReturnValue(0); // senza il filtro uscirebbe sempre la stessa parola
     const words = new Set<string>();
     for (let i = 0; i < 5; i++) {
       const duelId: Id<"wordleDuels"> = await challenge(f);
-      words.add(await f.t.run(async (ctx) => (await ctx.db.get("wordleDuels", duelId))!.word));
-      await f.alice.mutation(api.wordleDuels.respond, { duelId, action: "withdraw" });
+      await f.bob.mutation(api.wordleDuels.respond, { duelId, action: "accept" });
+      words.add(await wordOf(f, duelId));
+      await f.t.run((ctx) => ctx.db.patch("wordleDuels", duelId, { status: "closed" }));
     }
     expect(words.size).toBe(5);
+  });
+
+  it("la parola di un invito mai accettato resta libera", async () => {
+    const f = await twoFriends();
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    const first = await challenge(f);
+    await f.bob.mutation(api.wordleDuels.respond, { duelId: first, action: "decline" });
+    const second = await challenge(f);
+    expect(await wordOf(f, second)).toBe(await wordOf(f, first));
   });
 });

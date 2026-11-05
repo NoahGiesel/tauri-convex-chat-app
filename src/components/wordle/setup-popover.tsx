@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useI18n } from "@/i18n/i18n-provider";
 import { outlineButtonClass, primaryButtonClass, sectionLabelClass } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
-import { WORDLE_LANGUAGE_NAME, type RunMinutes, type WordleLanguage } from "@/lib/wordle";
-import { RUN_MINUTES, WORDLE_LANGUAGES } from "../../../convex/wordleRules";
+import { WORDLE_LANGUAGE_NAME } from "@/lib/wordle";
+import { RUN_MINUTES, WORDLE_LANGUAGES, type RunMinutes, type WordleLanguage } from "../../../convex/wordleRules";
 
 function Segmented<T extends string | number>({
   label,
@@ -52,9 +52,20 @@ export function WordleSetupPopover({
   const { t, language: appLanguage } = useI18n();
   const [runMinutes, setRunMinutes] = useState<RunMinutes>(5);
   const [language, setLanguage] = useState<WordleLanguage>(appLanguage === "it" ? "it" : "en");
+  const boxRef = useRef<HTMLDivElement>(null);
+
+  // Un clic fuori dal pannello lo chiude, come Esc.
+  useEffect(() => {
+    const onDown = (e: MouseEvent) => {
+      if (boxRef.current && !boxRef.current.contains(e.target as Node)) onCancel();
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [onCancel]);
 
   return (
     <div
+      ref={boxRef}
       role="dialog"
       aria-label={t("wordle.setupTitle")}
       onKeyDown={(e) => e.key === "Escape" && onCancel()}

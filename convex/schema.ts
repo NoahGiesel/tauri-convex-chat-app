@@ -1,6 +1,10 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
+/** Run timer del Wordle Duel, in minuti, e lingua della parola: li usano anche le funzioni in `wordleDuels.ts`. */
+export const wordleRunMinutes = v.union(v.literal(1), v.literal(5), v.literal(10));
+export const wordleLanguage = v.union(v.literal("it"), v.literal("en"));
+
 /** Una Run del Wordle Duel: si salvano solo le parole, i colori li calcola il server dalla parola. */
 const wordleRun = v.object({
   startedAt: v.number(),
@@ -240,8 +244,8 @@ export default defineSchema({
     playerA: v.id("profiles"),
     playerB: v.id("profiles"),
     /** Run timer, in minuti. */
-    runMinutes: v.union(v.literal(1), v.literal(5), v.literal(10)),
-    language: v.union(v.literal("it"), v.literal("en")),
+    runMinutes: wordleRunMinutes,
+    language: wordleLanguage,
     /** La parola: nessuna query la restituisce finché il Duel non è chiuso. */
     word: v.string(),
     /** `expired` vale per l'invito senza risposta (senza `acceptedAt`) e per il Duel che nessuno ha finito (con `acceptedAt`). */

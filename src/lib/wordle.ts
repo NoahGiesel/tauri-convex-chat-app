@@ -1,13 +1,11 @@
 import type { MessageKey } from "@/i18n/en";
-import type { RunMinutes, WordleLanguage } from "../../convex/wordleRules";
+import type { WordleLanguage } from "../../convex/wordleRules";
 
 /** `/wordle` resta nascosto fino al rilascio: solo in sviluppo e nella build di test dell'E2E. */
 export const WORDLE_ENABLED = import.meta.env.DEV || import.meta.env.VITE_E2E === "1";
 
 /** Nome della lingua della parola, scritto sempre nella lingua stessa. */
 export const WORDLE_LANGUAGE_NAME: Record<WordleLanguage, string> = { it: "Italiano", en: "English" };
-
-export type { RunMinutes, WordleLanguage };
 
 type Translate = (key: MessageKey, vars?: Record<string, string | number>) => string;
 

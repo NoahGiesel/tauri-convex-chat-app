@@ -57,7 +57,7 @@ const COMMANDS = [
 ] as const;
 
 /** Comandi che si usano solo in una chat diretta (sono sfide 1 contro 1). */
-const DIRECT_ONLY = new Set<string>(["stone-paper-scissors", "quiz3", "quiz5", "wordle"]);
+const DIRECT_ONLY = new Set<string>(["stone-paper-scissors", "quiz3", "quiz5", ...(WORDLE_ENABLED ? ["wordle"] : [])]);
 
 type TextStyle = "me" | "code" | "pre" | "spoiler" | "quote";
 const MAX_ATTACHMENTS = 10;
@@ -568,11 +568,11 @@ export function ConversationView({
       await post(() => sendMessage({ conversationId, body: arg, style: name as TextStyle }), body);
       return;
     }
+    if (name && DIRECT_ONLY.has(name) && isGroup) {
+      setError(t("error.game_direct_only"));
+      return;
+    }
     if (name === "stone-paper-scissors") {
-      if (isGroup) {
-        setError(t("error.game_direct_only"));
-        return;
-      }
       setDraft("");
       setError(null);
       stickToBottom.current = true;
@@ -580,10 +580,6 @@ export function ConversationView({
       return;
     }
     if (name === "quiz3" || name === "quiz5") {
-      if (isGroup) {
-        setError(t("error.game_direct_only"));
-        return;
-      }
       setDraft("");
       setError(null);
       stickToBottom.current = true;
@@ -591,10 +587,6 @@ export function ConversationView({
       return;
     }
     if (name === "wordle" && WORDLE_ENABLED) {
-      if (isGroup) {
-        setError(t("error.game_direct_only"));
-        return;
-      }
       setDraft("");
       setError(null);
       setWordleSetup(true);
