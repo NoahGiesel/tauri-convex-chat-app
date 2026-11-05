@@ -214,8 +214,24 @@ function AiTab({ conversationId }: { conversationId: Id<"conversations"> }) {
   );
 }
 
-/** Risultato di una Run nell'elenco: tentativi su sei, o X se la parola non è stata indovinata. */
+/** Risultato di una Run nell'elenco: tentativi sul massimo, o X se la parola non è stata indovinata. */
 const runScore = (guesses: number | null) => `${guesses ?? "X"}/${MAX_GUESSES}`;
+
+/** L'icona di ogni gioco, nel titolo delle statistiche e nell'elenco. */
+const GAME_ICON = { rps: "🪨", quiz: "🧠", wordle: "🟩" } as const;
+
+/** Una partita finita nell'elenco della scheda "Giochi", qualunque sia il gioco. */
+interface FinishedGameRow {
+  _id: string;
+  finishedAt: number;
+  nameA: string;
+  nameB: string;
+  score: string;
+  winnerSide: "a" | "b" | null;
+  icon: string;
+  /** Etichetta accanto alla data (formato del quiz, Run timer e lingua del Duel); null se non serve. */
+  tag: string | null;
+}
 
 /** Storico dei giochi della chat (sasso-carta-forbici, quiz e Wordle Duel), con le statistiche di chi ha giocato. */
 function GamesTab({ conversationId }: { conversationId: Id<"conversations"> }) {
@@ -284,33 +300,33 @@ function GamesTab({ conversationId }: { conversationId: Id<"conversations"> }) {
     );
   };
 
-  const list = [
-    ...rps.recent.map((g) => ({ ...g, score: `${g.scoreA}–${g.scoreB}`, icon: "🪨", mode: null as string | null })),
-    ...quiz.recent.map((g) => ({ ...g, score: `${g.scoreA}–${g.scoreB}`, icon: "🧠", mode: `quiz${g.size}` as string | null })),
+  const list: FinishedGameRow[] = [
+    ...rps.recent.map((g) => ({ ...g, score: `${g.scoreA}–${g.scoreB}`, icon: GAME_ICON.rps, tag: null })),
+    ...quiz.recent.map((g) => ({ ...g, score: `${g.scoreA}–${g.scoreB}`, icon: GAME_ICON.quiz, tag: `quiz${g.size}` })),
     ...wordle.recent.map((g) => ({
       ...g,
       score: `${runScore(g.guessesA)}–${runScore(g.guessesB)}`,
-      icon: "🟩",
-      mode: `${t("wordle.minutes", { n: g.runMinutes })} · ${g.language.toUpperCase()}` as string | null,
+      icon: GAME_ICON.wordle,
+      tag: `${t("wordle.minutes", { n: g.runMinutes })} · ${g.language.toUpperCase()}`,
     })),
   ].sort((x, y) => y.finishedAt - x.finishedAt);
 
   return (
     <div className="flex flex-col gap-3">
       {stats(
-        `🪨 ${t("game.title")}`,
+        `${GAME_ICON.rps} ${t("game.title")}`,
         rps.total,
         rps.draws,
         rps.players.map((p) => ({ profileId: p.profileId, name: p.name, wins: p.wins, extra: t("library.gamesRounds", { count: p.roundWins }) })),
       )}
       {stats(
-        `🧠 ${t("library.quizzes")}`,
+        `${GAME_ICON.quiz} ${t("library.quizzes")}`,
         quiz.total,
         quiz.draws,
         quiz.players.map((p) => ({ profileId: p.profileId, name: p.name, wins: p.wins, extra: t("library.quizPoints", { count: p.points }) })),
       )}
       {stats(
-        `🟩 ${t("wordle.title")}`,
+        `${GAME_ICON.wordle} ${t("wordle.title")}`,
         wordle.total,
         wordle.draws,
         wordle.players.map((p) => ({
@@ -334,7 +350,7 @@ function GamesTab({ conversationId }: { conversationId: Id<"conversations"> }) {
               </div>
               <div className="text-[11px] text-app-text-dim">
                 {when(g.finishedAt)}
-                {g.mode && <span className="ml-1.5 rounded bg-app-field px-1 py-px font-mono font-semibold text-app-text-muted">{g.mode}</span>}
+                {g.tag && <span className="ml-1.5 rounded bg-app-field px-1 py-px font-mono font-semibold text-app-text-muted">{g.tag}</span>}
               </div>
             </div>
             <span className={cn("shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-bold", g.winnerSide ? "bg-app-accent-soft text-app-accent-text" : "bg-app-field text-app-text-muted")}>
