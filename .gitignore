@@ -11,3 +11,4 @@ src-tauri/gen
 e2e/.stage
 e2e/.profiles
 e2e/.failures
+scripts/wordle-lists/.cache
