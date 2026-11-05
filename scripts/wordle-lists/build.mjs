@@ -5,6 +5,7 @@
 //   node scripts/wordle-lists/build.mjs --candidates  stampa le parole di wordfreq che mancano a Morph-it!,
 //                                                     da rivedere per include-guesses-it.txt
 //
+// Serve un Node che tolga i tipi da solo (22.18+ o 24+): lo script importa la regola delle lettere da convex/wordleRules.ts.
 // Le fonti sono fissate per commit e controllate con SHA-256: gli stessi ingressi danno le stesse liste.
 // Le liste a mano (exclude-solutions-*.txt, include-guesses-it.txt) stanno accanto a questo file.
 import { createHash } from "node:crypto";
@@ -12,7 +13,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { gunzipSync } from "node:zlib";
-import { passesLetterRule } from "../../convex/wordleLetters.ts";
+import { missingFromGuesses, passesLetterRule } from "../../convex/wordleRules.ts";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const CACHE = join(HERE, ".cache");
@@ -69,10 +70,12 @@ function readList(name) {
 
 const SKIP_POS = new Set(["abbr", "pre", "suf", "wp", "we", "x", "s"]);
 const PROPER_CLASSES = new Set(["person", "surname", "place", "name", "demonym", "trademark", "name?", "upper", "upper?", "abbr", "abbr?"]);
-/** Livelli di variante ammessi nei tentativi: tutti tranne "uncommon" (-), "archaic" (@) e "invalid" (x). */
-const BAD_LEVELS = new Set(["-", "@", "x"]);
-/** Annotazioni di forma da scartare: "uncommon", "archaic", "nearly non-existent". */
-const BAD_ANNOTATIONS = new Set(["-", "@", "!"]);
+/** Livelli di variante esclusi anche dai tentativi: solo "invalid" (x), cioè gli errori di ortografia. */
+const BAD_LEVELS = new Set(["x"]);
+/** Annotazioni di forma escluse anche dai tentativi: solo "nearly non-existent" (!). */
+const BAD_ANNOTATIONS = new Set(["!"]);
+/** Annotazioni che restano tentativi validi ma si tolgono dalla parola: usage dependent, uncommon, archaic, inapplicable, ambiguous. */
+const KEPT_ANNOTATIONS = "*-@~†";
 
 /** Divide `s` su `sep` fuori dalle parentesi tonde. */
 function splitTop(s, sep) {
@@ -98,7 +101,7 @@ function derivedWord(raw) {
   const last = word.at(-1);
   if (word === "-" || word === "") return null;
   if (BAD_ANNOTATIONS.has(last)) return null;
-  if ("*~†".includes(last)) word = word.slice(0, -1);
+  if (KEPT_ANNOTATIONS.includes(last)) word = word.slice(0, -1);
   return word;
 }
 
@@ -153,21 +156,28 @@ function parseEsdb(text) {
       groupSkipped = true;
       continue;
     }
+    // Un gruppo "uncommon" o "archaic" resta tra i tentativi, ma non dà soluzioni.
+    const rareGroup = lemma !== "-" && KEPT_ANNOTATIONS.includes(lemma[0]);
+    if (rareGroup) lemma = lemma.slice(1);
+    // Le parole offensive restano fuori anche dai tentativi: a Duel chiuso l'altro giocatore vede la griglia.
     if (groupSkipped || SKIP_POS.has(pos) || usage.startsWith("offensive")) continue;
     if (variants && variants.every((t) => t !== "+" && BAD_LEVELS.has(t.slice(1)))) continue;
     // Le grafie solo australiane (codice D) restano fuori, come la regione AU.
     if (variants && variants.every((t) => t[0] === "D")) continue;
 
-    // Una riga vale per le soluzioni se è (anche) grafia americana, senza variante o con "include".
-    const american = !variants || variants.some((t) => (t[0] === "A" || t[0] === "_") && (t.length === 1 || t[1] === "."));
+    // Una riga vale per le soluzioni se non è solo britannica, canadese o australiana: grafia americana (A) o comune (_).
+    // Le grafie "uncommon" (-) e "archaic" (@) restano solo tentativi.
+    const american = !variants || variants.some((t) => (t[0] === "A" || t[0] === "_") && !"-@x".includes(t.slice(1) || " "));
     const solutionUsage = usage === "";
     const proper = PROPER_CLASSES.has(posClass ?? "");
 
     if (lemma !== "-") {
-      lemma = derivedWord(lemma);
-      if (lemma && passesLetterRule("en", lemma) && minAll <= EN_GUESS_SIZE) {
-        guesses.add(lemma);
-        if (minNoRegion <= EN_SOLUTION_SIZE && american && solutionUsage && !proper) solutions.add(lemma);
+      const rareForm = "-@".includes(lemma.at(-1));
+      const word = derivedWord(lemma);
+      if (word && passesLetterRule("en", word) && minAll <= EN_GUESS_SIZE) {
+        guesses.add(word);
+        const common = !rareGroup && !rareForm;
+        if (minNoRegion <= EN_SOLUTION_SIZE && american && common && solutionUsage && !proper) solutions.add(word);
       }
     }
 
@@ -253,8 +263,8 @@ function minus(set, remove) {
 }
 
 /** Fallisce se una soluzione non è anche un tentativo. */
-export function assertSolutionsAreGuesses(lang, solutions, guesses) {
-  const missing = [...solutions].filter((w) => !guesses.has(w));
+function assertSolutionsAreGuesses(lang, solutions, guesses) {
+  const missing = missingFromGuesses(solutions, guesses);
   if (missing.length) throw new Error(`${lang}: soluzioni che non sono tentativi: ${missing.join(", ")}`);
 }
 
@@ -325,4 +335,4 @@ async function main() {
   );
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) await main();
+await main();

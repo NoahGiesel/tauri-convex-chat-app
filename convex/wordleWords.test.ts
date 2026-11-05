@@ -1,10 +1,8 @@
 /// <reference types="vite/client" />
 import { describe, expect, test } from "vitest";
-import { passesLetterRule } from "./wordleLetters";
 import { EN_GUESSES, EN_SOLUTIONS, IT_GUESSES, IT_SOLUTIONS } from "./wordleLists";
+import { missingFromGuesses, passesLetterRule, unpack as words } from "./wordleRules";
 import { isGuess, pickSolution } from "./wordleWords";
-
-const words = (packed: string) => packed.match(/.{5}/g) ?? [];
 
 describe("regola delle lettere", () => {
   test("cinque lettere minuscole a–z", () => {
@@ -66,8 +64,20 @@ describe("liste generate", () => {
     expect(guessList.length * 5).toBe(guesses.length);
     expect(solutionList.length * 5).toBe(solutions.length);
     for (const word of [...guessList, ...solutionList]) expect(passesLetterRule(lang, word)).toBe(true);
-    const guessSet = new Set(guessList);
-    expect(solutionList.filter((word) => !guessSet.has(word))).toEqual([]);
+    expect(missingFromGuesses(solutionList, new Set(guessList))).toEqual([]);
+  });
+
+  test("il controllo dello script trova la soluzione che non è un tentativo", () => {
+    expect(missingFromGuesses(["crane", "zzzzz"], new Set(["crane"]))).toEqual(["zzzzz"]);
+  });
+
+  test("le varianti americane e le forme senza accento restano soluzioni", () => {
+    for (const word of ["donut", "saute", "drier"]) expect(words(EN_SOLUTIONS)).toContain(word);
+  });
+
+  test("le forme rare sono tentativi ma non soluzioni", () => {
+    expect(isGuess("en", "aahed")).toBe(true);
+    expect(words(EN_SOLUTIONS)).not.toContain("aahed");
   });
 
   test("le dimensioni sono quelle della specifica, a meno di un margine", () => {
@@ -101,10 +111,20 @@ describe("scelta della soluzione", () => {
   });
 });
 
-test("nessun file del client importa le liste", () => {
-  const sources = import.meta.glob("../src/**/*.{ts,tsx}", { query: "?raw", import: "default", eager: true });
-  const offenders = Object.entries(sources)
-    .filter(([, text]) => /convex\/wordle(Lists|Words)\b/.test(text as string))
-    .map(([path]) => path);
-  expect(offenders).toEqual([]);
+test("nessun file del client importa le liste, neanche passando da un altro modulo di convex/", () => {
+  const client = import.meta.glob<string>("../src/**/*.{ts,tsx}", { query: "?raw", import: "default", eager: true });
+  const server = import.meta.glob<string>("./*.ts", { query: "?raw", import: "default", eager: true });
+  const importsOf = (text: string) => [...text.matchAll(/from\s+["'](?:\.\.\/)*(?:convex\/|\.\/)([\w]+)["']/g)].map((m) => m[1]);
+
+  // Tutti i moduli di convex/ che il client raggiunge, direttamente o attraverso altri moduli.
+  const reached = new Set<string>();
+  const queue = Object.values(client).flatMap((text) => [...text.matchAll(/["'](?:\.\.\/)+convex\/(\w+)["']/g)].map((m) => m[1]));
+  while (queue.length > 0) {
+    const name = queue.pop()!;
+    if (reached.has(name) || name === "_generated") continue;
+    reached.add(name);
+    queue.push(...importsOf(server[`./${name}.ts`] ?? ""));
+  }
+  expect(reached).not.toContain("wordleLists");
+  expect(reached).not.toContain("wordleWords");
 });
