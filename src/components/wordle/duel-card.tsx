@@ -42,6 +42,7 @@ export function WordleDuelCard({ duelId, onLayout }: { duelId: Id<"wordleDuels">
   const { t } = useI18n();
   const duel = useQuery(api.wordleDuels.get, { duelId });
   const respond = useMutation(api.wordleDuels.respond);
+  const start = useMutation(api.wordleDuels.start);
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
 
@@ -79,6 +80,9 @@ export function WordleDuelCard({ duelId, onLayout }: { duelId: Id<"wordleDuels">
   }
   const answer = (action: "accept" | "decline" | "withdraw") => void run(() => respond({ duelId, action }));
   const openRun = () => void openRunWindow(duelId, t("wordle.title"));
+  // La rivincita è un invito normale con le stesse impostazioni, senza il popover di /wordle.
+  const rematch = () =>
+    void run(() => start({ conversationId: duel.conversationId, runMinutes: duel.runMinutes, language: duel.language }));
 
   return (
     <div
@@ -169,6 +173,11 @@ export function WordleDuelCard({ duelId, onLayout }: { duelId: Id<"wordleDuels">
       )}
 
       {duel.status === "closed" && duel.result && <ClosedResult duel={duel} result={duel.result} />}
+      {duel.canRematch && (
+        <button type="button" onClick={rematch} className={cn(primaryButtonClass, "h-9 self-center px-4 text-sm")}>
+          {t("game.rematch")}
+        </button>
+      )}
 
       {duel.status === "declined" && <p className="text-sm text-app-text-muted">{t("wordle.declined", { name: duel.nameB })}</p>}
       {duel.status === "withdrawn" && <p className="text-sm text-app-text-muted">{t("wordle.withdrawn", { name: duel.nameA })}</p>}

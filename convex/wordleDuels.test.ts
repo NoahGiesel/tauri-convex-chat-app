@@ -695,3 +695,78 @@ describe("statistiche", () => {
     expect(await f.carol.query(api.wordleDuels.history, { conversationId: f.direct })).toBeNull();
   });
 });
+
+describe("rivincita", () => {
+  /** Duel chiuso: entrambi si arrendono. */
+  async function closedDuel() {
+    const f = await openDuel("crane");
+    await quit(f, "alice");
+    await quit(f, "bob");
+    return f;
+  }
+
+  const canRematch = async (f: Duel, duelId: Id<"wordleDuels"> = f.duelId) =>
+    (await f.alice.query(api.wordleDuels.get, { duelId }))!.canRematch;
+
+  /** La rivincita come la manda la scheda: la stessa mutazione di /wordle, con le impostazioni del Duel. */
+  const rematch = (f: Duel, who: Player) =>
+    f[who].mutation(api.wordleDuels.start, { conversationId: f.direct, runMinutes: 1, language: "en" });
+
+  it("compare sull'ultimo Duel chiuso della chat", async () => {
+    const f = await closedDuel();
+    expect(await canRematch(f)).toBe(true);
+  });
+
+  it("non compare su un Duel aperto, rifiutato o scaduto", async () => {
+    const f = await openDuel("crane");
+    expect(await canRematch(f)).toBe(false);
+
+    const declined = await f.t.run(async (ctx) => {
+      await ctx.db.patch("wordleDuels", f.duelId, { status: "declined" });
+      return f.duelId;
+    });
+    expect(await canRematch(f, declined)).toBe(false);
+  });
+
+  it("non compare su un Duel chiuso più vecchio", async () => {
+    const f = await closedDuel();
+    const newer = await rematch(f, "alice");
+    await f.bob.mutation(api.wordleDuels.respond, { duelId: newer, action: "accept" });
+    await quit({ ...f, duelId: newer }, "alice");
+    await quit({ ...f, duelId: newer }, "bob");
+
+    expect(await canRematch(f)).toBe(false);
+    expect(await canRematch(f, newer)).toBe(true);
+  });
+
+  it("un Duel più recente finito rifiutato, ritirato o scaduto non toglie la rivincita all'ultimo chiuso", async () => {
+    const f = await closedDuel();
+    const declined = await rematch(f, "alice");
+    await f.bob.mutation(api.wordleDuels.respond, { duelId: declined, action: "decline" });
+    const withdrawn = await rematch(f, "alice");
+    await f.alice.mutation(api.wordleDuels.respond, { duelId: withdrawn, action: "withdraw" });
+    expect(await canRematch(f)).toBe(true);
+  });
+
+  it("sparisce mentre nella chat c'è un invito o un Duel aperto", async () => {
+    const f = await closedDuel();
+    const next = await rematch(f, "bob");
+    expect(await canRematch(f)).toBe(false);
+    await f.alice.mutation(api.wordleDuels.respond, { duelId: next, action: "accept" });
+    expect(await canRematch(f)).toBe(false);
+  });
+
+  it("chi la preme diventa lo sfidante, con lo stesso Run timer e la stessa lingua", async () => {
+    const f = await closedDuel();
+    const next = await rematch(f, "bob");
+    const card = (await f.alice.query(api.wordleDuels.get, { duelId: next }))!;
+    expect(card).toMatchObject({ status: "invite", mySide: "b", nameA: "bob", runMinutes: 1, language: "en" });
+  });
+
+  it("se la premono entrambi insieme, la seconda fallisce e la rivincita sparisce", async () => {
+    const f = await closedDuel();
+    await rematch(f, "alice");
+    await expect(rematch(f, "bob")).rejects.toSatisfy((e) => errorCode(e) === "wordle_in_progress");
+    expect(await canRematch(f)).toBe(false);
+  });
+});
