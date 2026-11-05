@@ -8,6 +8,17 @@ export interface ReleaseNote {
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
     version: "next",
+    items: { en: [], it: [] },
+  },
+  {
+    version: "0.1.29",
+    items: {
+      en: ["Wordle Duel tiles keep the same colours in every theme: green for the right letter in the right place, yellow for a letter in the wrong place, red for a letter not in the word"],
+      it: ["Le caselle del Wordle Duel hanno gli stessi colori in ogni tema: verde per la lettera al posto giusto, giallo per la lettera al posto sbagliato, rosso per la lettera che non c'è"],
+    },
+  },
+  {
+    version: "0.1.28",
     items: {
       en: [
         "Wordle Duel: type /wordle in a direct chat to challenge a friend on the same five-letter word, in Italian or English. Each of you plays a timed Run (1, 5 or 10 minutes) whenever you like within 24 hours, and the card shows the result once you have both finished, or when the Duel closes: fewer guesses wins, then the faster Run",
