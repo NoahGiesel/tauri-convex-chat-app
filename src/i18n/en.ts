@@ -507,7 +507,6 @@ export const en = {
   "wordle.seeRun": "See your Run",
   "wordle.starting": "Starting your Run…",
   "wordle.neverPauses": "The timer never pauses: closing this window or leaving the app does not stop it.",
-  "wordle.short": "Not enough letters",
   "wordle.notInList.it": "{word} is not in the Italian list. It doesn't count.",
   "wordle.notInList.en": "{word} is not in the English list. It doesn't count.",
   "wordle.enter": "Enter",

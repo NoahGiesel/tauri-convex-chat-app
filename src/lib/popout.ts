@@ -26,17 +26,24 @@ interface AppWindow {
   height: number;
   minWidth: number;
   minHeight: number;
+  /** Nel browser: riusa il popup già aperto con la stessa etichetta invece di aprirne uno nuovo. */
+  reuseInBrowser?: boolean;
 }
 
 /**
  * Apre una finestra dell'app con la stessa sessione (o porta in primo piano quella già aperta con la stessa etichetta).
  * Nel browser è un popup. Restituisce true se la finestra è aperta.
  */
-async function openAppWindow({ label, query, title, width, height, minWidth, minHeight }: AppWindow): Promise<boolean> {
+async function openAppWindow({ label, query, title, width, height, minWidth, minHeight, reuseInBrowser }: AppWindow): Promise<boolean> {
   if (!isTauri()) {
-    const popup = window.open(`/?${query}`, label, `popup,width=${width},height=${height}`);
-    popup?.focus();
-    return popup !== null;
+    const features = `popup,width=${width},height=${height}`;
+    if (!reuseInBrowser) return window.open(`/?${query}`, "_blank", features) !== null;
+    // Senza URL il popup già aperto non si ricarica; uno nuovo nasce vuoto e qui riceve l'indirizzo.
+    const popup = window.open("", label, features);
+    if (!popup) return false;
+    if (popup.location.href === "about:blank") popup.location.href = `/?${query}`;
+    popup.focus();
+    return true;
   }
   try {
     const existing = await WebviewWindow.getByLabel(label);
@@ -86,5 +93,6 @@ export function openRunWindow(duelId: string, title: string): Promise<boolean> {
     height: 820,
     minWidth: 420,
     minHeight: 640,
+    reuseInBrowser: true,
   });
 }

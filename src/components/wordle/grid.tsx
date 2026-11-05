@@ -1,6 +1,6 @@
 import { useI18n } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
-import { MAX_GUESSES, WORD_LENGTH, type TileColor, type WordleLanguage } from "../../../convex/wordleRules";
+import { MAX_GUESSES, WORD_LENGTH, isLetterOf, type TileColor, type WordleLanguage } from "../../../convex/wordleRules";
 import { TILE_CLASS, Tile } from "./tile";
 
 export interface ScoredGuess {
@@ -8,8 +8,6 @@ export interface ScoredGuess {
   colors: TileColor[];
 }
 
-/** Lettere che la tastiera italiana nasconde (e che la tastiera fisica non scrive). */
-export const ITALIAN_HIDDEN = new Set(["j", "k", "w", "x", "y"]);
 const ROWS = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
 const RANK: Record<TileColor, number> = { absent: 0, present: 1, correct: 2 };
 
@@ -85,7 +83,7 @@ export function Keyboard({ language, guesses, onKey }: { language: WordleLanguag
             </button>
           )}
           {[...row]
-            .filter((ch) => language !== "it" || !ITALIAN_HIDDEN.has(ch))
+            .filter((ch) => isLetterOf(language, ch))
             .map((ch) => {
               const color = colors.get(ch);
               return (

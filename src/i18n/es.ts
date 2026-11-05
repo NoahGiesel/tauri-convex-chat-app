@@ -508,7 +508,6 @@ export const es: Messages = {
   "wordle.seeRun": "Ver tu Run",
   "wordle.starting": "Empezando tu Run…",
   "wordle.neverPauses": "El temporizador nunca se detiene: cerrar esta ventana o salir de la app no lo para.",
-  "wordle.short": "Faltan letras",
   "wordle.notInList.it": "{word} no está en la lista italiana. No cuenta.",
   "wordle.notInList.en": "{word} no está en la lista inglesa. No cuenta.",
   "wordle.enter": "Enter",

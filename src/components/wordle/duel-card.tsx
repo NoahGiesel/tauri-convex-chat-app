@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
@@ -7,7 +7,7 @@ import { errorKey } from "@/lib/errors";
 import { outlineButtonClass, primaryButtonClass } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 import { openRunWindow } from "@/lib/popout";
-import { WORDLE_LANGUAGE_NAME, formatClock, formatHoursMinutes } from "@/lib/wordle";
+import { WORDLE_LANGUAGE_NAME, formatHoursMinutes, formatMinutesSeconds } from "@/lib/wordle";
 import { Tile } from "./tile";
 
 /** Ogni quanto si aggiorna la scheda: ogni secondo mentre la tua Run è in corso, altrimenti bastano ore e minuti. */
@@ -30,12 +30,19 @@ export function WordleDuelCard({ duelId, onLayout }: { duelId: Id<"wordleDuels">
     return () => clearInterval(id);
   }, [tick]);
 
+  // Differenza dall'ora del server, perché il tempo che resta sia quello del server.
+  const offset = useRef(0);
+  useEffect(() => {
+    if (duel) offset.current = duel.serverNow - Date.now();
+  }, [duel]);
+
   const layoutKey = `${duel?.status ?? ""}-${duel?.myRun?.state ?? ""}`;
   useEffect(() => {
     onLayout?.();
   }, [layoutKey, onLayout]);
 
   if (!duel) return null;
+  const serverNow = now + offset.current;
 
   async function run(action: () => Promise<unknown>) {
     setError(null);
@@ -89,7 +96,7 @@ export function WordleDuelCard({ duelId, onLayout }: { duelId: Id<"wordleDuels">
                 {t("wordle.withdraw")}
               </button>
             )}
-            <span className="ml-auto text-xs text-app-text-dim">{t("wordle.expiresIn", { time: formatHoursMinutes(duel.expiresAt - now, t) })}</span>
+            <span className="ml-auto text-xs text-app-text-dim">{t("wordle.expiresIn", { time: formatHoursMinutes(duel.expiresAt - serverNow, t) })}</span>
           </div>
         </>
       )}
@@ -106,7 +113,7 @@ export function WordleDuelCard({ duelId, onLayout }: { duelId: Id<"wordleDuels">
           )}
           {duel.myRun.state === "playing" && duel.myRun.endsAt !== null && (
             <button type="button" onClick={openRun} className={cn(primaryButtonClass, "h-10 px-5 text-sm")}>
-              {t("wordle.backToRun", { time: formatClock(duel.myRun.endsAt - now) })}
+              {t("wordle.backToRun", { time: formatMinutesSeconds(duel.myRun.endsAt - serverNow) })}
             </button>
           )}
           {duel.myRun.state === "finished" && (

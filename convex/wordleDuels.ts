@@ -4,7 +4,7 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { internalMutation, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import { fail, getProfile, requireMember, requireProfile } from "./model";
 import { wordleLanguage, wordleRunMinutes } from "./schema";
-import { DUEL_TTL_MS, GRACE_MS, INVITE_TTL_MS, MAX_GUESSES, WORD_LENGTH, foldGuess, scoreGuess } from "./wordleRules";
+import { DUEL_DEADLINE_MS, GRACE_MS, INVITE_TTL_MS, MAX_GUESSES, WORD_LENGTH, foldGuess, scoreGuess } from "./wordleRules";
 import { isGuess, pickSolution } from "./wordleWords";
 
 /** Parole dei Duel passati lette per non ripeterle: più di quante soluzioni ha una lista. */
@@ -13,8 +13,15 @@ const USED_WORDS_LIMIT = 3000;
 type Side = "a" | "b";
 type Run = NonNullable<Doc<"wordleDuels">["runA"]>;
 type EndReason = NonNullable<Run["endReason"]>;
-/** Il campo della Run di ciascun giocatore: A è chi ha sfidato. */
+/** I campi di ciascun giocatore: A è chi ha sfidato. */
 const RUN_FIELD = { a: "runA", b: "runB" } as const;
+const PLAYER_FIELD = { a: "playerA", b: "playerB" } as const;
+const OTHER_SIDE = { a: "b", b: "a" } as const;
+
+/** La Duel deadline: 24 ore dopo l'accettazione; null se l'invito non è stato accettato. */
+function deadlineOf(duel: Doc<"wordleDuels">): number | null {
+  return duel.acceptedAt !== undefined ? duel.acceptedAt + DUEL_DEADLINE_MS : null;
+}
 
 function sideOf(duel: Doc<"wordleDuels">, profileId: Id<"profiles">): Side | null {
   return duel.playerA === profileId ? "a" : duel.playerB === profileId ? "b" : null;
@@ -42,7 +49,7 @@ function requireRunningRun(duel: Doc<"wordleDuels">, side: Side, now: number): R
   return run;
 }
 
-const runPatch = (side: Side, run: Run) => (side === "a" ? { runA: run } : { runB: run });
+const runPatch = (side: Side, run: Run) => ({ [RUN_FIELD[side]]: run });
 
 /** Chiude la Run. Il tempo della Run non supera mai il Run timer, anche per un tentativo arrivato nella tolleranza. */
 async function endRun(ctx: MutationCtx, duel: Doc<"wordleDuels">, side: Side, run: Run, reason: EndReason, now: number) {
@@ -179,9 +186,11 @@ export const get = query({
       createdAt: duel.createdAt,
       expiresAt: duel.createdAt + INVITE_TTL_MS,
       acceptedAt: duel.acceptedAt ?? null,
-      deadline: duel.acceptedAt !== undefined ? duel.acceptedAt + DUEL_TTL_MS : null,
+      deadline: deadlineOf(duel),
       /** Solo lo stato e la fine del Run timer di chi guarda: mai i suoi tentativi qui. */
       myRun: side ? { state: runState(duel[RUN_FIELD[side]]), endsAt: duel[RUN_FIELD[side]]?.endsAt ?? null } : null,
+      /** Ora del server: la scheda corregge il proprio orologio per mostrare il tempo che resta (come `games.get`). */
+      serverNow: Date.now(),
     };
   },
 });
@@ -193,7 +202,8 @@ export const openRun = mutation({
     const { duel, side } = await requirePlayer(ctx, args.duelId);
     const now = Date.now();
     // La Run si può aprire fino alla Duel deadline.
-    if (duel.status !== "open" || duel.acceptedAt === undefined || now >= duel.acceptedAt + DUEL_TTL_MS) throw fail("game_closed");
+    const deadline = deadlineOf(duel);
+    if (duel.status !== "open" || deadline === null || now >= deadline) throw fail("game_closed");
     if (duel[RUN_FIELD[side]]) return;
     const endsAt = now + duel.runMinutes * 60_000;
     await ctx.db.patch("wordleDuels", duel._id, runPatch(side, { startedAt: now, endsAt, guesses: [] }));
@@ -253,15 +263,15 @@ export const myRun = query({
     const side = duel ? sideOf(duel, me._id) : null;
     if (!duel || !side) return null;
     const run = duel[RUN_FIELD[side]];
-    const other = side === "a" ? "b" : "a";
-    const opponent = await ctx.db.get("profiles", side === "a" ? duel.playerB : duel.playerA);
+    const other = OTHER_SIDE[side];
+    const opponent = await ctx.db.get("profiles", duel[PLAYER_FIELD[other]]);
     return {
       status: duel.status,
       language: duel.language,
       runMinutes: duel.runMinutes,
       opponentName: opponent?.name ?? "?",
       opponentState: runState(duel[RUN_FIELD[other]]),
-      deadline: duel.acceptedAt !== undefined ? duel.acceptedAt + DUEL_TTL_MS : null,
+      deadline: deadlineOf(duel),
       run: run
         ? {
             startedAt: run.startedAt,

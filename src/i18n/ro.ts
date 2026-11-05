@@ -508,7 +508,6 @@ export const ro: Messages = {
   "wordle.seeRun": "Vezi Run-ul tău",
   "wordle.starting": "Se pornește Run-ul…",
   "wordle.neverPauses": "Timerul nu se oprește niciodată: închiderea ferestrei sau ieșirea din aplicație nu îl opresc.",
-  "wordle.short": "Prea puține litere",
   "wordle.notInList.it": "{word} nu este în lista italiană. Nu contează.",
   "wordle.notInList.en": "{word} nu este în lista engleză. Nu contează.",
   "wordle.enter": "Enter",

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ConvexError } from "convex/values";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
@@ -7,15 +6,20 @@ import { useI18n } from "@/i18n/i18n-provider";
 import { errorKey } from "@/lib/errors";
 import { outlineButtonClass } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
-import { WORDLE_LANGUAGE_NAME, formatClock, formatHoursMinutes } from "@/lib/wordle";
-import { MAX_GUESSES, WORD_LENGTH } from "../../../convex/wordleRules";
-import { Grid, ITALIAN_HIDDEN, Keyboard } from "./grid";
+import { WORDLE_LANGUAGE_NAME, formatHoursMinutes, formatMinutesSeconds } from "@/lib/wordle";
+import type { MessageKey } from "@/i18n/en";
+import { MAX_GUESSES, WORD_LENGTH, isLetterOf } from "../../../convex/wordleRules";
+import { Grid, Keyboard } from "./grid";
 
 /** Sotto questa soglia il Run timer diventa rosso. */
 const LOW_TIME_MS = 30_000;
 
-const codeOf = (e: unknown) =>
-  e instanceof ConvexError && typeof e.data === "object" && e.data !== null && "code" in e.data ? String(e.data.code) : null;
+/** La riga di riepilogo per ogni modo in cui una Run non indovinata finisce. */
+const END_LINE: Record<"timeout" | "missed" | "gaveUp", MessageKey> = {
+  timeout: "wordle.endTimeout",
+  missed: "wordle.endMissed",
+  gaveUp: "wordle.endGaveUp",
+};
 
 /** La finestra della Run: Run timer, griglia, tastiera, Give up e il riepilogo a fine Run. */
 export function WordleRunWindow({ duelId: rawId }: { duelId: string }) {
@@ -64,15 +68,15 @@ export function WordleRunWindow({ duelId: rawId }: { duelId: string }) {
   }, []);
 
   const submit = useCallback(async () => {
-    if (typed.length < WORD_LENGTH) return reject(t("wordle.short"));
+    if (typed.length < WORD_LENGTH) return reject(t("error.wordle_short"));
     setSending(true);
     try {
       await guess({ duelId, word: typed });
       setTyped("");
       setMessage(null);
     } catch (e) {
-      const code = codeOf(e);
-      if (code === "wordle_not_a_word") reject(t(language === "it" ? "wordle.notInList.it" : "wordle.notInList.en", { word: typed.toUpperCase() }));
+      // Il messaggio dice in quale lista manca la parola.
+      if (errorKey(e) === "error.wordle_not_a_word") reject(t(language === "it" ? "wordle.notInList.it" : "wordle.notInList.en", { word: typed.toUpperCase() }));
       else reject(t(errorKey(e)));
     } finally {
       setSending(false);
@@ -84,7 +88,7 @@ export function WordleRunWindow({ duelId: rawId }: { duelId: string }) {
       if (!playing || sending) return;
       if (key === "Enter") return void submit();
       if (key === "Backspace") return setTyped((w) => w.slice(0, -1));
-      if (!/^[a-z]$/.test(key) || (language === "it" && ITALIAN_HIDDEN.has(key))) return;
+      if (!isLetterOf(language, key)) return;
       setTyped((w) => (w.length < WORD_LENGTH ? w + key : w));
     },
     [playing, sending, submit, language],
@@ -124,17 +128,17 @@ export function WordleRunWindow({ duelId: rawId }: { duelId: string }) {
               left < LOW_TIME_MS ? "bg-destructive/15 text-destructive" : "bg-app-accent-soft text-app-accent-text",
             )}
           >
-            ⏱ {formatClock(left)}
+            ⏱ {formatMinutesSeconds(left)}
           </span>
         )}
       </div>
       {playing && <p className="-mt-1 text-center text-[11px] text-app-text-dim">{t("wordle.neverPauses")}</p>}
-      {!run && data.status === "open" && <p className="text-sm text-app-text-muted">{t("wordle.starting")}</p>}
+      {!run && data.status === "open" && !message && <p className="text-sm text-app-text-muted">{t("wordle.starting")}</p>}
 
       <Grid guesses={guesses} typed={playing ? typed : ""} size="lg" shakeKey={shakeKey} />
 
       <div role="alert" className="min-h-5 text-center text-xs font-semibold text-destructive">
-        {playing ? message : null}
+        {playing || !run ? message : null}
       </div>
 
       {playing && (
@@ -172,8 +176,8 @@ export function WordleRunWindow({ duelId: rawId }: { duelId: string }) {
         <div className="flex w-full flex-col items-center gap-1.5 rounded-xl border border-app-border bg-app-bg p-3 text-center">
           <div className="text-[15px] font-extrabold text-app-text-strong">
             {run.endReason === "solved"
-              ? t("wordle.endSolved", { n: guesses.length, time: formatClock((run.endedAt ?? run.endsAt) - run.startedAt) })
-              : t(run.endReason === "timeout" ? "wordle.endTimeout" : run.endReason === "missed" ? "wordle.endMissed" : "wordle.endGaveUp")}
+              ? t("wordle.endSolved", { n: guesses.length, time: formatMinutesSeconds((run.endedAt ?? run.endsAt) - run.startedAt) })
+              : t(END_LINE[run.endReason])}
           </div>
           {data.status === "open" && data.opponentState !== "finished" && (
             <div className="text-sm text-app-text-muted">

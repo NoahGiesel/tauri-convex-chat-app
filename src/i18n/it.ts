@@ -508,7 +508,6 @@ export const it: Messages = {
   "wordle.seeRun": "Guarda la tua Run",
   "wordle.starting": "Apro la tua Run…",
   "wordle.neverPauses": "Il timer non si ferma mai: chiudere questa finestra o uscire dall'app non lo blocca.",
-  "wordle.short": "Lettere insufficienti",
   "wordle.notInList.it": "{word} non è nella lista italiana. Non conta.",
   "wordle.notInList.en": "{word} non è nella lista inglese. Non conta.",
   "wordle.enter": "Invio",
