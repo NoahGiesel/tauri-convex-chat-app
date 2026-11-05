@@ -8,9 +8,10 @@ import { WhatsNewModal } from "@/components/whats-new-modal";
 import { SettingsPage, type SettingsSection } from "@/components/settings-page";
 import { UpdateBanner } from "@/components/update-banner";
 import { PopoutChat } from "@/components/popout-chat";
+import { WordleRunWindow } from "@/components/wordle/run-window";
 import { SidebarProvider } from "@/hooks/use-sidebar";
 import { useI18n } from "@/i18n/i18n-provider";
-import { popoutChatId } from "@/lib/popout";
+import { popoutChatId, runWindowDuelId } from "@/lib/popout";
 
 function Splash({ children }: { children: string }) {
   return (
@@ -35,6 +36,9 @@ function Session() {
   // Finestra staccata: mostra solo la chat richiesta.
   const popoutId = popoutChatId();
   if (popoutId) return <PopoutChat conversationId={popoutId} />;
+  // Finestra della Run di un Wordle Duel.
+  const runDuelId = runWindowDuelId();
+  if (runDuelId) return <WordleRunWindow duelId={runDuelId} />;
 
   return (
     <SidebarProvider>

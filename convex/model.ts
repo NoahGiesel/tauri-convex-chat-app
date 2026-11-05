@@ -50,7 +50,10 @@ export type ErrorCode =
   | "game_in_progress"
   | "game_closed"
   | "quiz_invalid_topics"
-  | "wordle_in_progress";
+  | "wordle_in_progress"
+  | "wordle_short"
+  | "wordle_not_a_word"
+  | "wordle_run_over";
 
 export const fail = (code: ErrorCode) => new ConvexError({ code });
 

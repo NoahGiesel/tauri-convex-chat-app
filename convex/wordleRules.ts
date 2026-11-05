@@ -12,10 +12,18 @@ export const WORDLE_LANGUAGES: readonly WordleLanguage[] = ["it", "en"];
 export const INVITE_TTL_MS = 24 * 60 * 60 * 1000;
 
 /** Lettere ammesse: a–z; l'italiano toglie anche j, k, w, x, y (accenti e apostrofi restano fuori in entrambe). */
+/** Le lettere di ogni lingua: l'italiano non ha j, k, w, x, y. */
+const LETTERS: Record<WordleLanguage, string> = { en: "a-z", it: "a-il-vz" };
 const LETTER_RULES: Record<WordleLanguage, RegExp> = {
-  en: /^[a-z]{5}$/,
-  it: /^[a-il-vz]{5}$/,
+  en: new RegExp(`^[${LETTERS.en}]{5}$`),
+  it: new RegExp(`^[${LETTERS.it}]{5}$`),
 };
+const LETTER: Record<WordleLanguage, RegExp> = { en: new RegExp(`^[${LETTERS.en}]$`), it: new RegExp(`^[${LETTERS.it}]$`) };
+
+/** Vero se la lettera (minuscola) si può scrivere in questa lingua: la tastiera mostra solo queste. */
+export function isLetterOf(lang: WordleLanguage, letter: string): boolean {
+  return LETTER[lang].test(letter);
+}
 
 /** true se la parola, così com'è, ha cinque lettere minuscole ammesse nella lingua. */
 export function passesLetterRule(lang: WordleLanguage, word: string): boolean {
@@ -37,4 +45,33 @@ export function unpack(packed: string): string[] {
 /** Le soluzioni che non sono anche tentativi (deve essere vuoto: lo script si ferma altrimenti). */
 export function missingFromGuesses(solutions: Iterable<string>, guesses: ReadonlySet<string>): string[] {
   return [...solutions].filter((word) => !guesses.has(word));
+}
+
+/** Il Duel si chiude 24 ore dopo l'accettazione (Duel deadline). */
+export const DUEL_DEADLINE_MS = 24 * 60 * 60 * 1000;
+/** Tolleranza per i tentativi che arrivano proprio sul filo (orologi e rete), come in sasso-carta-forbici. */
+export const GRACE_MS = 500;
+export const MAX_GUESSES = 6;
+export const WORD_LENGTH = 5;
+
+export type TileColor = "correct" | "present" | "absent";
+
+/**
+ * Colori di un tentativo, come nel Wordle classico: prima le lettere al posto giusto, poi le altre
+ * diventano gialle finché la parola ha ancora quella lettera da assegnare.
+ */
+export function scoreGuess(guess: string, word: string): TileColor[] {
+  const colors: TileColor[] = Array.from({ length: guess.length }, () => "absent");
+  const left = new Map<string, number>();
+  for (let i = 0; i < guess.length; i++) {
+    if (guess[i] === word[i]) colors[i] = "correct";
+    else left.set(word[i], (left.get(word[i]) ?? 0) + 1);
+  }
+  for (let i = 0; i < guess.length; i++) {
+    const n = left.get(guess[i]) ?? 0;
+    if (colors[i] === "correct" || n === 0) continue;
+    colors[i] = "present";
+    left.set(guess[i], n - 1);
+  }
+  return colors;
 }

@@ -16,3 +16,9 @@ export function formatHoursMinutes(ms: number, t: Translate): string {
   const m = minutes % 60;
   return h > 0 ? t("wordle.hoursMinutes", { h, m }) : t("wordle.minutesOnly", { m });
 }
+
+/** Tempo in "m:ss", per il Run timer e il tempo di una Run. */
+export function formatMinutesSeconds(ms: number): string {
+  const seconds = Math.max(0, Math.ceil(ms / 1000));
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+}

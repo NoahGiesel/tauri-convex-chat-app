@@ -234,3 +234,205 @@ describe("scelta della parola", () => {
     expect(await wordOf(f, second)).toBe(await wordOf(f, first));
   });
 });
+
+/** Duel inglese da 1 minuto già accettato, con la parola fissata dal test. */
+async function openDuel(word: string) {
+  const f = await twoFriends();
+  const duelId = await f.alice.mutation(api.wordleDuels.start, { conversationId: f.direct, runMinutes: 1, language: "en" });
+  await f.bob.mutation(api.wordleDuels.respond, { duelId, action: "accept" });
+  await f.t.run((ctx) => ctx.db.patch("wordleDuels", duelId, { word }));
+  return { ...f, duelId };
+}
+
+const RUN_MS = 60_000;
+
+describe("Run", () => {
+  it("si apre solo a Duel accettato, e aprirla fa partire il Run timer", async () => {
+    const f = await twoFriends();
+    const duelId = await challenge(f);
+    await expect(f.bob.mutation(api.wordleDuels.openRun, { duelId })).rejects.toSatisfy((e) => errorCode(e) === "game_closed");
+
+    await f.bob.mutation(api.wordleDuels.respond, { duelId, action: "accept" });
+    await f.bob.mutation(api.wordleDuels.openRun, { duelId });
+    const run = (await f.bob.query(api.wordleDuels.myRun, { duelId }))!.run!;
+    expect(run.endsAt - run.startedAt).toBe(5 * 60_000);
+    expect(run.guesses).toEqual([]);
+  });
+
+  it("riaprirla non rimette a zero il tempo", async () => {
+    const f = await openDuel("crane");
+    await f.alice.mutation(api.wordleDuels.openRun, { duelId: f.duelId });
+    const first = (await f.alice.query(api.wordleDuels.myRun, { duelId: f.duelId }))!.run!;
+    vi.advanceTimersByTime(10_000);
+    await f.alice.mutation(api.wordleDuels.openRun, { duelId: f.duelId });
+    expect((await f.alice.query(api.wordleDuels.myRun, { duelId: f.duelId }))!.run).toMatchObject({ startedAt: first.startedAt, endsAt: first.endsAt });
+  });
+
+  it("chi non gioca nel Duel non apre una Run", async () => {
+    const f = await openDuel("crane");
+    await expect(f.carol.mutation(api.wordleDuels.openRun, { duelId: f.duelId })).rejects.toSatisfy((e) => errorCode(e) === "not_member");
+  });
+
+  it("non si tenta senza aver aperto la Run", async () => {
+    const f = await openDuel("crane");
+    await expect(f.alice.mutation(api.wordleDuels.guess, { duelId: f.duelId, word: "slate" })).rejects.toSatisfy(
+      (e) => errorCode(e) === "wordle_run_over",
+    );
+  });
+});
+
+describe("colori", () => {
+  async function colorsOf(word: string, guess: string) {
+    const f = await openDuel(word);
+    await f.alice.mutation(api.wordleDuels.openRun, { duelId: f.duelId });
+    await f.alice.mutation(api.wordleDuels.guess, { duelId: f.duelId, word: guess });
+    return (await f.alice.query(api.wordleDuels.myRun, { duelId: f.duelId }))!.run!.guesses[0];
+  }
+
+  it("verde al posto giusto, giallo altrove, grigio se manca", async () => {
+    expect(await colorsOf("crane", "slate")).toEqual({ word: "slate", colors: ["absent", "absent", "correct", "absent", "correct"] });
+    expect(await colorsOf("crane", "react")).toEqual({ word: "react", colors: ["present", "present", "correct", "present", "absent"] });
+  });
+
+  it("una lettera ripetuta è gialla solo quante volte compare nella parola", async () => {
+    expect((await colorsOf("abide", "speed")).colors).toEqual(["absent", "absent", "present", "absent", "present"]);
+  });
+
+  it("il verde ha la precedenza sul giallo di una lettera ripetuta", async () => {
+    expect((await colorsOf("crane", "eerie")).colors).toEqual(["absent", "absent", "present", "absent", "correct"]);
+  });
+
+  it("due lettere uguali nella parola possono essere due gialli", async () => {
+    expect((await colorsOf("spool", "loops")).colors).toEqual(["present", "present", "correct", "present", "present"]);
+  });
+});
+
+describe("tentativi", () => {
+  it("si controlla in minuscolo e indovinare chiude la Run", async () => {
+    const f = await openDuel("crane");
+    await f.alice.mutation(api.wordleDuels.openRun, { duelId: f.duelId });
+    vi.advanceTimersByTime(7_000);
+    await f.alice.mutation(api.wordleDuels.guess, { duelId: f.duelId, word: "CRANE" });
+    const run = (await f.alice.query(api.wordleDuels.myRun, { duelId: f.duelId }))!.run!;
+    expect(run).toMatchObject({ endReason: "solved", guesses: [{ word: "crane" }] });
+    expect(run.endedAt! - run.startedAt).toBeCloseTo(7_000, -2); // convex-test sposta l'orologio di qualche ms
+    await expect(f.alice.mutation(api.wordleDuels.guess, { duelId: f.duelId, word: "slate" })).rejects.toSatisfy(
+      (e) => errorCode(e) === "wordle_run_over",
+    );
+  });
+
+  it("una parola fuori lista o corta è respinta, non si salva e non conta", async () => {
+    const f = await openDuel("crane");
+    await f.alice.mutation(api.wordleDuels.openRun, { duelId: f.duelId });
+    await expect(f.alice.mutation(api.wordleDuels.guess, { duelId: f.duelId, word: "xxxxx" })).rejects.toSatisfy(
+      (e) => errorCode(e) === "wordle_not_a_word",
+    );
+    await expect(f.alice.mutation(api.wordleDuels.guess, { duelId: f.duelId, word: "cran" })).rejects.toSatisfy(
+      (e) => errorCode(e) === "wordle_short",
+    );
+    expect((await f.alice.query(api.wordleDuels.myRun, { duelId: f.duelId }))!.run!.guesses).toEqual([]);
+  });
+
+  it("sei errori chiudono la Run", async () => {
+    const f = await openDuel("crane");
+    await f.alice.mutation(api.wordleDuels.openRun, { duelId: f.duelId });
+    for (const word of ["slate", "pious", "dough", "lymph", "fight", "brisk"]) {
+      await f.alice.mutation(api.wordleDuels.guess, { duelId: f.duelId, word });
+    }
+    expect((await f.alice.query(api.wordleDuels.myRun, { duelId: f.duelId }))!.run).toMatchObject({ endReason: "missed" });
+    await expect(f.alice.mutation(api.wordleDuels.guess, { duelId: f.duelId, word: "crane" })).rejects.toSatisfy(
+      (e) => errorCode(e) === "wordle_run_over",
+    );
+  });
+});
+
+describe("tempo", () => {
+  it("un tentativo entro la tolleranza dopo la fine conta ancora", async () => {
+    const f = await openDuel("crane");
+    await f.alice.mutation(api.wordleDuels.openRun, { duelId: f.duelId });
+    vi.advanceTimersByTime(RUN_MS + 400);
+    await f.alice.mutation(api.wordleDuels.guess, { duelId: f.duelId, word: "crane" });
+    const run = (await f.alice.query(api.wordleDuels.myRun, { duelId: f.duelId }))!.run!;
+    expect(run.endReason).toBe("solved");
+    expect(run.endedAt).toBe(run.endsAt); // il tempo della Run non supera il Run timer
+  });
+
+  it("oltre la tolleranza il tentativo è respinto", async () => {
+    const f = await openDuel("crane");
+    await f.alice.mutation(api.wordleDuels.openRun, { duelId: f.duelId });
+    vi.advanceTimersByTime(RUN_MS + 600);
+    await expect(f.alice.mutation(api.wordleDuels.guess, { duelId: f.duelId, word: "crane" })).rejects.toSatisfy(
+      (e) => errorCode(e) === "wordle_run_over",
+    );
+  });
+
+  it("allo scadere un lavoro programmato chiude la Run con timeout, anche a finestra chiusa", async () => {
+    const f = await openDuel("crane");
+    await f.alice.mutation(api.wordleDuels.openRun, { duelId: f.duelId });
+    await f.alice.mutation(api.wordleDuels.guess, { duelId: f.duelId, word: "slate" });
+    vi.advanceTimersByTime(RUN_MS + 400);
+    await f.t.finishInProgressScheduledFunctions();
+    expect((await f.alice.query(api.wordleDuels.myRun, { duelId: f.duelId }))!.run!.endReason).toBeUndefined();
+
+    vi.advanceTimersByTime(200);
+    await f.t.finishInProgressScheduledFunctions();
+    const run = (await f.alice.query(api.wordleDuels.myRun, { duelId: f.duelId }))!.run!;
+    expect(run).toMatchObject({ endReason: "timeout", endedAt: run.endsAt, guesses: [{ word: "slate" }] });
+  });
+
+  it("il lavoro programmato non tocca una Run già finita", async () => {
+    const f = await openDuel("crane");
+    await f.alice.mutation(api.wordleDuels.openRun, { duelId: f.duelId });
+    await f.alice.mutation(api.wordleDuels.guess, { duelId: f.duelId, word: "crane" });
+    await f.t.finishAllScheduledFunctions(vi.runAllTimers);
+    expect((await f.alice.query(api.wordleDuels.myRun, { duelId: f.duelId }))!.run!.endReason).toBe("solved");
+  });
+});
+
+describe("arrendersi", () => {
+  it("chiude la Run con gaveUp", async () => {
+    const f = await openDuel("crane");
+    await f.alice.mutation(api.wordleDuels.openRun, { duelId: f.duelId });
+    vi.advanceTimersByTime(3_000);
+    await f.alice.mutation(api.wordleDuels.giveUp, { duelId: f.duelId });
+    const run = (await f.alice.query(api.wordleDuels.myRun, { duelId: f.duelId }))!.run!;
+    expect(run.endReason).toBe("gaveUp");
+    expect(run.endedAt! - run.startedAt).toBeCloseTo(3_000, -2);
+  });
+
+  it("non si arrende chi non ha una Run in corso", async () => {
+    const f = await openDuel("crane");
+    await expect(f.alice.mutation(api.wordleDuels.giveUp, { duelId: f.duelId })).rejects.toSatisfy((e) => errorCode(e) === "wordle_run_over");
+  });
+});
+
+describe("segretezza", () => {
+  it("mentre il Duel è aperto nessuna query dà la parola o i tentativi dell'altro", async () => {
+    const f = await openDuel("crane");
+    await f.alice.mutation(api.wordleDuels.openRun, { duelId: f.duelId });
+    await f.alice.mutation(api.wordleDuels.guess, { duelId: f.duelId, word: "slate" });
+    await f.alice.mutation(api.wordleDuels.guess, { duelId: f.duelId, word: "crane" });
+
+    const bobRun = await f.bob.query(api.wordleDuels.myRun, { duelId: f.duelId });
+    expect(bobRun?.run).toBeNull();
+    for (const who of [f.alice, f.bob]) {
+      const card = JSON.stringify(await who.query(api.wordleDuels.get, { duelId: f.duelId }));
+      expect(card).not.toContain("crane");
+      expect(card).not.toContain("slate");
+    }
+    expect(JSON.stringify(bobRun)).not.toContain("crane");
+    expect(JSON.stringify(bobRun)).not.toContain("slate");
+  });
+
+  it("la Run di chi chiede dà l'ora del server e la fine del Run timer", async () => {
+    const f = await openDuel("crane");
+    await f.alice.mutation(api.wordleDuels.openRun, { duelId: f.duelId });
+    const mine = await f.alice.query(api.wordleDuels.myRun, { duelId: f.duelId });
+    expect(mine).toMatchObject({ serverNow: expect.any(Number), run: { endsAt: expect.any(Number) } });
+  });
+
+  it("chi non è nella chat non vede nessuna Run", async () => {
+    const f = await openDuel("crane");
+    expect(await f.carol.query(api.wordleDuels.myRun, { duelId: f.duelId })).toBeNull();
+  });
+});
