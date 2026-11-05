@@ -547,4 +547,7 @@ export const it: Messages = {
   "wordle.result.tie": "Wordle Duel chiuso: pareggio, stessi tentativi e stesso tempo",
 
   "wordle.closesAfterRun": "I risultati restano nascosti finché entrambi non finiscono. Il Duel si chiude quando finisce la Run ancora in corso.",
+
+  "library.wordleAverage": "{avg} tentativi in media",
+  "library.wordleNoAverage": "Nessuna parola indovinata",
 };
