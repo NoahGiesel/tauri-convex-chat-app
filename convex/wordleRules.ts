@@ -56,6 +56,20 @@ export const WORD_LENGTH = 5;
 
 export type TileColor = "correct" | "present" | "absent";
 
+/** Perché un Duel chiuso è finito così (vedi le regole del vincitore). */
+export type OutcomeReason = "fewerGuesses" | "fasterRun" | "onlyOneGuessed" | "forfeit" | "neitherGuessed";
+
+/** Il risultato in breve, da cui l'app scrive la riga di chiusura nella lingua di chi legge. */
+export interface ResultSummary {
+  status: "closed" | "expired";
+  /** Null per un pareggio o un Duel scaduto. */
+  winnerName: string | null;
+  /** Null per un Duel scaduto. */
+  reason: OutcomeReason | null;
+  winnerGuesses: number | null;
+  otherGuesses: number | null;
+}
+
 /**
  * Colori di un tentativo, come nel Wordle classico: prima le lettere al posto giusto, poi le altre
  * diventano gialle finché la parola ha ancora quella lettera da assegnare.

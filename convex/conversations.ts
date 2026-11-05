@@ -3,6 +3,7 @@ import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { internalMutation, mutation, query, type MutationCtx } from "./_generated/server";
 import { areFriends, avatarUrl, ensureDirectConversation, fail, getProfile, requireMember, requireProfile } from "./model";
+import { wordleResultSummary } from "./wordleDuels";
 
 const MAX_CONVERSATIONS = 100;
 const MAX_GROUP_MEMBERS = 20;
@@ -84,6 +85,8 @@ export const list = query({
               style: newest.style ?? null,
               body: (newest.kind === "media" && !newest.attachments ? "" : newest.body).slice(0, 160),
               attachment: newest.attachments?.[0]?.type ?? newest.media?.type ?? null,
+              /** Il messaggio di chiusura di un Wordle Duel (senza autore): la notifica mostra il risultato. */
+              wordleResult: newest.wordleDuelId && !newest.authorId ? await wordleResultSummary(ctx, newest.wordleDuelId) : null,
             }
           : null;
 

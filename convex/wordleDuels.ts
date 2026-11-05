@@ -4,7 +4,16 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { internalMutation, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import { fail, getProfile, requireMember, requireProfile } from "./model";
 import { wordleLanguage, wordleRunMinutes } from "./schema";
-import { DUEL_DEADLINE_MS, GRACE_MS, INVITE_TTL_MS, MAX_GUESSES, WORD_LENGTH, foldGuess, scoreGuess } from "./wordleRules";
+import {
+  DUEL_DEADLINE_MS,
+  GRACE_MS,
+  INVITE_TTL_MS,
+  MAX_GUESSES,
+  WORD_LENGTH,
+  foldGuess,
+  scoreGuess,
+  type ResultSummary,
+} from "./wordleRules";
 import { isGuess, pickSolution } from "./wordleWords";
 
 /** Parole dei Duel passati lette per non ripeterle: più di quante soluzioni ha una lista. */
@@ -13,6 +22,7 @@ const USED_WORDS_LIMIT = 3000;
 type Side = "a" | "b";
 type Run = NonNullable<Doc<"wordleDuels">["runA"]>;
 type EndReason = NonNullable<Run["endReason"]>;
+type Outcome = NonNullable<Doc<"wordleDuels">["outcome"]>;
 /** I campi di ciascun giocatore: A è chi ha sfidato. */
 const RUN_FIELD = { a: "runA", b: "runB" } as const;
 const PLAYER_FIELD = { a: "playerA", b: "playerB" } as const;
@@ -51,9 +61,60 @@ function requireRunningRun(duel: Doc<"wordleDuels">, side: Side, now: number): R
 
 const runPatch = (side: Side, run: Run) => ({ [RUN_FIELD[side]]: run });
 
-/** Chiude la Run. Il tempo della Run non supera mai il Run timer, anche per un tentativo arrivato nella tolleranza. */
+/** Chiude la Run, poi il Duel se è il momento. Il tempo della Run non supera mai il Run timer, anche nella tolleranza. */
 async function endRun(ctx: MutationCtx, duel: Doc<"wordleDuels">, side: Side, run: Run, reason: EndReason, now: number) {
   await ctx.db.patch("wordleDuels", duel._id, runPatch(side, { ...run, endReason: reason, endedAt: Math.min(now, run.endsAt) }));
+  await closeIfDone(ctx, duel._id);
+}
+
+/** Tempo della Run: da quando è stata aperta a quando è finita. */
+const runTime = (run: Run) => (run.endedAt ?? run.endsAt) - run.startedAt;
+
+/** La Run finita del giocatore, o null se non l'ha aperta o è ancora in corso. */
+function finishedRun(duel: Doc<"wordleDuels">, side: Side): Run | null {
+  const run = duel[RUN_FIELD[side]];
+  return run?.endReason ? run : null;
+}
+
+/**
+ * Come si chiude il Duel, dalle regole del vincitore. Chi non ha finito perde per forfeit;
+ * se nessuno ha finito il Duel scade senza esito.
+ */
+function closingOf(duel: Doc<"wordleDuels">): { status: "closed"; outcome: Outcome } | { status: "expired" } {
+  const a = finishedRun(duel, "a");
+  const b = finishedRun(duel, "b");
+  const win = (side: Side, reason: Outcome["reason"]) => ({ status: "closed" as const, outcome: { winner: duel[PLAYER_FIELD[side]], reason } });
+  const draw = (reason: Outcome["reason"]) => ({ status: "closed" as const, outcome: { reason } });
+  if (!a && !b) return { status: "expired" };
+  if (!a || !b) return win(a ? "a" : "b", "forfeit");
+  const solvedA = a.endReason === "solved";
+  const solvedB = b.endReason === "solved";
+  if (!solvedA && !solvedB) return draw("neitherGuessed");
+  if (solvedA !== solvedB) return win(solvedA ? "a" : "b", "onlyOneGuessed");
+  if (a.guesses.length !== b.guesses.length) return win(a.guesses.length < b.guesses.length ? "a" : "b", "fewerGuesses");
+  if (runTime(a) !== runTime(b)) return win(runTime(a) < runTime(b) ? "a" : "b", "fasterRun");
+  return draw("fasterRun"); // stessi tentativi e stesso tempo al millisecondo: pareggio
+}
+
+/** Chiude il Duel con il suo esito e lo annuncia in chat con un messaggio senza autore. */
+async function closeDuel(ctx: MutationCtx, duel: Doc<"wordleDuels">) {
+  await ctx.db.patch("wordleDuels", duel._id, { ...closingOf(duel), finishedAt: Date.now() });
+  const members = await membersOf(ctx, duel.conversationId);
+  await postDuelMessage(ctx, members, { conversationId: duel.conversationId, kind: "game", body: "wordle", wordleDuelId: duel._id });
+}
+
+/**
+ * Dopo la fine di una Run e alla Duel deadline: il Duel si chiude subito se anche l'altra Run è finita,
+ * oppure se la deadline è passata e nessuna Run è più in corso.
+ */
+async function closeIfDone(ctx: MutationCtx, duelId: Id<"wordleDuels">) {
+  const duel = await ctx.db.get("wordleDuels", duelId);
+  if (!duel || duel.status !== "open") return;
+  const states = [runState(duel.runA), runState(duel.runB)];
+  const deadline = deadlineOf(duel);
+  const bothFinished = states.every((state) => state === "finished");
+  const pastDeadline = deadline !== null && Date.now() >= deadline && !states.includes("playing");
+  if (bothFinished || pastDeadline) await closeDuel(ctx, duel);
 }
 
 /** Il Wordle Duel ancora in corso nella chat (invito in attesa o Duel aperto), se c'è. Non legge mai `games` né `quizzes`. */
@@ -145,6 +206,15 @@ export const respond = mutation({
       return;
     }
     await ctx.db.patch("wordleDuels", duel._id, { status: "open", acceptedAt: now });
+    await ctx.scheduler.runAt(now + DUEL_DEADLINE_MS, internal.wordleDuels.closeAtDeadline, { duelId: duel._id });
+  },
+});
+
+/** Alla Duel deadline il Duel si chiude; una Run ancora in corso finisce prima il suo Run timer, poi chiude lei. */
+export const closeAtDeadline = internalMutation({
+  args: { duelId: v.id("wordleDuels") },
+  handler: async (ctx, args) => {
+    await closeIfDone(ctx, args.duelId);
   },
 });
 
@@ -157,6 +227,52 @@ export const expireInvite = internalMutation({
     await ctx.db.patch("wordleDuels", duel._id, { status: "expired", finishedAt: Date.now() });
   },
 });
+
+/** Una Run finita come la mostra la scheda chiusa. */
+function runView(run: Run | null, word: string) {
+  if (!run?.endReason) return null;
+  return { guesses: run.guesses.map((g) => ({ word: g, colors: scoreGuess(g, word) })), endReason: run.endReason, timeMs: runTime(run) };
+}
+
+/** Il lato di chi ha vinto, o null per un pareggio o un Duel senza esito. */
+function winnerSideOf(duel: Doc<"wordleDuels">): Side | null {
+  const winner = duel.outcome?.winner;
+  return winner ? sideOf(duel, winner) : null;
+}
+
+/** Il Duel è finito dopo l'accettazione: chiuso con un esito, o scaduto senza che nessuno finisse. */
+const isOver = (duel: Doc<"wordleDuels">) => duel.status === "closed" || (duel.status === "expired" && duel.acceptedAt !== undefined);
+
+/** Il risultato completo, solo a Duel chiuso: la parola, le due Run e l'esito. Un Duel scaduto non mostra la parola. */
+function resultOf(duel: Doc<"wordleDuels">) {
+  if (duel.status !== "closed") return null;
+  return {
+    word: duel.word,
+    outcome: duel.outcome ? { winner: winnerSideOf(duel), reason: duel.outcome.reason } : null,
+    runs: { a: runView(finishedRun(duel, "a"), duel.word), b: runView(finishedRun(duel, "b"), duel.word) },
+  };
+}
+
+/** Il risultato in breve di un Duel finito: chi vince, perché, e i tentativi. */
+function resultSummaryOf(duel: Doc<"wordleDuels">, winnerName: string | null): ResultSummary {
+  const winnerSide = winnerSideOf(duel);
+  const guesses = (side: Side | null) => (side ? (finishedRun(duel, side)?.guesses.length ?? null) : null);
+  return {
+    status: duel.status === "closed" ? "closed" : "expired",
+    winnerName,
+    reason: duel.outcome?.reason ?? null,
+    winnerGuesses: guesses(winnerSide),
+    otherGuesses: guesses(winnerSide ? OTHER_SIDE[winnerSide] : null),
+  };
+}
+
+/** Per la notifica del messaggio di chiusura. Null se il Duel non è finito dopo l'accettazione. */
+export async function wordleResultSummary(ctx: QueryCtx, duelId: Id<"wordleDuels">): Promise<ResultSummary | null> {
+  const duel = await ctx.db.get("wordleDuels", duelId);
+  if (!duel || !isOver(duel)) return null;
+  const winner = duel.outcome?.winner;
+  return resultSummaryOf(duel, winner ? ((await ctx.db.get("profiles", winner))?.name ?? "?") : null);
+}
 
 /** La scheda del Duel per chi è nella chat. Finché il Duel non è chiuso non contiene mai la parola. */
 export const get = query({
@@ -174,13 +290,15 @@ export const get = query({
 
     const side = sideOf(duel, me._id);
     const [a, b] = await Promise.all([ctx.db.get("profiles", duel.playerA), ctx.db.get("profiles", duel.playerB)]);
+    const nameA = a?.name ?? "?";
+    const nameB = b?.name ?? "?";
     return {
       _id: duel._id,
       conversationId: duel.conversationId,
       status: duel.status,
       mySide: side,
-      nameA: a?.name ?? "?",
-      nameB: b?.name ?? "?",
+      nameA,
+      nameB,
       runMinutes: duel.runMinutes,
       language: duel.language,
       createdAt: duel.createdAt,
@@ -189,6 +307,11 @@ export const get = query({
       deadline: deadlineOf(duel),
       /** Solo lo stato e la fine del Run timer di chi guarda: mai i suoi tentativi qui. */
       myRun: side ? { state: runState(duel[RUN_FIELD[side]]), endsAt: duel[RUN_FIELD[side]]?.endsAt ?? null } : null,
+      /** Lo stato di ogni Run: mai un risultato finché il Duel è aperto. */
+      players: { a: runState(duel.runA), b: runState(duel.runB) },
+      result: resultOf(duel),
+      /** La riga di chiusura in breve, per il messaggio senza autore in chat. */
+      summary: isOver(duel) ? resultSummaryOf(duel, { a: nameA, b: nameB, none: null }[winnerSideOf(duel) ?? "none"]) : null,
       /** Ora del server: la scheda corregge il proprio orologio per mostrare il tempo che resta (come `games.get`). */
       serverNow: Date.now(),
     };

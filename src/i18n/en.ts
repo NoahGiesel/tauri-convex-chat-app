@@ -521,6 +521,31 @@ export const en = {
   "wordle.endGaveUp": "You gave up",
   "wordle.waitingOpponent": "The result and the word appear when {name} finishes, or when the Duel closes.",
   "wordle.duelClosesIn": "The Duel closes in {time}.",
+
+  "wordle.toPlay": "To play",
+  "wordle.playing": "Playing…",
+  "wordle.finished": "Finished",
+  "wordle.hiddenUntilBoth": "Results stay hidden until both finish. The Duel closes in {time}.",
+  "wordle.wordWas": "The word was",
+  "wordle.timeOutNote": "(time out)",
+  "wordle.gaveUpNote": "(gave up)",
+  "wordle.didNotFinish": "Did not finish in time",
+  "wordle.wins": "🏆 {name} wins",
+  "wordle.reason.fewerGuesses": "Fewer guesses",
+  "wordle.reason.fasterRun": "Same guesses, faster Run",
+  "wordle.reason.onlyOneGuessed": "The only one to guess the word",
+  "wordle.reason.forfeit": "The other player did not finish in time",
+  "wordle.drawNeither": "Draw: neither guessed the word",
+  "wordle.drawTie": "Draw: same guesses and same time",
+  "wordle.duelExpired": "Wordle Duel expired: neither player finished a Run in time.",
+  "wordle.result.fewerGuesses": "Wordle Duel closed: {name} wins ({n} to {m} guesses)",
+  "wordle.result.fasterRun": "Wordle Duel closed: {name} wins (faster Run, {n} guesses each)",
+  "wordle.result.onlyOneGuessed": "Wordle Duel closed: {name} wins (the only one to guess the word)",
+  "wordle.result.forfeit": "Wordle Duel closed: {name} wins (the other did not finish in time)",
+  "wordle.result.draw": "Wordle Duel closed: draw, neither guessed the word",
+  "wordle.result.tie": "Wordle Duel closed: draw, same guesses and same time",
+
+  "wordle.closesAfterRun": "Results stay hidden until both finish. The Duel closes when the Run still in progress ends.",
 } as const;
 
 export type MessageKey = keyof typeof en;

@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import schema from "./schema";
-import { INVITE_TTL_MS } from "./wordleRules";
+import { DUEL_DEADLINE_MS, INVITE_TTL_MS } from "./wordleRules";
 
 const modules = import.meta.glob("./**/*.ts");
 
@@ -200,8 +200,9 @@ describe("scadenza dell'invito", () => {
   it("un invito accettato non scade", async () => {
     const f = await twoFriends();
     const duelId = await challenge(f);
+    vi.advanceTimersByTime(60_000);
     await f.bob.mutation(api.wordleDuels.respond, { duelId, action: "accept" });
-    vi.advanceTimersByTime(INVITE_TTL_MS);
+    vi.advanceTimersByTime(INVITE_TTL_MS - 60_000);
     await f.t.finishInProgressScheduledFunctions();
     expect((await f.bob.query(api.wordleDuels.get, { duelId }))?.status).toBe("open");
   });
@@ -434,5 +435,191 @@ describe("segretezza", () => {
   it("chi non è nella chat non vede nessuna Run", async () => {
     const f = await openDuel("crane");
     expect(await f.carol.query(api.wordleDuels.myRun, { duelId: f.duelId })).toBeNull();
+  });
+});
+
+type Duel = Awaited<ReturnType<typeof openDuel>>;
+type Player = "alice" | "bob";
+
+/** Apre la Run del giocatore, aspetta `waitMs` e prova le parole in ordine. */
+async function play(f: Duel, who: Player, words: string[], waitMs = 0) {
+  await f[who].mutation(api.wordleDuels.openRun, { duelId: f.duelId });
+  vi.advanceTimersByTime(waitMs);
+  for (const word of words) await f[who].mutation(api.wordleDuels.guess, { duelId: f.duelId, word });
+}
+
+async function quit(f: Duel, who: Player) {
+  await f[who].mutation(api.wordleDuels.openRun, { duelId: f.duelId });
+  await f[who].mutation(api.wordleDuels.giveUp, { duelId: f.duelId });
+}
+
+const cardOf = (f: Duel, who: Player = "alice") => f[who].query(api.wordleDuels.get, { duelId: f.duelId });
+
+/** I messaggi della chat diretta, dal più vecchio. */
+const chatMessages = (f: Duel) =>
+  f.t.run((ctx) => ctx.db.query("messages").withIndex("by_conversation", (q) => q.eq("conversationId", f.direct)).collect());
+
+/** Un secondo di margine: convex-test sposta l'orologio di qualche ms tra una chiamata e l'altra. */
+const PAST_DEADLINE_MS = DUEL_DEADLINE_MS + 1_000;
+
+async function passDeadline(f: Duel) {
+  vi.advanceTimersByTime(PAST_DEADLINE_MS);
+  await f.t.finishInProgressScheduledFunctions();
+}
+
+describe("esito", () => {
+  it("vince chi indovina con meno tentativi", async () => {
+    const f = await openDuel("crane");
+    await play(f, "alice", ["slate", "crane"]);
+    await play(f, "bob", ["crane"]);
+    const card = (await cardOf(f))!;
+    expect(card.status).toBe("closed");
+    expect(card.result?.outcome).toEqual({ winner: "b", reason: "fewerGuesses" });
+  });
+
+  it("a parità di tentativi vince la Run più veloce", async () => {
+    const f = await openDuel("crane");
+    await play(f, "alice", ["slate", "crane"], 2_000);
+    await play(f, "bob", ["slate", "crane"], 5_000);
+    expect((await cardOf(f))!.result?.outcome).toEqual({ winner: "a", reason: "fasterRun" });
+  });
+
+  it("indovinare batte non indovinare, anche con più tentativi", async () => {
+    const f = await openDuel("crane");
+    await play(f, "alice", ["slate", "pious", "dough", "lymph", "fight", "crane"]);
+    await quit(f, "bob");
+    expect((await cardOf(f))!.result?.outcome).toEqual({ winner: "a", reason: "onlyOneGuessed" });
+  });
+
+  it("se nessuno indovina è un pareggio", async () => {
+    const f = await openDuel("crane");
+    await play(f, "alice", ["slate", "pious", "dough", "lymph", "fight", "brisk"]);
+    await quit(f, "bob");
+    const card = (await cardOf(f))!;
+    expect(card.status).toBe("closed");
+    expect(card.result?.outcome).toEqual({ winner: null, reason: "neitherGuessed" });
+  });
+});
+
+describe("chiusura", () => {
+  it("resta aperto e nasconde tutto finché la seconda Run non finisce", async () => {
+    const f = await openDuel("crane");
+    await play(f, "alice", ["slate", "crane"]);
+    const card = (await cardOf(f, "bob"))!;
+    expect(card).toMatchObject({ status: "open", result: null, players: { a: "finished", b: "toPlay" } });
+    expect(JSON.stringify(card)).not.toContain("crane");
+
+    await f.bob.mutation(api.wordleDuels.openRun, { duelId: f.duelId });
+    expect((await cardOf(f))!.players).toEqual({ a: "finished", b: "playing" });
+  });
+
+  it("chiuso, la scheda mostra la parola, le due griglie, i tempi e come è finita ogni Run", async () => {
+    const f = await openDuel("crane");
+    await play(f, "alice", ["slate", "crane"], 4_000);
+    await quit(f, "bob");
+    const result = (await cardOf(f, "bob"))!.result!;
+    expect(result.word).toBe("crane");
+    expect(result.runs.a).toMatchObject({ endReason: "solved", guesses: [{ word: "slate" }, { word: "crane" }] });
+    expect(result.runs.a!.timeMs).toBeCloseTo(4_000, -2);
+    expect(result.runs.a!.guesses[1].colors).toEqual(["correct", "correct", "correct", "correct", "correct"]);
+    expect(result.runs.b).toMatchObject({ endReason: "gaveUp", guesses: [] });
+  });
+
+  it("a Duel chiuso la Run non si apre e i tentativi sono respinti", async () => {
+    const f = await openDuel("crane");
+    await quit(f, "alice");
+    await quit(f, "bob");
+    await expect(f.alice.mutation(api.wordleDuels.openRun, { duelId: f.duelId })).rejects.toSatisfy((e) => errorCode(e) === "game_closed");
+  });
+
+  it("alla Duel deadline chi non ha finito perde per forfeit, qualunque sia la Run dell'altro", async () => {
+    const f = await openDuel("crane");
+    await quit(f, "alice");
+    await passDeadline(f);
+    const card = (await cardOf(f))!;
+    expect(card.status).toBe("closed");
+    expect(card.result?.outcome).toEqual({ winner: "a", reason: "forfeit" });
+    expect(card.result?.runs.b).toBeNull();
+  });
+
+  it("se alla deadline nessuno ha finito, il Duel scade senza vincitore", async () => {
+    const f = await openDuel("crane");
+    await passDeadline(f);
+    const card = (await cardOf(f))!;
+    expect(card.status).toBe("expired");
+    expect(card.result).toBeNull(); // un Duel scaduto non mostra la parola
+    expect(JSON.stringify(card)).not.toContain("crane");
+  });
+
+  it("una Run in corso alla deadline finisce il suo Run timer, poi il Duel si chiude", async () => {
+    const f = await openDuel("crane");
+    await play(f, "alice", ["slate", "crane"]);
+    vi.advanceTimersByTime(DUEL_DEADLINE_MS - 10_000);
+    await f.bob.mutation(api.wordleDuels.openRun, { duelId: f.duelId });
+    vi.advanceTimersByTime(10_000);
+    await f.t.finishInProgressScheduledFunctions();
+    expect((await cardOf(f))!.status).toBe("open");
+
+    // Bob gioca ancora dopo la deadline, nel suo Run timer.
+    await f.bob.mutation(api.wordleDuels.guess, { duelId: f.duelId, word: "crane" });
+    expect((await cardOf(f))!.result?.outcome).toEqual({ winner: "b", reason: "fewerGuesses" });
+  });
+
+  it("se la Run in corso alla deadline scade, il Duel si chiude allo scadere", async () => {
+    const f = await openDuel("crane");
+    vi.advanceTimersByTime(DUEL_DEADLINE_MS - 10_000);
+    await f.bob.mutation(api.wordleDuels.openRun, { duelId: f.duelId });
+    vi.advanceTimersByTime(10_000);
+    await f.t.finishInProgressScheduledFunctions();
+    expect((await cardOf(f))!.status).toBe("open");
+
+    vi.advanceTimersByTime(RUN_MS);
+    await f.t.finishInProgressScheduledFunctions();
+    expect((await cardOf(f))!.result?.outcome).toEqual({ winner: "b", reason: "forfeit" });
+  });
+
+  it("dopo la deadline una Run non si apre più", async () => {
+    const f = await openDuel("crane");
+    vi.advanceTimersByTime(PAST_DEADLINE_MS);
+    await expect(f.alice.mutation(api.wordleDuels.openRun, { duelId: f.duelId })).rejects.toSatisfy((e) => errorCode(e) === "game_closed");
+  });
+
+  it("i lavori programmati non toccano un Duel già chiuso", async () => {
+    const f = await openDuel("crane");
+    await play(f, "alice", ["crane"]);
+    await play(f, "bob", ["slate", "crane"]);
+    await f.t.finishAllScheduledFunctions(vi.runAllTimers);
+    const card = (await cardOf(f))!;
+    expect(card.status).toBe("closed");
+    expect(card.result?.outcome).toEqual({ winner: "a", reason: "fewerGuesses" });
+    expect((await chatMessages(f)).filter((m) => m.authorId === undefined)).toHaveLength(1);
+  });
+});
+
+describe("messaggio di chiusura", () => {
+  it("alla chiusura arriva in chat un messaggio senza autore, non letto per entrambi", async () => {
+    const f = await openDuel("crane");
+    await play(f, "alice", ["crane"]);
+    await play(f, "bob", ["slate", "crane"]);
+
+    const last = (await chatMessages(f)).at(-1)!;
+    expect(last).toMatchObject({ kind: "game", wordleDuelId: f.duelId });
+    expect(last.authorId).toBeUndefined();
+
+    for (const who of ["alice", "bob"] as const) {
+      const chat = (await f[who].query(api.conversations.list, {}))!.find((c) => c._id === f.direct)!;
+      expect(chat.unreadCount).toBeGreaterThan(0);
+      expect(chat.latest).toMatchObject({
+        id: last._id,
+        wordleResult: { status: "closed", winnerName: "alice", reason: "fewerGuesses", winnerGuesses: 1, otherGuesses: 2 },
+      });
+    }
+  });
+
+  it("anche un Duel scaduto dopo l'accettazione lo annuncia", async () => {
+    const f = await openDuel("crane");
+    await passDeadline(f);
+    const chat = (await f.bob.query(api.conversations.list, {}))!.find((c) => c._id === f.direct)!;
+    expect(chat.latest?.wordleResult).toMatchObject({ status: "expired", winnerName: null, reason: null });
   });
 });

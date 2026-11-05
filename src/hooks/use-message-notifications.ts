@@ -5,6 +5,7 @@ import { isPermissionGranted, requestPermission, sendNotification } from "@tauri
 import type { ConversationItem } from "@/components/chat-app";
 import { useI18n } from "@/i18n/i18n-provider";
 import { playNotificationSound } from "@/lib/notification-sound";
+import { formatWordleResult } from "@/lib/wordle";
 
 const isWindows = typeof navigator !== "undefined" && /windows/i.test(navigator.userAgent);
 
@@ -114,6 +115,11 @@ export function useMessageNotifications(conversations: ConversationItem[] | null
     void (async () => {
       if (!(await ensurePermission())) return;
       for (const { title, latest } of fresh.slice(-3)) {
+        // La chiusura di un Wordle Duel non ha autore ma non è una risposta dell'AI: titolo della chat e riga del risultato.
+        if (latest.wordleResult) {
+          sendNotification({ title, body: formatWordleResult(latest.wordleResult, t) });
+          continue;
+        }
         const author = latest.authorName ?? t("chat.aiName");
         const text = preview(latest);
         // In un gruppo si legge chi scrive; in una chat diretta il titolo è già il suo nome.
