@@ -145,7 +145,7 @@ The prototype on [`prototype/wordle-duel-ui`](https://github.com/NoahGiesel/taur
 
 ### Chat card
 
-In the look of `game-card.tsx`: a header with three tiles (green, yellow, grey), "Wordle Duel", and badges for the Run timer and the language.
+In the look of `game-card.tsx`: a header with three tiles (green, yellow, red), "Wordle Duel", and badges for the Run timer and the language.
 
 - **Invite.** The challenged player gets Accept and Decline. The challenger gets Withdraw. Both see "Expires in …".
 - **Open.** A box per player shows To play, Playing… or Finished, never a result. Below is the action: **Start your Run · N min**, with the note "the timer starts when you open the Run and never pauses"; or **Back to your Run · m:ss left**; or **See your Run**. A footer reads "Results stay hidden until both finish. The Duel closes in …". There is no Give up button on the card.
@@ -163,7 +163,7 @@ The Run opens in its own app window, like the chat popout in `src/lib/popout.ts`
 - **End of Run:** a summary reads "Guessed in n · m:ss", "Time's up", "Six misses" or "You gave up". While the other player has not finished, it adds that the result and the word appear when they finish, or when the Duel closes.
 - **See your Run:** after finishing, while the Duel is open, the window reopens read-only with the player's own grid, guesses and time.
 
-**Tile colours come from the theme:** correct is `--app-online`, present is `--app-upload`, absent is `--app-raised`, with `--app-bg` text. They follow every preset.
+**Tile colours are fixed, the same in every theme:** correct is green (`#538d4e`), present is yellow (`#b59f3b`), absent is red (`#c0443a`), with white text.
 
 ## Strings and release notes
 
