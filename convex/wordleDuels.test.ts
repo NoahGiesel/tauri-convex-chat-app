@@ -623,3 +623,75 @@ describe("messaggio di chiusura", () => {
     expect(chat.latest?.wordleResult).toMatchObject({ status: "expired", winnerName: null, reason: null });
   });
 });
+
+describe("statistiche", () => {
+  /** Un altro Duel accettato nella stessa chat, con la parola fissata dal test. */
+  async function nextDuel(f: Duel, word: string): Promise<Duel> {
+    const duelId = await f.alice.mutation(api.wordleDuels.start, { conversationId: f.direct, runMinutes: 1, language: "en" });
+    await f.bob.mutation(api.wordleDuels.respond, { duelId, action: "accept" });
+    await f.t.run((ctx) => ctx.db.patch("wordleDuels", duelId, { word }));
+    return { ...f, duelId };
+  }
+
+  const historyOf = (f: Duel, who: Player = "alice") => f[who].query(api.wordleDuels.history, { conversationId: f.direct });
+
+  it("contano i Duel chiusi, forfeit compresi; scaduti, rifiutati e ritirati no", async () => {
+    const f = await openDuel("crane");
+    await play(f, "alice", ["slate", "crane"]);
+    await play(f, "bob", ["slate", "pious", "crane"]); // vince Alice
+
+    const second = await nextDuel(f, "crane");
+    await quit(second, "alice");
+    await quit(second, "bob"); // pareggio
+
+    const third = await nextDuel(f, "crane");
+    await play(third, "bob", ["slate", "pious", "dough", "crane"]);
+    await passDeadline(third); // Alice non ha giocato: vince Bob per forfeit
+
+    const fourth = await nextDuel(f, "crane");
+    await passDeadline(fourth); // nessuno ha giocato: scaduto
+
+    const declined = await f.alice.mutation(api.wordleDuels.start, { conversationId: f.direct, runMinutes: 1, language: "en" });
+    await f.bob.mutation(api.wordleDuels.respond, { duelId: declined, action: "decline" });
+    const withdrawn = await f.alice.mutation(api.wordleDuels.start, { conversationId: f.direct, runMinutes: 1, language: "en" });
+    await f.alice.mutation(api.wordleDuels.respond, { duelId: withdrawn, action: "withdraw" });
+
+    const history = (await historyOf(f, "bob"))!;
+    expect(history.total).toBe(3);
+    expect(history.draws).toBe(1);
+    expect(history.recent.map((d) => d._id)).toEqual([third.duelId, second.duelId, f.duelId]);
+    expect(history.recent[0]).toMatchObject({ nameA: "alice", nameB: "bob", guessesA: null, guessesB: 4, winnerSide: "b" });
+    expect(history.players).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: "alice", wins: 1 }),
+        expect.objectContaining({ name: "bob", wins: 1 }),
+      ]),
+    );
+  });
+
+  it("la media è sui tentativi delle sole parole indovinate", async () => {
+    const f = await openDuel("crane");
+    await play(f, "alice", ["slate", "crane"]);
+    await play(f, "bob", ["slate", "pious", "crane"]);
+
+    const second = await nextDuel(f, "crane");
+    await play(second, "alice", ["slate", "pious", "dough", "crane"]);
+    await quit(second, "bob");
+
+    const players = (await historyOf(f))!.players;
+    expect(players.find((p) => p.name === "alice")).toMatchObject({ wins: 2, averageGuesses: 3 });
+    expect(players.find((p) => p.name === "bob")).toMatchObject({ wins: 0, averageGuesses: 3 });
+  });
+
+  it("chi non ha mai indovinato non ha una media", async () => {
+    const f = await openDuel("crane");
+    await quit(f, "alice");
+    await play(f, "bob", ["crane"]);
+    expect((await historyOf(f))!.players.find((p) => p.name === "alice")).toMatchObject({ wins: 0, averageGuesses: null });
+  });
+
+  it("chi non è nella chat non vede le statistiche", async () => {
+    const f = await openDuel("crane");
+    expect(await f.carol.query(api.wordleDuels.history, { conversationId: f.direct })).toBeNull();
+  });
+});

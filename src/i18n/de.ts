@@ -547,4 +547,7 @@ export const de: Messages = {
   "wordle.result.tie": "Wordle Duel beendet: Unentschieden, gleich viele Versuche und gleiche Zeit",
 
   "wordle.closesAfterRun": "Die Ergebnisse bleiben verborgen, bis beide fertig sind. Das Duel endet, wenn der laufende Run vorbei ist.",
+
+  "library.wordleAverage": "Ø {avg} Versuche",
+  "library.wordleNoAverage": "Noch kein Wort erraten",
 };

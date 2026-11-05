@@ -546,6 +546,9 @@ export const en = {
   "wordle.result.tie": "Wordle Duel closed: draw, same guesses and same time",
 
   "wordle.closesAfterRun": "Results stay hidden until both finish. The Duel closes when the Run still in progress ends.",
+
+  "library.wordleAverage": "{avg} guesses on average",
+  "library.wordleNoAverage": "No word guessed yet",
 } as const;
 
 export type MessageKey = keyof typeof en;

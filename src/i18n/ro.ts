@@ -547,4 +547,7 @@ export const ro: Messages = {
   "wordle.result.tie": "Wordle Duel închis: egalitate, aceleași încercări și același timp",
 
   "wordle.closesAfterRun": "Rezultatele rămân ascunse până termină amândoi. Duel-ul se închide când se termină Run-ul aflat în desfășurare.",
+
+  "library.wordleAverage": "{avg} încercări în medie",
+  "library.wordleNoAverage": "Niciun cuvânt ghicit încă",
 };

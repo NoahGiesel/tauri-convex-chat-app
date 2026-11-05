@@ -408,3 +408,86 @@ export const myRun = query({
     };
   },
 });
+
+/** Duel recenti mostrati nell'elenco della scheda "Giochi". */
+const HISTORY_LIMIT = 50;
+/** Duel letti per le statistiche, dal più recente. */
+const STATS_LIMIT = 500;
+
+/**
+ * Duel chiusi di una chat e statistiche, per la scheda "Giochi" di Media. Contano i Duel chiusi, forfeit compresi;
+ * per ogni giocatore le vittorie e la media dei tentativi sulle sole parole indovinate.
+ */
+export const history = query({
+  args: { conversationId: v.id("conversations") },
+  handler: async (ctx, args) => {
+    const me = await getProfile(ctx);
+    if (!me) return null;
+    const member = await ctx.db
+      .query("members")
+      .withIndex("by_conversation_and_profile", (q) => q.eq("conversationId", args.conversationId).eq("profileId", me._id))
+      .unique();
+    if (!member) return null;
+
+    const closed = await ctx.db
+      .query("wordleDuels")
+      .withIndex("by_conversation_and_status", (q) => q.eq("conversationId", args.conversationId).eq("status", "closed"))
+      .order("desc")
+      .take(STATS_LIMIT);
+
+    const names = new Map<Id<"profiles">, string>();
+    const nameOf = async (id: Id<"profiles">) => {
+      if (!names.has(id)) names.set(id, (await ctx.db.get("profiles", id))?.name ?? "?");
+      return names.get(id)!;
+    };
+    const players = new Map<Id<"profiles">, { profileId: Id<"profiles">; name: string; wins: number; guessed: number; guesses: number }>();
+    const entry = async (id: Id<"profiles">) => {
+      if (!players.has(id)) players.set(id, { profileId: id, name: await nameOf(id), wins: 0, guessed: 0, guesses: 0 });
+      return players.get(id)!;
+    };
+    /** Tentativi della parola indovinata, o null se il giocatore non l'ha indovinata. */
+    const solvedIn = (duel: Doc<"wordleDuels">, side: Side) => {
+      const run = finishedRun(duel, side);
+      return run?.endReason === "solved" ? run.guesses.length : null;
+    };
+
+    let draws = 0;
+    for (const duel of closed) {
+      for (const side of ["a", "b"] as const) {
+        const player = await entry(duel[PLAYER_FIELD[side]]);
+        const n = solvedIn(duel, side);
+        if (n !== null) {
+          player.guessed += 1;
+          player.guesses += n;
+        }
+      }
+      if (duel.outcome?.winner) (await entry(duel.outcome.winner)).wins += 1;
+      else draws += 1;
+    }
+
+    const recent = await Promise.all(
+      closed.slice(0, HISTORY_LIMIT).map(async (duel) => ({
+        _id: duel._id,
+        finishedAt: duel.finishedAt ?? duel._creationTime,
+        nameA: await nameOf(duel.playerA),
+        nameB: await nameOf(duel.playerB),
+        guessesA: solvedIn(duel, "a"),
+        guessesB: solvedIn(duel, "b"),
+        runMinutes: duel.runMinutes,
+        language: duel.language,
+        winnerSide: winnerSideOf(duel),
+      })),
+    );
+    return {
+      total: closed.length,
+      draws,
+      players: [...players.values()].map(({ profileId, name, wins, guessed, guesses }) => ({
+        profileId,
+        name,
+        wins,
+        averageGuesses: guessed > 0 ? guesses / guessed : null,
+      })),
+      recent,
+    };
+  },
+});

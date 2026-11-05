@@ -9,6 +9,7 @@ import type { LightboxItem } from "@/components/media-lightbox";
 import { useI18n } from "@/i18n/i18n-provider";
 import { openLink } from "@/lib/links";
 import { cn } from "@/lib/utils";
+import { MAX_GUESSES } from "../../convex/wordleRules";
 
 type Tab = "media" | "links" | "ai" | "games";
 const PAGE = 30;
@@ -213,15 +214,35 @@ function AiTab({ conversationId }: { conversationId: Id<"conversations"> }) {
   );
 }
 
-/** Storico dei giochi della chat (sasso-carta-forbici e quiz), con le statistiche di chi ha giocato. */
+/** Risultato di una Run nell'elenco: tentativi sul massimo, o X se la parola non è stata indovinata. */
+const runScore = (guesses: number | null) => `${guesses ?? "X"}/${MAX_GUESSES}`;
+
+/** L'icona di ogni gioco, nel titolo delle statistiche e nell'elenco. */
+const GAME_ICON = { rps: "🪨", quiz: "🧠", wordle: "🟩" } as const;
+
+/** Una partita finita nell'elenco della scheda "Giochi", qualunque sia il gioco. */
+interface FinishedGameRow {
+  _id: string;
+  finishedAt: number;
+  nameA: string;
+  nameB: string;
+  score: string;
+  winnerSide: "a" | "b" | null;
+  icon: string;
+  /** Etichetta accanto alla data (formato del quiz, Run timer e lingua del Duel); null se non serve. */
+  tag: string | null;
+}
+
+/** Storico dei giochi della chat (sasso-carta-forbici, quiz e Wordle Duel), con le statistiche di chi ha giocato. */
 function GamesTab({ conversationId }: { conversationId: Id<"conversations"> }) {
   const { t, language } = useI18n();
   const rps = useQuery(api.games.history, { conversationId });
   const quiz = useQuery(api.quizzes.history, { conversationId });
+  const wordle = useQuery(api.wordleDuels.history, { conversationId });
   const when = (ms: number) => new Date(ms).toLocaleString(language, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
-  if (!rps || !quiz) return null;
-  if (rps.total === 0 && quiz.total === 0) return <p className="pt-10 text-center text-sm text-app-text-muted">{t("library.noGames")}</p>;
+  if (!rps || !quiz || !wordle) return null;
+  if (rps.total === 0 && quiz.total === 0 && wordle.total === 0) return <p className="pt-10 text-center text-sm text-app-text-muted">{t("library.noGames")}</p>;
 
   /** Una riga per gioco: titolo e totali, poi i due giocatori con vittorie e una barra che li mette a confronto. */
   const stats = (
@@ -279,24 +300,44 @@ function GamesTab({ conversationId }: { conversationId: Id<"conversations"> }) {
     );
   };
 
-  const list = [
-    ...rps.recent.map((g) => ({ ...g, icon: "🪨", mode: null as string | null })),
-    ...quiz.recent.map((g) => ({ ...g, icon: "🧠", mode: `quiz${g.size}` as string | null })),
+  const list: FinishedGameRow[] = [
+    ...rps.recent.map((g) => ({ ...g, score: `${g.scoreA}–${g.scoreB}`, icon: GAME_ICON.rps, tag: null })),
+    ...quiz.recent.map((g) => ({ ...g, score: `${g.scoreA}–${g.scoreB}`, icon: GAME_ICON.quiz, tag: `quiz${g.size}` })),
+    ...wordle.recent.map((g) => ({
+      ...g,
+      score: `${runScore(g.guessesA)}–${runScore(g.guessesB)}`,
+      icon: GAME_ICON.wordle,
+      tag: `${t("wordle.minutes", { n: g.runMinutes })} · ${g.language.toUpperCase()}`,
+    })),
   ].sort((x, y) => y.finishedAt - x.finishedAt);
 
   return (
     <div className="flex flex-col gap-3">
       {stats(
-        `🪨 ${t("game.title")}`,
+        `${GAME_ICON.rps} ${t("game.title")}`,
         rps.total,
         rps.draws,
         rps.players.map((p) => ({ profileId: p.profileId, name: p.name, wins: p.wins, extra: t("library.gamesRounds", { count: p.roundWins }) })),
       )}
       {stats(
-        `🧠 ${t("library.quizzes")}`,
+        `${GAME_ICON.quiz} ${t("library.quizzes")}`,
         quiz.total,
         quiz.draws,
         quiz.players.map((p) => ({ profileId: p.profileId, name: p.name, wins: p.wins, extra: t("library.quizPoints", { count: p.points }) })),
+      )}
+      {stats(
+        `${GAME_ICON.wordle} ${t("wordle.title")}`,
+        wordle.total,
+        wordle.draws,
+        wordle.players.map((p) => ({
+          profileId: p.profileId,
+          name: p.name,
+          wins: p.wins,
+          extra:
+            p.averageGuesses === null
+              ? t("library.wordleNoAverage")
+              : t("library.wordleAverage", { avg: p.averageGuesses.toLocaleString(language, { maximumFractionDigits: 1 }) }),
+        })),
       )}
 
       <ul className="mt-1 flex flex-col divide-y divide-app-border">
@@ -305,11 +346,11 @@ function GamesTab({ conversationId }: { conversationId: Id<"conversations"> }) {
             <span className="w-5 shrink-0 text-center text-base">{g.icon}</span>
             <div className="min-w-0 flex-1">
               <div className="truncate text-[13px] font-semibold text-app-text">
-                {g.nameA} <span className="font-extrabold text-app-text-strong">{g.scoreA}–{g.scoreB}</span> {g.nameB}
+                {g.nameA} <span className="font-extrabold text-app-text-strong">{g.score}</span> {g.nameB}
               </div>
               <div className="text-[11px] text-app-text-dim">
                 {when(g.finishedAt)}
-                {g.mode && <span className="ml-1.5 rounded bg-app-field px-1 py-px font-mono font-semibold text-app-text-muted">{g.mode}</span>}
+                {g.tag && <span className="ml-1.5 rounded bg-app-field px-1 py-px font-mono font-semibold text-app-text-muted">{g.tag}</span>}
               </div>
             </div>
             <span className={cn("shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-bold", g.winnerSide ? "bg-app-accent-soft text-app-accent-text" : "bg-app-field text-app-text-muted")}>
