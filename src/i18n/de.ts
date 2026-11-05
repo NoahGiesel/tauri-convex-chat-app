@@ -545,4 +545,6 @@ export const de: Messages = {
   "wordle.result.forfeit": "Wordle Duel beendet: {name} gewinnt (die andere Person wurde nicht rechtzeitig fertig)",
   "wordle.result.draw": "Wordle Duel beendet: Unentschieden, niemand hat das Wort erraten",
   "wordle.result.tie": "Wordle Duel beendet: Unentschieden, gleich viele Versuche und gleiche Zeit",
+
+  "wordle.closesAfterRun": "Die Ergebnisse bleiben verborgen, bis beide fertig sind. Das Duel endet, wenn der laufende Run vorbei ist.",
 };

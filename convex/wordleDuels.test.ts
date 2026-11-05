@@ -547,7 +547,8 @@ describe("chiusura", () => {
     await passDeadline(f);
     const card = (await cardOf(f))!;
     expect(card.status).toBe("expired");
-    expect(card.result).toMatchObject({ word: "crane", outcome: null });
+    expect(card.result).toBeNull(); // un Duel scaduto non mostra la parola
+    expect(JSON.stringify(card)).not.toContain("crane");
   });
 
   it("una Run in corso alla deadline finisce il suo Run timer, poi il Duel si chiude", async () => {

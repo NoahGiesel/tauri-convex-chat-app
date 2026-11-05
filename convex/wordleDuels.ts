@@ -234,24 +234,28 @@ function runView(run: Run | null, word: string) {
   return { guesses: run.guesses.map((g) => ({ word: g, colors: scoreGuess(g, word) })), endReason: run.endReason, timeMs: runTime(run) };
 }
 
+/** Il lato di chi ha vinto, o null per un pareggio o un Duel senza esito. */
+function winnerSideOf(duel: Doc<"wordleDuels">): Side | null {
+  const winner = duel.outcome?.winner;
+  return winner ? sideOf(duel, winner) : null;
+}
+
 /** Il Duel è finito dopo l'accettazione: chiuso con un esito, o scaduto senza che nessuno finisse. */
 const isOver = (duel: Doc<"wordleDuels">) => duel.status === "closed" || (duel.status === "expired" && duel.acceptedAt !== undefined);
 
-/** Il risultato completo, solo a Duel finito: la parola, le due Run e l'esito. */
+/** Il risultato completo, solo a Duel chiuso: la parola, le due Run e l'esito. Un Duel scaduto non mostra la parola. */
 function resultOf(duel: Doc<"wordleDuels">) {
-  if (!isOver(duel)) return null;
-  const winner = duel.outcome?.winner;
+  if (duel.status !== "closed") return null;
   return {
     word: duel.word,
-    outcome: duel.outcome ? { winner: winner ? sideOf(duel, winner) : null, reason: duel.outcome.reason } : null,
+    outcome: duel.outcome ? { winner: winnerSideOf(duel), reason: duel.outcome.reason } : null,
     runs: { a: runView(finishedRun(duel, "a"), duel.word), b: runView(finishedRun(duel, "b"), duel.word) },
   };
 }
 
 /** Il risultato in breve di un Duel finito: chi vince, perché, e i tentativi. */
-function summaryOf(duel: Doc<"wordleDuels">, winnerName: string | null): ResultSummary {
-  const winner = duel.outcome?.winner;
-  const winnerSide = winner ? sideOf(duel, winner) : null;
+function resultSummaryOf(duel: Doc<"wordleDuels">, winnerName: string | null): ResultSummary {
+  const winnerSide = winnerSideOf(duel);
   const guesses = (side: Side | null) => (side ? (finishedRun(duel, side)?.guesses.length ?? null) : null);
   return {
     status: duel.status === "closed" ? "closed" : "expired",
@@ -263,11 +267,11 @@ function summaryOf(duel: Doc<"wordleDuels">, winnerName: string | null): ResultS
 }
 
 /** Per la notifica del messaggio di chiusura. Null se il Duel non è finito dopo l'accettazione. */
-export async function wordleResultLine(ctx: QueryCtx, duelId: Id<"wordleDuels">): Promise<ResultSummary | null> {
+export async function wordleResultSummary(ctx: QueryCtx, duelId: Id<"wordleDuels">): Promise<ResultSummary | null> {
   const duel = await ctx.db.get("wordleDuels", duelId);
   if (!duel || !isOver(duel)) return null;
   const winner = duel.outcome?.winner;
-  return summaryOf(duel, winner ? ((await ctx.db.get("profiles", winner))?.name ?? "?") : null);
+  return resultSummaryOf(duel, winner ? ((await ctx.db.get("profiles", winner))?.name ?? "?") : null);
 }
 
 /** La scheda del Duel per chi è nella chat. Finché il Duel non è chiuso non contiene mai la parola. */
@@ -307,7 +311,7 @@ export const get = query({
       players: { a: runState(duel.runA), b: runState(duel.runB) },
       result: resultOf(duel),
       /** La riga di chiusura in breve, per il messaggio senza autore in chat. */
-      summary: isOver(duel) ? summaryOf(duel, duel.outcome?.winner ? (duel.outcome.winner === duel.playerA ? nameA : nameB) : null) : null,
+      summary: isOver(duel) ? resultSummaryOf(duel, { a: nameA, b: nameB, none: null }[winnerSideOf(duel) ?? "none"]) : null,
       /** Ora del server: la scheda corregge il proprio orologio per mostrare il tempo che resta (come `games.get`). */
       serverNow: Date.now(),
     };

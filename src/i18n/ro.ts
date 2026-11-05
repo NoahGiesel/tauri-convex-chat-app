@@ -545,4 +545,6 @@ export const ro: Messages = {
   "wordle.result.forfeit": "Wordle Duel închis: câștigă {name} (celălalt nu a terminat la timp)",
   "wordle.result.draw": "Wordle Duel închis: egalitate, nimeni nu a ghicit cuvântul",
   "wordle.result.tie": "Wordle Duel închis: egalitate, aceleași încercări și același timp",
+
+  "wordle.closesAfterRun": "Rezultatele rămân ascunse până termină amândoi. Duel-ul se închide când se termină Run-ul aflat în desfășurare.",
 };

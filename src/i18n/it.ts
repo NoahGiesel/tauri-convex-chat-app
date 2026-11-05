@@ -545,4 +545,6 @@ export const it: Messages = {
   "wordle.result.forfeit": "Wordle Duel chiuso: vince {name} (l'altro non ha finito in tempo)",
   "wordle.result.draw": "Wordle Duel chiuso: pareggio, nessuno ha indovinato la parola",
   "wordle.result.tie": "Wordle Duel chiuso: pareggio, stessi tentativi e stesso tempo",
+
+  "wordle.closesAfterRun": "I risultati restano nascosti finché entrambi non finiscono. Il Duel si chiude quando finisce la Run ancora in corso.",
 };

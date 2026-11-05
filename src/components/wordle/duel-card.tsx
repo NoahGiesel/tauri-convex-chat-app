@@ -15,7 +15,9 @@ import { Grid } from "./grid";
 import { Tile } from "./tile";
 
 type Card = NonNullable<FunctionReturnType<typeof api.wordleDuels.get>>;
-type Side = "a" | "b";
+type Side = Card["mySide"] & string;
+
+const nameOf = (duel: Card, side: Side) => (side === "a" ? duel.nameA : duel.nameB);
 
 const PLAYER_STATE: Record<Card["players"]["a"], MessageKey> = {
   toPlay: "wordle.toPlay",
@@ -64,6 +66,8 @@ export function WordleDuelCard({ duelId, onLayout }: { duelId: Id<"wordleDuels">
 
   if (!duel) return null;
   const serverNow = now + offset.current;
+  // Dopo la Duel deadline una Run non si apre più: il Duel aspetta solo la Run ancora in corso.
+  const pastDeadline = duel.deadline !== null && serverNow >= duel.deadline;
 
   async function run(action: () => Promise<unknown>) {
     setError(null);
@@ -127,7 +131,7 @@ export function WordleDuelCard({ duelId, onLayout }: { duelId: Id<"wordleDuels">
         <div className="grid grid-cols-2 gap-2">
           {(["a", "b"] as const).map((side) => (
             <div key={side} className="flex flex-col items-center gap-0.5 rounded-xl border border-app-border bg-app-bg px-2 py-2">
-              <span className="max-w-full truncate text-sm font-bold text-app-text-strong">{side === "a" ? duel.nameA : duel.nameB}</span>
+              <span className="max-w-full truncate text-sm font-bold text-app-text-strong">{nameOf(duel, side)}</span>
               <span className={cn("text-xs", duel.players[side] === "finished" ? "font-semibold text-app-online" : "text-app-text-muted")}>
                 {t(PLAYER_STATE[duel.players[side]])}
               </span>
@@ -138,7 +142,7 @@ export function WordleDuelCard({ duelId, onLayout }: { duelId: Id<"wordleDuels">
 
       {duel.status === "open" && duel.myRun && (
         <div className="flex flex-col items-center gap-1.5">
-          {duel.myRun.state === "toPlay" && (
+          {duel.myRun.state === "toPlay" && !pastDeadline && (
             <>
               <button type="button" onClick={openRun} className={cn(primaryButtonClass, "h-10 px-5 text-sm")}>
                 {t("wordle.startRun", { n: duel.runMinutes })}
@@ -160,7 +164,7 @@ export function WordleDuelCard({ duelId, onLayout }: { duelId: Id<"wordleDuels">
       )}
       {duel.status === "open" && duel.deadline !== null && (
         <p className="text-center text-[11px] text-app-text-dim">
-          {t("wordle.hiddenUntilBoth", { time: formatHoursMinutes(duel.deadline - serverNow, t) })}
+          {pastDeadline ? t("wordle.closesAfterRun") : t("wordle.hiddenUntilBoth", { time: formatHoursMinutes(duel.deadline - serverNow, t) })}
         </p>
       )}
 
@@ -181,7 +185,6 @@ export function WordleDuelCard({ duelId, onLayout }: { duelId: Id<"wordleDuels">
 function ClosedResult({ duel, result }: { duel: Card; result: NonNullable<Card["result"]> }) {
   const { t } = useI18n();
   const winner = result.outcome?.winner ?? null;
-  const name = (side: Side) => (side === "a" ? duel.nameA : duel.nameB);
   return (
     <>
       <div className="flex flex-col items-center gap-1">
@@ -203,7 +206,7 @@ function ClosedResult({ duel, result }: { duel: Card; result: NonNullable<Card["
                 winner === side ? "border-app-accent" : "border-app-border",
               )}
             >
-              <span className="max-w-full truncate text-sm font-bold text-app-text-strong">{name(side)}</span>
+              <span className="max-w-full truncate text-sm font-bold text-app-text-strong">{nameOf(duel, side)}</span>
               {run ? (
                 <>
                   <Grid guesses={run.guesses} size="sm" />
@@ -224,7 +227,7 @@ function ClosedResult({ duel, result }: { duel: Card; result: NonNullable<Card["
       <p className="text-center text-sm font-bold text-app-text-strong">
         {result.outcome && winner !== null && result.outcome.reason !== "neitherGuessed" ? (
           <>
-            {t("wordle.wins", { name: name(winner) })}
+            {t("wordle.wins", { name: nameOf(duel, winner) })}
             <span className="block text-xs font-normal text-app-text-muted">{t(WIN_REASON[result.outcome.reason])}</span>
           </>
         ) : (

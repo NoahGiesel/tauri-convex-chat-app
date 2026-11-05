@@ -24,17 +24,16 @@ export function formatMinutesSeconds(ms: number): string {
 }
 
 /** La riga di chiusura di ogni esito con un vincitore; i pareggi e i Duel scaduti hanno la loro. */
-const RESULT_LINE: Record<OutcomeReason, MessageKey> = {
+const RESULT_LINE: Record<Exclude<OutcomeReason, "neitherGuessed">, MessageKey> = {
   fewerGuesses: "wordle.result.fewerGuesses",
   fasterRun: "wordle.result.fasterRun",
   onlyOneGuessed: "wordle.result.onlyOneGuessed",
   forfeit: "wordle.result.forfeit",
-  neitherGuessed: "wordle.result.draw",
 };
 
 /** La riga che annuncia la chiusura del Duel, in chat e nella notifica. */
 export function formatWordleResult(r: ResultSummary, t: Translate): string {
   if (r.status === "expired" || r.reason === null) return t("wordle.duelExpired");
-  if (r.winnerName === null) return t(r.reason === "neitherGuessed" ? "wordle.result.draw" : "wordle.result.tie");
+  if (r.winnerName === null || r.reason === "neitherGuessed") return t(r.reason === "neitherGuessed" ? "wordle.result.draw" : "wordle.result.tie");
   return t(RESULT_LINE[r.reason], { name: r.winnerName, n: r.winnerGuesses ?? 0, m: r.otherGuesses ?? 0 });
 }

@@ -412,6 +412,23 @@ export function ConversationView({
     loadMore(PAGE_SIZE);
   }
 
+  // Il messaggio di chiusura di un Wordle Duel porta alla sua scheda: se non è ancora caricata, carica i messaggi più vecchi.
+  const [cardTarget, setCardTarget] = useState<string | null>(null);
+  useEffect(() => {
+    if (!cardTarget) return;
+    const card = document.querySelector(`[data-wordle-duel="${cardTarget}"]`);
+    if (card) {
+      card.scrollIntoView({ behavior: "smooth", block: "center" });
+      setCardTarget(null);
+    } else if (status === "CanLoadMore") {
+      loadOlder();
+    } else if (status === "Exhausted") {
+      setCardTarget(null);
+    }
+    // loadOlder cambia a ogni render; conta solo quando arrivano messaggi nuovi o cambia lo stato del caricamento.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cardTarget, status, results]);
+
   // --- segna come letto quando arriva qualcosa mentre guardi la chat
   useEffect(() => {
     if (!newestId) return;
@@ -781,7 +798,8 @@ export function ConversationView({
           const m = row.message;
           // Il messaggio di chiusura di un Wordle Duel non ha autore: è una riga al centro, non una risposta dell'AI.
           if (m.kind === "game" && m.wordleDuelId && m.authorId === null) {
-            return <WordleResultLine key={m._id} duelId={m.wordleDuelId} />;
+            const duelId = m.wordleDuelId;
+            return <WordleResultLine key={m._id} duelId={duelId} onShowCard={() => setCardTarget(duelId)} />;
           }
           const isAi = m.kind === "ai";
 

@@ -544,6 +544,8 @@ export const en = {
   "wordle.result.forfeit": "Wordle Duel closed: {name} wins (the other did not finish in time)",
   "wordle.result.draw": "Wordle Duel closed: draw, neither guessed the word",
   "wordle.result.tie": "Wordle Duel closed: draw, same guesses and same time",
+
+  "wordle.closesAfterRun": "Results stay hidden until both finish. The Duel closes when the Run still in progress ends.",
 } as const;
 
 export type MessageKey = keyof typeof en;
