@@ -3,6 +3,13 @@
  * Niente import: lo script che genera le liste lo carica con Node (`scripts/wordle-lists/build.mjs`).
  */
 export type WordleLanguage = "it" | "en";
+export type RunMinutes = 1 | 5 | 10;
+
+/** Run timer tra cui sceglie chi sfida. */
+export const RUN_MINUTES: readonly RunMinutes[] = [1, 5, 10];
+export const WORDLE_LANGUAGES: readonly WordleLanguage[] = ["it", "en"];
+/** Un invito senza risposta scade dopo 24 ore. */
+export const INVITE_TTL_MS = 24 * 60 * 60 * 1000;
 
 /** Lettere ammesse: a–z; l'italiano toglie anche j, k, w, x, y (accenti e apostrofi restano fuori in entrambe). */
 const LETTER_RULES: Record<WordleLanguage, RegExp> = {

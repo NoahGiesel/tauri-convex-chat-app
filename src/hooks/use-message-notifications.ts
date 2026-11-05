@@ -31,6 +31,9 @@ async function badgePng(count: number): Promise<Uint8Array> {
 
 const isTauri = () => typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
+/** Testo della notifica di un gioco, dal corpo del messaggio che lo mostra (il resto è sasso-carta-forbici). */
+const GAME_NOTIFICATION: Partial<Record<string, "notif.quiz" | "notif.wordle">> = { quiz: "notif.quiz", wordle: "notif.wordle" };
+
 type Latest = NonNullable<ConversationItem["latest"]>;
 
 /** La finestra non è davanti all'utente? */
@@ -97,7 +100,7 @@ export function useMessageNotifications(conversations: ConversationItem[] | null
     const preview = (l: Latest): string => {
       const caption = l.body.trim();
       if (l.kind === "gif") return "GIF";
-      if (l.kind === "game") return t(l.body === "quiz" ? "notif.quiz" : "notif.game");
+      if (l.kind === "game") return t(GAME_NOTIFICATION[l.body] ?? "notif.game");
       if (l.kind === "media") {
         const label = t(l.attachment === "video" ? "notif.video" : "notif.photo");
         return caption ? `${label} ${caption}` : label;

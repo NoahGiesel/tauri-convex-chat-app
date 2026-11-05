@@ -34,6 +34,10 @@ import type * as summaryPrompt from "../summaryPrompt.js";
 import type * as summaryRules from "../summaryRules.js";
 import type * as typing from "../typing.js";
 import type * as users from "../users.js";
+import type * as wordleDuels from "../wordleDuels.js";
+import type * as wordleLists from "../wordleLists.js";
+import type * as wordleRules from "../wordleRules.js";
+import type * as wordleWords from "../wordleWords.js";
 
 import type {
   ApiFromModules,
@@ -68,6 +72,10 @@ declare const fullApi: ApiFromModules<{
   summaryRules: typeof summaryRules;
   typing: typeof typing;
   users: typeof users;
+  wordleDuels: typeof wordleDuels;
+  wordleLists: typeof wordleLists;
+  wordleRules: typeof wordleRules;
+  wordleWords: typeof wordleWords;
 }>;
 
 /**

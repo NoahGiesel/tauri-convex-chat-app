@@ -1,0 +1,18 @@
+import type { MessageKey } from "@/i18n/en";
+import type { WordleLanguage } from "../../convex/wordleRules";
+
+/** `/wordle` resta nascosto fino al rilascio: solo in sviluppo e nella build di test dell'E2E. */
+export const WORDLE_ENABLED = import.meta.env.DEV || import.meta.env.VITE_E2E === "1";
+
+/** Nome della lingua della parola, scritto sempre nella lingua stessa. */
+export const WORDLE_LANGUAGE_NAME: Record<WordleLanguage, string> = { it: "Italiano", en: "English" };
+
+type Translate = (key: MessageKey, vars?: Record<string, string | number>) => string;
+
+/** Tempo che manca in ore e minuti ("23 h 59 min", "12 min"), arrotondato al minuto per eccesso. */
+export function formatHoursMinutes(ms: number, t: Translate): string {
+  const minutes = Math.max(1, Math.ceil(ms / 60_000));
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return h > 0 ? t("wordle.hoursMinutes", { h, m }) : t("wordle.minutesOnly", { m });
+}

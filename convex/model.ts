@@ -49,7 +49,8 @@ export type ErrorCode =
   | "game_direct_only"
   | "game_in_progress"
   | "game_closed"
-  | "quiz_invalid_topics";
+  | "quiz_invalid_topics"
+  | "wordle_in_progress";
 
 export const fail = (code: ErrorCode) => new ConvexError({ code });
 
