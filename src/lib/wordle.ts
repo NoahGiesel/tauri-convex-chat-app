@@ -1,9 +1,6 @@
 import type { MessageKey } from "@/i18n/en";
 import type { OutcomeReason, ResultSummary, WordleLanguage } from "../../convex/wordleRules";
 
-/** `/wordle` resta nascosto fino al rilascio: solo in sviluppo e nella build di test dell'E2E. */
-export const WORDLE_ENABLED = import.meta.env.DEV || import.meta.env.VITE_E2E === "1";
-
 /** Nome della lingua della parola, scritto sempre nella lingua stessa. */
 export const WORDLE_LANGUAGE_NAME: Record<WordleLanguage, string> = { it: "Italiano", en: "English" };
 
