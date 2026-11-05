@@ -39,3 +39,25 @@ _Avoid_: Manual QA, sanity test
 **Fixture**:
 A ready-made scenario handed to a test, such as two friends signed in with their chat open. A Fixture consumes exactly one Seed.
 _Avoid_: Test setup, Seed
+
+### Games
+
+**Wordle Duel**:
+A challenge between the two people of a direct chat, who each try to guess the same hidden five-letter word on their own, at any time, before the Duel deadline.
+_Avoid_: Wordle game, Wordle match, Wordle challenge
+
+**Run**:
+One player's own attempt at the word inside a Wordle Duel, from opening it to guessing the word, using all six guesses, running out of time, or giving up. Giving up counts as not guessing the word.
+_Avoid_: Turn, round, game
+
+**Run timer**:
+The time limit of a Run, chosen by the challenger as 1, 5 or 10 minutes. It starts when the player opens their Run and never pauses.
+_Avoid_: Countdown, clock
+
+**Duel deadline**:
+The moment, 24 hours after the invite is accepted, when a Wordle Duel closes. A player who has not finished their Run by then loses by forfeit.
+_Avoid_: Expiry, timeout
+
+**Rematch**:
+A new invite sent from a finished game's card to the same person, with the same settings. Whoever sends it becomes the challenger, and the other person accepts or declines it as usual.
+_Avoid_: Replay, revenge, new game
