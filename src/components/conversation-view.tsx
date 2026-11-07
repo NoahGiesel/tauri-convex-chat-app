@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import { insertAtTop, useAction, useMutation, usePaginatedQuery, useQuery } from "convex/react";
 import type { OptimisticLocalStore } from "convex/browser";
 import { PingIndicator } from "@/components/ping-indicator";
-import { ArrowDown, Ban, Film, Images, Loader2, Maximize2, Paperclip, Send, Smile, Sparkles, X } from "lucide-react";
+import { ArrowDown, Ban, Film, Images, Loader2, Maximize2, Paperclip, Pin, Send, Smile, Sparkles, X } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { Avatar } from "@/components/avatar";
@@ -180,6 +180,10 @@ export function ConversationView({
   const [picked, setPicked] = useState({ prefix: "", index: 0 });
   const editMessage = useMutation(api.messages.edit);
   const removeMessage = useMutation(api.messages.remove);
+  const pins = useQuery(api.pins.list, { conversationId });
+  const pinMessage = useMutation(api.pins.pin);
+  const unpinMessage = useMutation(api.pins.unpin);
+  const pinById = new Map((pins ?? []).map((p) => [p.messageId as string, p]));
   const markRead = useMutation(api.conversations.markRead);
 
   const [draft, setDraft] = useState("");
@@ -269,6 +273,16 @@ export function ConversationView({
         next.delete(id);
         return next;
       });
+    }
+  }
+
+  async function togglePin(id: Id<"messages">, pinned: boolean) {
+    setError(null);
+    try {
+      if (pinned) await unpinMessage({ messageId: id });
+      else await pinMessage({ messageId: id });
+    } catch (e) {
+      setError(t(errorKey(e)));
     }
   }
 
@@ -832,6 +846,18 @@ export function ConversationView({
                   onError={setError}
                   onEdit={m.mine && m.kind === "text" && isEditableStyle(m.style) ? () => setEditingId(m._id) : undefined}
                   onDelete={m.mine && m.kind !== "ai" && m.kind !== "game" ? () => void deleteMessage(m._id) : undefined}
+                  pin={
+                    m.kind === "text" || m.kind === "gif" || m.kind === "media"
+                      ? (() => {
+                          const p = pinById.get(m._id);
+                          return {
+                            state: p ? (p.pinnedByMe ? "mine" : "other") : "none",
+                            by: p?.pinnedByName ?? "",
+                            onClick: () => void togglePin(m._id, !!p),
+                          } as const;
+                        })()
+                      : undefined
+                  }
                   onSummarize={
                     m.summarizable && !m.summarized && !m.summaryBlocked && !firstEmbedLink(m.body)
                       ? { busy: summarizing.has(m._id), onClick: () => void summarize(m._id) }
@@ -972,6 +998,12 @@ export function ConversationView({
                     <Ban className="size-3.5" strokeWidth={2} />
                     {t("chat.summaryUnavailable")}
                   </p>
+                )}
+                {pinById.get(m._id) && (
+                  <div className="mt-1 flex items-center gap-1 text-xs text-app-accent-text">
+                    <Pin className="size-3" strokeWidth={2.2} />
+                    {t("pin.pinnedBy", { name: pinById.get(m._id)!.pinnedByName })}
+                  </div>
                 )}
                 <ReactionChips messageId={m._id} reactions={m.reactions} onError={setError} />
               </div>

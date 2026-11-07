@@ -99,6 +99,16 @@ export default defineSchema({
     .index("by_message", ["messageId"])
     .index("by_message_and_profile_and_emoji", ["messageId", "profileId", "emoji"]),
 
+  /** Messaggi pinnati in una chat o in un gruppo: li vedono tutti i membri, li toglie solo chi li ha pinnati. */
+  pins: defineTable({
+    conversationId: v.id("conversations"),
+    messageId: v.id("messages"),
+    pinnedBy: v.id("profiles"),
+    pinnedAt: v.number(),
+  })
+    .index("by_conversation", ["conversationId"])
+    .index("by_message", ["messageId"]),
+
   messages: defineTable({
     conversationId: v.id("conversations"),
     /** Assente per le risposte dell'AI locale. */

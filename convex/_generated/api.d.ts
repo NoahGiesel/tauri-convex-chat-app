@@ -23,6 +23,7 @@ import type * as media from "../media.js";
 import type * as mediaRules from "../mediaRules.js";
 import type * as messages from "../messages.js";
 import type * as model from "../model.js";
+import type * as pins from "../pins.js";
 import type * as previews from "../previews.js";
 import type * as quizRules from "../quizRules.js";
 import type * as quizzes from "../quizzes.js";
@@ -61,6 +62,7 @@ declare const fullApi: ApiFromModules<{
   mediaRules: typeof mediaRules;
   messages: typeof messages;
   model: typeof model;
+  pins: typeof pins;
   previews: typeof previews;
   quizRules: typeof quizRules;
   quizzes: typeof quizzes;

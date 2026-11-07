@@ -53,7 +53,11 @@ export type ErrorCode =
   | "wordle_in_progress"
   | "wordle_short"
   | "wordle_not_a_word"
-  | "wordle_run_over";
+  | "wordle_run_over"
+  | "cannot_pin"
+  | "already_pinned"
+  | "too_many_pins"
+  | "not_pin_owner";
 
 export const fail = (code: ErrorCode) => new ConvexError({ code });
 

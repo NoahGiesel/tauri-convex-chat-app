@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation } from "convex/react";
-import { Loader2, Pencil, Sparkles, SmilePlus, Trash2 } from "lucide-react";
+import { Loader2, Pencil, Pin, PinOff, Sparkles, SmilePlus, Trash2 } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { EmojiPanel } from "@/components/emoji-gif-picker";
@@ -70,6 +70,7 @@ export function ReactionToolbar({
   onEdit,
   onDelete,
   onSummarize,
+  pin,
 }: {
   messageId: Id<"messages">;
   onError: (text: string) => void;
@@ -79,6 +80,8 @@ export function ReactionToolbar({
   onDelete?: () => void;
   /** Presente quando il messaggio si può riassumere con l'AI. */
   onSummarize?: { busy: boolean; onClick: () => void };
+  /** Stato del pin: solo chi ha pinnato può toglierlo, per gli altri il pulsante è spento. */
+  pin?: { state: "none" | "mine" | "other"; by: string; onClick: () => void };
 }) {
   const { t } = useI18n();
   const react = useToggleReaction(messageId, onError);
@@ -137,6 +140,21 @@ export function ReactionToolbar({
             className="flex size-7 items-center justify-center rounded-md text-app-text-muted hover:bg-app-field hover:text-app-text"
           >
             <Pencil className="size-4" strokeWidth={1.9} />
+          </button>
+        )}
+        {pin && (
+          <button
+            type="button"
+            aria-label={pin.state === "mine" ? t("pin.unpin") : t("pin.pin")}
+            title={pin.state === "none" ? t("pin.pin") : pin.state === "mine" ? t("pin.unpin") : t("pin.unpinnedOnlyBy", { name: pin.by })}
+            disabled={pin.state === "other"}
+            onClick={pin.onClick}
+            className={cn(
+              "flex size-7 items-center justify-center rounded-md hover:bg-app-field disabled:opacity-40 disabled:hover:bg-transparent",
+              pin.state === "none" ? "text-app-text-muted hover:text-app-text" : "text-app-accent-text",
+            )}
+          >
+            {pin.state === "mine" ? <PinOff className="size-4" strokeWidth={1.9} /> : <Pin className="size-4" strokeWidth={1.9} />}
           </button>
         )}
         {onDelete &&

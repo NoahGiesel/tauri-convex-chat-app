@@ -295,6 +295,11 @@ export const purgeMessages = internalMutation({
         await ctx.scheduler.runAfter(0, internal.media.deleteObject, { key: a.key });
       }
       if (reactions.length === 256) continue; // restano reazioni: il messaggio si rivede al giro dopo
+      const pin = await ctx.db
+        .query("pins")
+        .withIndex("by_message", (q) => q.eq("messageId", message._id))
+        .first();
+      if (pin) await ctx.db.delete("pins", pin._id);
       await ctx.db.delete("messages", message._id);
     }
     if (batch.length === PURGE_BATCH) {

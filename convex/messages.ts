@@ -235,6 +235,11 @@ export const remove = mutation({
       if (batch.length === 0) break;
       for (const r of batch) await ctx.db.delete("reactions", r._id);
     }
+    const pin = await ctx.db
+      .query("pins")
+      .withIndex("by_message", (q) => q.eq("messageId", message._id))
+      .unique();
+    if (pin) await ctx.db.delete("pins", pin._id);
     await ctx.db.delete("messages", message._id);
     for (const a of message.attachments ?? (message.media ? [message.media] : [])) {
       await ctx.scheduler.runAfter(0, internal.media.deleteObject, { key: a.key });

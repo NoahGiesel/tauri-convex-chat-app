@@ -1,17 +1,18 @@
 import { useMemo, useState } from "react";
-import { usePaginatedQuery, useQuery } from "convex/react";
-import { Link2, Play, Sparkles, X } from "lucide-react";
+import { useMutation, usePaginatedQuery, useQuery } from "convex/react";
+import { Link2, Pin, PinOff, Play, Sparkles, X } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AskCard } from "@/components/ask-card";
 import { SummaryCard } from "@/components/summary-card";
 import type { LightboxItem } from "@/components/media-lightbox";
 import { useI18n } from "@/i18n/i18n-provider";
+import { errorKey } from "@/lib/errors";
 import { openLink } from "@/lib/links";
 import { cn } from "@/lib/utils";
 import { MAX_GUESSES } from "../../convex/wordleRules";
 
-type Tab = "media" | "links" | "ai" | "games";
+type Tab = "media" | "links" | "pins" | "ai" | "games";
 const PAGE = 30;
 
 /** Tutte le foto, i video e i link mandati in una chat o in un gruppo. */
@@ -30,7 +31,7 @@ export function MediaLibrary({
   return (
     <div role="region" aria-label={t("library.open")} className="flex min-h-0 flex-1 flex-col">
       <div role="tablist" className="flex shrink-0 gap-1 border-b border-app-border px-6 pt-2">
-        {(["media", "links", "ai", "games"] as const).map((id) => (
+        {(["media", "links", "pins", "ai", "games"] as const).map((id) => (
           <button
             key={id}
             type="button"
@@ -42,7 +43,7 @@ export function MediaLibrary({
               tab === id ? "border-app-accent text-app-text-strong" : "border-transparent text-app-text-muted hover:text-app-text",
             )}
           >
-            {id === "ai" ? t("chat.aiName") : id === "games" ? t("library.games") : t(id === "media" ? "library.media" : "library.links")}
+            {id === "ai" ? t("chat.aiName") : id === "games" ? t("library.games") : id === "pins" ? t("pin.title") : t(id === "media" ? "library.media" : "library.links")}
           </button>
         ))}
         <button
@@ -58,6 +59,7 @@ export function MediaLibrary({
       <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
         {tab === "media" && <MediaTab conversationId={conversationId} onOpenMedia={onOpenMedia} />}
         {tab === "links" && <LinksTab conversationId={conversationId} />}
+        {tab === "pins" && <PinsTab conversationId={conversationId} />}
         {tab === "ai" && <AiTab conversationId={conversationId} />}
         {tab === "games" && <GamesTab conversationId={conversationId} />}
       </div>
@@ -166,6 +168,56 @@ function LinksTab({ conversationId }: { conversationId: Id<"conversations"> }) {
         ))}
       </ul>
       <LoadMore status={status} onMore={() => loadMore(PAGE)} />
+    </>
+  );
+}
+
+/** Messaggi pinnati della chat: li vedono tutti, ma il pin lo toglie solo chi lo ha messo. */
+function PinsTab({ conversationId }: { conversationId: Id<"conversations"> }) {
+  const { t, language } = useI18n();
+  const pins = useQuery(api.pins.list, { conversationId });
+  const unpin = useMutation(api.pins.unpin);
+  const [error, setError] = useState<string | null>(null);
+  const when = (ms: number) => new Date(ms).toLocaleString(language, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+
+  if (!pins) return null;
+  if (pins.length === 0) return <p className="pt-10 text-center text-sm text-app-text-muted">{t("pin.none")}</p>;
+
+  return (
+    <>
+      {error && <p role="alert" className="mb-2 text-sm text-destructive">{error}</p>}
+      <ul className="flex flex-col gap-2">
+        {pins.map((p) => (
+          <li key={p.messageId} className="flex items-start gap-3 rounded-xl border border-app-border p-3">
+            <Pin className="mt-0.5 size-4 shrink-0 text-app-accent-text" strokeWidth={2} />
+            <div className="min-w-0 flex-1">
+              <div className="text-sm">
+                <span className="font-bold text-app-text-strong">{p.authorName}</span>{" "}
+                <span className="break-words whitespace-pre-wrap text-app-text-soft">
+                  {p.kind === "gif" ? t("pin.gif") : p.preview || (p.attachmentCount > 0 ? t("pin.attachments") : "")}
+                </span>
+              </div>
+              <div className="mt-0.5 text-xs text-app-text-dim">
+                {t("pin.pinnedBy", { name: p.pinnedByName })} · {when(p.pinnedAt)}
+              </div>
+            </div>
+            {p.pinnedByMe && (
+              <button
+                type="button"
+                aria-label={t("pin.unpin")}
+                title={t("pin.unpin")}
+                onClick={() => {
+                  setError(null);
+                  unpin({ messageId: p.messageId }).catch((e: unknown) => setError(t(errorKey(e))));
+                }}
+                className="flex size-7 shrink-0 items-center justify-center rounded-md text-app-text-muted hover:bg-app-field hover:text-app-text"
+              >
+                <PinOff className="size-4" strokeWidth={1.9} />
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
     </>
   );
 }

@@ -8,7 +8,10 @@ export interface ReleaseNote {
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
     version: "next",
-    items: { en: [], it: [] },
+    items: {
+      en: ["Pin messages in a chat or group: pinned messages are visible to everyone and only the person who pinned one can unpin it"],
+      it: ["Puoi pinnare messaggi in una chat o in un gruppo: i messaggi pinnati li vedono tutti e solo chi li ha pinnati può rimuovere il pin"],
+    },
   },
   {
     version: "0.1.29",
