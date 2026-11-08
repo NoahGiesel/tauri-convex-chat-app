@@ -4,6 +4,7 @@
  * ESPN non ha documentazione: ogni risposta si controlla, e un campo mancante è un errore
  * come una risposta non 200 (docs/adr/0001-espn-json-for-team-pins.md).
  */
+import type { Doc } from "./_generated/dataModel";
 
 const DEFAULT_BASE_URL = "https://site.api.espn.com/apis";
 /** Una richiesta ESPN appesa non deve bloccare il cron che l'ha lanciata. */
@@ -73,6 +74,9 @@ function str(value: unknown, what: string): string {
 function optStr(value: unknown): string | undefined {
   return typeof value === "string" && value !== "" ? value : undefined;
 }
+function optObj(value: unknown): Obj | undefined {
+  return typeof value === "object" && value !== null && !Array.isArray(value) ? (value as Obj) : undefined;
+}
 
 /**
  * Squadre giovanili, riserve e femminili: le liste coperte non dovrebbero averne,
@@ -109,8 +113,8 @@ export type ProviderMatch = {
   clock?: string;
 };
 
-/** Il punteggio di una squadra: stringa nei tabelloni ("2"), oggetto in `nextEvent` ({ value: 2 }). */
-function readScore(value: unknown, what: string): number {
+/** Un numero ESPN (punteggio o statistica): stringa nei tabelloni ("2"), oggetto in `nextEvent` ({ value: 2 }). */
+function readNumber(value: unknown, what: string): number {
   const raw = typeof value === "object" && value !== null ? (value as Obj).value : value;
   const n = typeof raw === "string" ? Number(raw) : raw;
   if (typeof n !== "number" || !Number.isFinite(n)) throw new EspnError(`ESPN: ${what} missing`);
@@ -151,9 +155,9 @@ function parseEvent(value: unknown, league: string): ProviderMatch {
   };
   // Prima del calcio d'inizio il punteggio non c'è (o è 0-0): si legge solo da quando si gioca.
   if (state !== "pre") {
-    match.score = { home: readScore(home.score, "home score"), away: readScore(away.score, "away score") };
+    match.score = { home: readNumber(home.score, "home score"), away: readNumber(away.score, "away score") };
     if (home.shootoutScore !== undefined || away.shootoutScore !== undefined) {
-      match.shootout = { home: readScore(home.shootoutScore, "home shootoutScore"), away: readScore(away.shootoutScore, "away shootoutScore") };
+      match.shootout = { home: readNumber(home.shootoutScore, "home shootoutScore"), away: readNumber(away.shootoutScore, "away shootoutScore") };
     }
     const clock = optStr(status.displayClock);
     if (clock) match.clock = clock;
@@ -192,6 +196,121 @@ export function espnDays(kickoff: number): string[] {
 /** Le partite di una competizione in un giorno ESPN (`YYYYMMDD`). */
 export async function fetchScoreboard(league: string, day: string): Promise<ProviderMatch[]> {
   return parseScoreboard(await getJson(`/site/v2/sports/soccer/${league}/scoreboard?dates=${day}`), league);
+}
+
+export type Side = "home" | "away";
+/** I dettagli di una partita per il drawer, alleggeriti: pochi KB invece dei ~400 KB del riassunto ESPN. */
+export type ProviderDetails = Omit<Doc<"footballMatchDetails">, "_id" | "_creationTime" | "matchId" | "fetchedAt">;
+export type MatchEventKind = ProviderDetails["events"][number]["kind"];
+export type StatKey = ProviderDetails["stats"][number]["key"];
+type LineupPlayer = ProviderDetails["lineups"][number]["starters"][number];
+
+/** I tipi di evento ESPN che il drawer mostra; gli altri (calcio d'inizio, interruzioni…) si ignorano. */
+function eventKind(type: string): MatchEventKind | null {
+  if (type === "own-goal") return "ownGoal";
+  // ESPN scrive il rigore segnato con più trattini ("penalty---scored"): se ne accetta qualunque numero.
+  if (/^penalty-+scored$/.test(type)) return "penaltyGoal";
+  if (type.startsWith("goal")) return "goal";
+  if (type === "yellow-card") return "yellowCard";
+  if (type === "red-card" || type === "yellow-red-card" || type === "second-yellow-card") return "redCard";
+  if (type === "substitution") return "substitution";
+  return null;
+}
+
+/** Le statistiche del drawer, dal nome ESPN. "shots" è il totale: in porta, fuori e respinti. */
+const STAT_NAMES: Record<string, StatKey> = {
+  possessionPct: "possession",
+  totalShots: "shots",
+  shotsOnTarget: "shotsOnTarget",
+  wonCorners: "corners",
+  foulsCommitted: "fouls",
+  offsides: "offsides",
+};
+const STAT_ORDER: StatKey[] = ["possession", "shots", "shotsOnTarget", "corners", "fouls", "offsides"];
+
+/**
+ * Il riassunto ESPN di una partita. L'intestazione deve esserci; eventi, formazioni e statistiche possono mancare
+ * (prima della partita non ci sono), ma se ci sono vanno letti per intero: un campo mancante è un errore.
+ * L'autogol ESPN lo mette dalla parte della squadra che ne beneficia, come il tabellone.
+ */
+export function parseSummary(json: unknown): ProviderDetails {
+  const root = obj(json, "summary");
+  const header = obj(root.header, "header");
+  const competition = obj(arr(header.competitions, "header.competitions")[0], "header.competitions[0]");
+  const sideOf = new Map<string, Side>();
+  for (const c of arr(competition.competitors, "header.competitors").map((c) => obj(c, "header.competitors[]"))) {
+    const homeAway = c.homeAway;
+    if (homeAway !== "home" && homeAway !== "away") throw new EspnError("ESPN: header.competitors[].homeAway missing");
+    sideOf.set(str(c.id, "header.competitors[].id"), homeAway);
+  }
+  const side = (teamId: unknown, what: string): Side => {
+    const found = sideOf.get(str(teamId, what));
+    if (!found) throw new EspnError(`ESPN: ${what} missing`);
+    return found;
+  };
+
+  const events: ProviderDetails["events"] = [];
+  for (const raw of Array.isArray(root.keyEvents) ? root.keyEvents : []) {
+    const e = obj(raw, "keyEvents[]");
+    // I tiri della lotteria dei rigori non sono gol della partita: il chip ne mostra già il punteggio.
+    if (e.shootout === true) continue;
+    const kind = eventKind(str(obj(e.type, "keyEvents[].type").type, "keyEvents[].type.type"));
+    if (!kind) continue;
+    const names = (Array.isArray(e.participants) ? e.participants : []).map((p) =>
+      str(obj(obj(p, "participants[]").athlete, "athlete").displayName, "athlete.displayName"),
+    );
+    events.push({
+      kind,
+      minute: str(obj(e.clock, "keyEvents[].clock").displayValue, "keyEvents[].clock.displayValue"),
+      side: side(obj(e.team, "keyEvents[].team").id, "keyEvents[].team.id"),
+      ...(names[0] ? { player: names[0] } : {}),
+      ...(names[1] ? { other: names[1] } : {}),
+    });
+  }
+
+  const lineups: ProviderDetails["lineups"] = [];
+  for (const raw of Array.isArray(root.rosters) ? root.rosters : []) {
+    const r = obj(raw, "rosters[]");
+    const players = arr(r.roster, "rosters[].roster").map((p) => obj(p, "roster[]"));
+    if (players.length === 0) continue;
+    const toPlayer = (p: Obj): LineupPlayer => {
+      const jersey = optStr(p.jersey);
+      return { name: str(obj(p.athlete, "roster[].athlete").displayName, "roster[].athlete.displayName"), ...(jersey ? { jersey } : {}) };
+    };
+    const formation = optStr(r.formation);
+    lineups.push({
+      side: side(obj(r.team, "rosters[].team").id, "rosters[].team.id"),
+      ...(formation ? { formation } : {}),
+      starters: players.filter((p) => p.starter === true).map(toPlayer),
+      bench: players.filter((p) => p.starter !== true).map(toPlayer),
+    });
+  }
+
+  const values = new Map<StatKey, Partial<Record<Side, number>>>();
+  const teams = optObj(root.boxscore)?.teams;
+  for (const raw of Array.isArray(teams) ? teams : []) {
+    const t = obj(raw, "boxscore.teams[]");
+    const teamSide = side(obj(t.team, "boxscore.teams[].team").id, "boxscore.teams[].team.id");
+    for (const s of Array.isArray(t.statistics) ? t.statistics : []) {
+      const stat = obj(s, "statistics[]");
+      const key = STAT_NAMES[str(stat.name, "statistics[].name")];
+      if (!key) continue;
+      values.set(key, { ...values.get(key), [teamSide]: readNumber(stat.displayValue, `statistics.${key}`) });
+    }
+  }
+  const stats = STAT_ORDER.flatMap((key) => {
+    const v = values.get(key);
+    return v?.home !== undefined && v.away !== undefined ? [{ key, home: v.home, away: v.away }] : [];
+  });
+
+  const league = optStr(optObj(header.league)?.name);
+  const venue = optStr(optObj(optObj(root.gameInfo)?.venue)?.fullName);
+  return { ...(league ? { competition: league } : {}), ...(venue ? { venue } : {}), events, lineups, stats };
+}
+
+/** Il riassunto di una partita: eventi, formazioni e statistiche. */
+export async function fetchSummary(league: string, eventId: string): Promise<ProviderDetails> {
+  return parseSummary(await getJson(`/site/v2/sports/soccer/${league}/summary?event=${encodeURIComponent(eventId)}`));
 }
 
 /** Le squadre di una competizione, senza giovanili e femminili. */

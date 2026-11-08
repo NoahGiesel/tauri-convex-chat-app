@@ -1,9 +1,11 @@
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
-import { internalAction, internalMutation, type MutationCtx, type QueryCtx } from "./_generated/server";
-import { espnDays, fetchNextMatch, fetchScoreboard, type ProviderMatch } from "./espn";
+import { internalAction, internalMutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
+import { espnDays, fetchNextMatch, fetchScoreboard, fetchSummary, type ProviderDetails, type ProviderMatch } from "./espn";
+import { getProfile } from "./model";
 import { teamRow } from "./footballTeams";
+import { MAX_TEAM_PINS } from "./teamPins";
 import schema from "./schema";
 
 /** Più pin di quanti l'app ne avrà mai: ogni chat ne ha al massimo 3. */
@@ -26,9 +28,14 @@ const MAX_CLEANED = 200;
 const MAX_CLEANUP_SCANNED = 2000;
 /** Una partita sparita dal suo tabellone fa cercare la prossima al massimo ogni 10 minuti. */
 const MISSING_RETRY_MS = 10 * MINUTE;
+/** Il riassunto finale, se alla fine non arriva, si riprova a parte (poi la partita non si segue più): 3 tentativi in tutto. */
+const FINAL_DETAILS_ATTEMPTS = 3;
+const FINAL_DETAILS_RETRY_MS = 2 * MINUTE;
 
 /** Una partita come la manda il fornitore: la riga di `footballMatches` senza `fetchedAt`. */
 export const matchValidator = schema.tables.footballMatches.validator.omit("fetchedAt");
+/** I dettagli come li manda il fornitore: la riga di `footballMatchDetails` senza partita e `fetchedAt`. */
+const detailsValidator = schema.tables.footballMatchDetails.validator.omit("matchId", "fetchedAt");
 
 /** Una partita chiusa: finita, interrotta, oppure rinviata o annullata (che ESPN dia `pre` o `post`). */
 const isClosed = (m: { state: string; statusName: string }) => m.state === "post" || /POSTPONED|CANCEL/.test(m.statusName);
@@ -58,6 +65,25 @@ async function matchByEvent(ctx: QueryCtx, eventId: string): Promise<Doc<"footba
     .query("footballMatches")
     .withIndex("by_eventId", (q) => q.eq("eventId", eventId))
     .unique();
+}
+
+async function detailsOf(ctx: QueryCtx, matchId: Id<"footballMatches">): Promise<Doc<"footballMatchDetails"> | null> {
+  return await ctx.db
+    .query("footballMatchDetails")
+    .withIndex("by_matchId", (q) => q.eq("matchId", matchId))
+    .unique();
+}
+
+function sameDetails(saved: Doc<"footballMatchDetails">, fresh: ProviderDetails): boolean {
+  const { _id, _creationTime, matchId, fetchedAt, ...rest } = saved;
+  return canonical(rest) === canonical(fresh);
+}
+
+/** JSON con le chiavi in ordine: due oggetti uguali danno la stessa stringa qualunque sia l'ordine dei campi. */
+function canonical(value: unknown): string {
+  return JSON.stringify(value, (_key, v: unknown) =>
+    typeof v === "object" && v !== null && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b))) : v,
+  );
 }
 
 async function isPinned(ctx: QueryCtx, teamId: string): Promise<boolean> {
@@ -160,8 +186,44 @@ export const pollLeague = internalAction({
       console.error(`Tabellone ${args.league}:`, e instanceof Error ? e.message : e);
       return null;
     }
+    // Il riassunto di ogni partita seguita, anche l'ultima volta (alla fine): poi resta salvato. Se non arriva, resta il precedente.
+    const details: { eventId: string; details: ProviderDetails }[] = [];
+    for (const match of found.values()) {
+      try {
+        details.push({ eventId: match.eventId, details: await fetchSummary(args.league, match.eventId) });
+      } catch (e) {
+        console.error(`Riassunto ${match.eventId}:`, e instanceof Error ? e.message : e);
+        if (match.state === "post") {
+          await ctx.scheduler.runAfter(FINAL_DETAILS_RETRY_MS, internal.footballMatches.retryFinalDetails, {
+            league: args.league,
+            eventId: match.eventId,
+            attempt: 2,
+          });
+        }
+      }
+    }
     const missing = [...wanted].filter((eventId) => !found.has(eventId));
-    await ctx.runMutation(internal.footballMatches.applyPoll, { matches: [...found.values()], missing, fetchedAt });
+    await ctx.runMutation(internal.footballMatches.applyPoll, { matches: [...found.values()], details, missing, fetchedAt });
+    return null;
+  },
+});
+
+/** Riprova il riassunto di una partita appena finita, finché non arriva o finiscono i tentativi. */
+export const retryFinalDetails = internalAction({
+  args: { league: v.string(), eventId: v.string(), attempt: v.number() },
+  handler: async (ctx, args) => {
+    const fetchedAt = Date.now();
+    let details: ProviderDetails;
+    try {
+      details = await fetchSummary(args.league, args.eventId);
+    } catch (e) {
+      console.error(`Riassunto finale ${args.eventId} (tentativo ${args.attempt}):`, e instanceof Error ? e.message : e);
+      if (args.attempt < FINAL_DETAILS_ATTEMPTS) {
+        await ctx.scheduler.runAfter(FINAL_DETAILS_RETRY_MS, internal.footballMatches.retryFinalDetails, { ...args, attempt: args.attempt + 1 });
+      }
+      return null;
+    }
+    await ctx.runMutation(internal.footballMatches.applyPoll, { matches: [], details: [{ eventId: args.eventId, details }], missing: [], fetchedAt });
     return null;
   },
 });
@@ -172,9 +234,25 @@ export const pollLeague = internalAction({
  * delle sue squadre, al massimo ogni 10 minuti (la ricerca rinfresca `fetchedAt` se ESPN dà ancora la stessa partita).
  */
 export const applyPoll = internalMutation({
-  args: { matches: v.array(matchValidator), missing: v.array(v.string()), fetchedAt: v.number() },
+  args: {
+    matches: v.array(matchValidator),
+    details: v.array(v.object({ eventId: v.string(), details: detailsValidator })),
+    missing: v.array(v.string()),
+    fetchedAt: v.number(),
+  },
   handler: async (ctx, args) => {
     for (const match of args.matches) await recordMatch(ctx, match, args.fetchedAt);
+    for (const { eventId, details } of args.details) {
+      const match = await matchByEvent(ctx, eventId);
+      if (!match) continue;
+      const existing = await detailsOf(ctx, match._id);
+      if (existing && existing.fetchedAt > args.fetchedAt) continue;
+      // Uguali a quelli salvati: non si riscrive, così le query iscritte non ripartono a ogni giro.
+      if (existing && sameDetails(existing, details)) continue;
+      const row = { ...details, matchId: match._id, fetchedAt: args.fetchedAt };
+      if (existing) await ctx.db.replace("footballMatchDetails", existing._id, row);
+      else await ctx.db.insert("footballMatchDetails", row);
+    }
     for (const eventId of args.missing) {
       const row = await matchByEvent(ctx, eventId);
       if (!row || args.fetchedAt - row.fetchedAt < MISSING_RETRY_MS) continue;
@@ -204,10 +282,45 @@ export const cleanup = internalMutation({
         const asLast = await ctx.db.query("footballTeams").withIndex("by_lastMatchId", (q) => q.eq("lastMatchId", match._id)).first();
         const asNext = await ctx.db.query("footballTeams").withIndex("by_nextMatchId", (q) => q.eq("nextMatchId", match._id)).first();
         if (asLast || asNext) continue;
+        const details = await detailsOf(ctx, match._id);
+        if (details) await ctx.db.delete("footballMatchDetails", details._id);
         await ctx.db.delete("footballMatches", match._id);
         deleted++;
       }
     }
     return null;
+  },
+});
+
+/**
+ * Il drawer di una partita: competizione, stadio, eventi, formazioni e statistiche. `null` se non sono ancora arrivati,
+ * o se chi chiede non è nella chat o la chat non ha pinnato nessuna delle due squadre.
+ */
+export const details = query({
+  args: { conversationId: v.id("conversations"), eventId: v.string() },
+  handler: async (ctx, args) => {
+    const me = await getProfile(ctx);
+    if (!me) return null;
+    const member = await ctx.db
+      .query("members")
+      .withIndex("by_conversation_and_profile", (q) => q.eq("conversationId", args.conversationId).eq("profileId", me._id))
+      .unique();
+    if (!member) return null;
+    const match = await matchByEvent(ctx, args.eventId);
+    if (!match) return null;
+    const pins = await ctx.db
+      .query("teamPins")
+      .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
+      .take(MAX_TEAM_PINS);
+    if (!pins.some((pin) => pin.teamId === match.home.teamId || pin.teamId === match.away.teamId)) return null;
+    const row = await detailsOf(ctx, match._id);
+    if (!row) return null;
+    return {
+      competition: row.competition ?? null,
+      venue: row.venue ?? null,
+      events: row.events,
+      lineups: row.lineups,
+      stats: row.stats,
+    };
   },
 });

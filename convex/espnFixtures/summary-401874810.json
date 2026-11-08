@@ -1,0 +1,1045 @@
+{
+ "header": {
+  "league": {
+   "name": "Italian Serie A"
+  },
+  "competitions": [
+   {
+    "id": "401874810",
+    "status": {
+     "type": {
+      "name": "STATUS_FULL_TIME",
+      "state": "post"
+     }
+    },
+    "competitors": [
+     {
+      "id": "114",
+      "homeAway": "home",
+      "score": "1"
+     },
+     {
+      "id": "112",
+      "homeAway": "away",
+      "score": "1"
+     }
+    ]
+   }
+  ]
+ },
+ "gameInfo": {
+  "venue": {
+   "fullName": "Stadio Diego Armando Maradona"
+  }
+ },
+ "keyEvents": [
+  {
+   "type": {
+    "type": "kickoff"
+   },
+   "clock": {
+    "displayValue": ""
+   }
+  },
+  {
+   "type": {
+    "type": "goal"
+   },
+   "clock": {
+    "displayValue": "28'"
+   },
+   "team": {
+    "id": "112"
+   },
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Davide Frattesi"
+     }
+    },
+    {
+     "athlete": {
+      "displayName": "Tijjani Noslin"
+     }
+    }
+   ]
+  },
+  {
+   "type": {
+    "type": "start-delay"
+   },
+   "clock": {
+    "displayValue": "31'"
+   },
+   "team": {
+    "id": "112"
+   }
+  },
+  {
+   "type": {
+    "type": "start-delay"
+   },
+   "clock": {
+    "displayValue": "31'"
+   },
+   "team": {
+    "id": "114"
+   }
+  },
+  {
+   "type": {
+    "type": "end-delay"
+   },
+   "clock": {
+    "displayValue": "33'"
+   },
+   "team": {
+    "id": "112"
+   }
+  },
+  {
+   "type": {
+    "type": "substitution"
+   },
+   "clock": {
+    "displayValue": "33'"
+   },
+   "team": {
+    "id": "112"
+   },
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Diogo Leite"
+     }
+    },
+    {
+     "athlete": {
+      "displayName": "Josip Sutalo"
+     }
+    }
+   ]
+  },
+  {
+   "type": {
+    "type": "end-delay"
+   },
+   "clock": {
+    "displayValue": "33'"
+   },
+   "team": {
+    "id": "114"
+   }
+  },
+  {
+   "type": {
+    "type": "yellow-card"
+   },
+   "clock": {
+    "displayValue": "44'"
+   },
+   "team": {
+    "id": "114"
+   },
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Noa Lang"
+     }
+    }
+   ]
+  },
+  {
+   "type": {
+    "type": "halftime"
+   },
+   "clock": {
+    "displayValue": "45'+1'"
+   }
+  },
+  {
+   "type": {
+    "type": "substitution"
+   },
+   "clock": {
+    "displayValue": "45'"
+   },
+   "team": {
+    "id": "112"
+   },
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Alfonso Pedraza"
+     }
+    },
+    {
+     "athlete": {
+      "displayName": "Nuno Tavares"
+     }
+    }
+   ]
+  },
+  {
+   "type": {
+    "type": "start-2nd-half"
+   },
+   "clock": {
+    "displayValue": "45'"
+   }
+  },
+  {
+   "type": {
+    "type": "own-goal"
+   },
+   "clock": {
+    "displayValue": "48'"
+   },
+   "team": {
+    "id": "114"
+   },
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Alfonso Pedraza"
+     }
+    }
+   ]
+  },
+  {
+   "type": {
+    "type": "substitution"
+   },
+   "clock": {
+    "displayValue": "61'"
+   },
+   "team": {
+    "id": "112"
+   },
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Fisayo Dele-Bashiru"
+     }
+    },
+    {
+     "athlete": {
+      "displayName": "Andrea Pinamonti"
+     }
+    }
+   ]
+  },
+  {
+   "type": {
+    "type": "substitution"
+   },
+   "clock": {
+    "displayValue": "61'"
+   },
+   "team": {
+    "id": "112"
+   },
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Manuel Lazzari"
+     }
+    },
+    {
+     "athlete": {
+      "displayName": "Romano Floriani"
+     }
+    }
+   ]
+  },
+  {
+   "type": {
+    "type": "yellow-card"
+   },
+   "clock": {
+    "displayValue": "65'"
+   },
+   "team": {
+    "id": "114"
+   },
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Billy Gilmour"
+     }
+    }
+   ]
+  },
+  {
+   "type": {
+    "type": "yellow-card"
+   },
+   "clock": {
+    "displayValue": "66'"
+   },
+   "team": {
+    "id": "114"
+   },
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Antonio Vergara"
+     }
+    }
+   ]
+  },
+  {
+   "type": {
+    "type": "start-delay"
+   },
+   "clock": {
+    "displayValue": "68'"
+   },
+   "team": {
+    "id": "112"
+   }
+  },
+  {
+   "type": {
+    "type": "start-delay"
+   },
+   "clock": {
+    "displayValue": "68'"
+   },
+   "team": {
+    "id": "114"
+   }
+  },
+  {
+   "type": {
+    "type": "end-delay"
+   },
+   "clock": {
+    "displayValue": "69'"
+   },
+   "team": {
+    "id": "112"
+   }
+  },
+  {
+   "type": {
+    "type": "end-delay"
+   },
+   "clock": {
+    "displayValue": "69'"
+   },
+   "team": {
+    "id": "114"
+   }
+  },
+  {
+   "type": {
+    "type": "substitution"
+   },
+   "clock": {
+    "displayValue": "69'"
+   },
+   "team": {
+    "id": "114"
+   },
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Frank Anguissa"
+     }
+    },
+    {
+     "athlete": {
+      "displayName": "Billy Gilmour"
+     }
+    }
+   ]
+  },
+  {
+   "type": {
+    "type": "substitution"
+   },
+   "clock": {
+    "displayValue": "74'"
+   },
+   "team": {
+    "id": "114"
+   },
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Lorenzo Lucca"
+     }
+    },
+    {
+     "athlete": {
+      "displayName": "Rasmus Højlund"
+     }
+    }
+   ]
+  },
+  {
+   "type": {
+    "type": "substitution"
+   },
+   "clock": {
+    "displayValue": "74'"
+   },
+   "team": {
+    "id": "114"
+   },
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Matteo Politano"
+     }
+    },
+    {
+     "athlete": {
+      "displayName": "Antonio Vergara"
+     }
+    }
+   ]
+  },
+  {
+   "type": {
+    "type": "yellow-card"
+   },
+   "clock": {
+    "displayValue": "78'"
+   },
+   "team": {
+    "id": "112"
+   },
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Alfonso Pedraza"
+     }
+    }
+   ]
+  },
+  {
+   "type": {
+    "type": "substitution"
+   },
+   "clock": {
+    "displayValue": "78'"
+   },
+   "team": {
+    "id": "112"
+   },
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Matteo Cancellieri"
+     }
+    },
+    {
+     "athlete": {
+      "displayName": "Davide Frattesi"
+     }
+    }
+   ]
+  },
+  {
+   "type": {
+    "type": "substitution"
+   },
+   "clock": {
+    "displayValue": "83'"
+   },
+   "team": {
+    "id": "114"
+   },
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Giovane"
+     }
+    },
+    {
+     "athlete": {
+      "displayName": "Kevin De Bruyne"
+     }
+    }
+   ]
+  },
+  {
+   "type": {
+    "type": "end-regular-time"
+   },
+   "clock": {
+    "displayValue": "90'+4'"
+   }
+  }
+ ],
+ "rosters": [
+  {
+   "homeAway": "home",
+   "team": {
+    "id": "114"
+   },
+   "formation": "3-4-2-1",
+   "roster": [
+    {
+     "starter": true,
+     "jersey": "32",
+     "athlete": {
+      "displayName": "Vanja Milinkovic-Savic"
+     },
+     "position": {
+      "abbreviation": "G"
+     }
+    },
+    {
+     "starter": true,
+     "jersey": "13",
+     "athlete": {
+      "displayName": "Amir Rrahmani"
+     },
+     "position": {
+      "abbreviation": "CD"
+     }
+    },
+    {
+     "starter": true,
+     "jersey": "16",
+     "athlete": {
+      "displayName": "Rafa Marín"
+     },
+     "position": {
+      "abbreviation": "CD-L"
+     }
+    },
+    {
+     "starter": true,
+     "jersey": "31",
+     "athlete": {
+      "displayName": "Sam Beukema"
+     },
+     "position": {
+      "abbreviation": "CD-R"
+     }
+    },
+    {
+     "starter": true,
+     "jersey": "8",
+     "athlete": {
+      "displayName": "Scott McTominay"
+     },
+     "position": {
+      "abbreviation": "CM-L"
+     }
+    },
+    {
+     "starter": true,
+     "jersey": "6",
+     "athlete": {
+      "displayName": "Billy Gilmour"
+     },
+     "position": {
+      "abbreviation": "CM-R"
+     }
+    },
+    {
+     "starter": true,
+     "jersey": "17",
+     "athlete": {
+      "displayName": "Mathías Olivera"
+     },
+     "position": {
+      "abbreviation": "LM"
+     }
+    },
+    {
+     "starter": true,
+     "jersey": "26",
+     "athlete": {
+      "displayName": "Antonio Vergara"
+     },
+     "position": {
+      "abbreviation": "RM"
+     }
+    },
+    {
+     "starter": true,
+     "jersey": "19",
+     "athlete": {
+      "displayName": "Rasmus Højlund"
+     },
+     "position": {
+      "abbreviation": "F"
+     }
+    },
+    {
+     "starter": true,
+     "jersey": "70",
+     "athlete": {
+      "displayName": "Noa Lang"
+     },
+     "position": {
+      "abbreviation": "CF-L"
+     }
+    },
+    {
+     "starter": true,
+     "jersey": "11",
+     "athlete": {
+      "displayName": "Kevin De Bruyne"
+     },
+     "position": {
+      "abbreviation": "CF-R"
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "18",
+     "athlete": {
+      "displayName": "Francisco Baridó"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "20",
+     "athlete": {
+      "displayName": "Lorenzo Lucca"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "23",
+     "athlete": {
+      "displayName": "Giovane"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "21",
+     "athlete": {
+      "displayName": "Matteo Politano"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "14",
+     "athlete": {
+      "displayName": "Nikita Contini"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "38",
+     "athlete": {
+      "displayName": "Andrea Chiummariello"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "36",
+     "athlete": {
+      "displayName": "Milton Agustín Pereyra"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "99",
+     "athlete": {
+      "displayName": "Frank Anguissa"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "40",
+     "athlete": {
+      "displayName": "Claudio Lieto"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "39",
+     "athlete": {
+      "displayName": "Nikita Melnyk"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "1",
+     "athlete": {
+      "displayName": "Alex Meret"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     }
+    }
+   ]
+  },
+  {
+   "homeAway": "away",
+   "team": {
+    "id": "112"
+   },
+   "formation": "4-3-3",
+   "roster": [
+    {
+     "starter": true,
+     "jersey": "35",
+     "athlete": {
+      "displayName": "Christos Mandas"
+     },
+     "position": {
+      "abbreviation": "G"
+     }
+    },
+    {
+     "starter": true,
+     "jersey": "25",
+     "athlete": {
+      "displayName": "Oliver Provstgaard"
+     },
+     "position": {
+      "abbreviation": "CD-L"
+     }
+    },
+    {
+     "starter": true,
+     "jersey": "37",
+     "athlete": {
+      "displayName": "Josip Sutalo"
+     },
+     "position": {
+      "abbreviation": "CD-R"
+     }
+    },
+    {
+     "starter": true,
+     "jersey": "17",
+     "athlete": {
+      "displayName": "Nuno Tavares"
+     },
+     "position": {
+      "abbreviation": "LB"
+     }
+    },
+    {
+     "starter": true,
+     "jersey": "15",
+     "athlete": {
+      "displayName": "Romano Floriani"
+     },
+     "position": {
+      "abbreviation": "RB"
+     }
+    },
+    {
+     "starter": true,
+     "jersey": "21",
+     "athlete": {
+      "displayName": "Reda Belahyane"
+     },
+     "position": {
+      "abbreviation": "CM"
+     }
+    },
+    {
+     "starter": true,
+     "jersey": "24",
+     "athlete": {
+      "displayName": "Kenneth Taylor"
+     },
+     "position": {
+      "abbreviation": "LM"
+     }
+    },
+    {
+     "starter": true,
+     "jersey": "16",
+     "athlete": {
+      "displayName": "Davide Frattesi"
+     },
+     "position": {
+      "abbreviation": "RM"
+     }
+    },
+    {
+     "starter": true,
+     "jersey": "9",
+     "athlete": {
+      "displayName": "Andrea Pinamonti"
+     },
+     "position": {
+      "abbreviation": "F"
+     }
+    },
+    {
+     "starter": true,
+     "jersey": "14",
+     "athlete": {
+      "displayName": "Tijjani Noslin"
+     },
+     "position": {
+      "abbreviation": "LF"
+     }
+    },
+    {
+     "starter": true,
+     "jersey": "11",
+     "athlete": {
+      "displayName": "Gustav Isaksen"
+     },
+     "position": {
+      "abbreviation": "RF"
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "2",
+     "athlete": {
+      "displayName": "Diogo Leite"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "22",
+     "athlete": {
+      "displayName": "Matteo Cancellieri"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "3",
+     "athlete": {
+      "displayName": "Luca Pellegrini"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "5",
+     "athlete": {
+      "displayName": "Danilho Doekhi"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "40",
+     "athlete": {
+      "displayName": "Edoardo Motta"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "23",
+     "athlete": {
+      "displayName": "Alfonso Pedraza"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "32",
+     "athlete": {
+      "displayName": "Danilo Cataldi"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "29",
+     "athlete": {
+      "displayName": "Manuel Lazzari"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "71",
+     "athlete": {
+      "displayName": "Valerio Farcomeni"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "63",
+     "athlete": {
+      "displayName": "Federico Serra"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "28",
+     "athlete": {
+      "displayName": "Adrian Przyborek"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "7",
+     "athlete": {
+      "displayName": "Fisayo Dele-Bashiru"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "77",
+     "athlete": {
+      "displayName": "Adam Marusic"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "47",
+     "athlete": {
+      "displayName": "Davide Renzetti"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "6",
+     "athlete": {
+      "displayName": "Nicolò Rovella"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     }
+    }
+   ]
+  }
+ ],
+ "boxscore": {
+  "teams": [
+   {
+    "homeAway": "home",
+    "team": {
+     "id": "114"
+    },
+    "statistics": [
+     {
+      "name": "foulsCommitted",
+      "displayValue": "12"
+     },
+     {
+      "name": "offsides",
+      "displayValue": "2"
+     },
+     {
+      "name": "wonCorners",
+      "displayValue": "6"
+     },
+     {
+      "name": "possessionPct",
+      "displayValue": "49"
+     },
+     {
+      "name": "totalShots",
+      "displayValue": "15"
+     },
+     {
+      "name": "shotsOnTarget",
+      "displayValue": "6"
+     }
+    ]
+   },
+   {
+    "homeAway": "away",
+    "team": {
+     "id": "112"
+    },
+    "statistics": [
+     {
+      "name": "foulsCommitted",
+      "displayValue": "11"
+     },
+     {
+      "name": "offsides",
+      "displayValue": "1"
+     },
+     {
+      "name": "wonCorners",
+      "displayValue": "6"
+     },
+     {
+      "name": "possessionPct",
+      "displayValue": "51"
+     },
+     {
+      "name": "totalShots",
+      "displayValue": "15"
+     },
+     {
+      "name": "shotsOnTarget",
+      "displayValue": "6"
+     }
+    ]
+   }
+  ]
+ }
+}
