@@ -6,6 +6,8 @@
  */
 
 const DEFAULT_BASE_URL = "https://site.api.espn.com/apis";
+/** Una richiesta ESPN appesa non deve bloccare il cron che l'ha lanciata. */
+const TIMEOUT_MS = 10_000;
 
 /** Una risposta ESPN che non si è potuta usare: rete, stato HTTP o formato cambiato. */
 export class EspnError extends Error {}
@@ -40,7 +42,7 @@ function baseUrl() {
 async function getJson(path: string): Promise<unknown> {
   let res: Response;
   try {
-    res = await fetch(`${baseUrl()}${path}`, { headers: { accept: "application/json" } });
+    res = await fetch(`${baseUrl()}${path}`, { headers: { accept: "application/json" }, signal: AbortSignal.timeout(TIMEOUT_MS) });
   } catch (e) {
     throw new EspnError(`ESPN ${path}: ${String(e)}`);
   }
@@ -72,19 +74,22 @@ function optStr(value: unknown): string | undefined {
   return typeof value === "string" && value !== "" ? value : undefined;
 }
 
-/** Squadre giovanili e femminili: le liste coperte non dovrebbero averne, ma non entrano mai nell'indice. */
-const NOT_SENIOR_MEN = /\b(u-?\d{2}|women|femenino|féminin|feminine|femminile|frauen)\b/i;
+/**
+ * Squadre giovanili, riserve e femminili: le liste coperte non dovrebbero averne,
+ * ma non entrano mai nell'indice.
+ */
+const NOT_SENIOR_MEN = /\b(u-?\d{2}|ii|b team|primavera|castilla|reserves?|women|femenino|féminin|feminine|femminile|frauen)\b/i;
 
+/** Lo stemma è facoltativo: senza, il picker mostra le iniziali. Gli altri campi devono esserci. */
 function parseTeam(value: unknown): ProviderTeam {
   const team = obj(value, "team");
   const logos = Array.isArray(team.logos) ? team.logos : [];
   const firstLogo = logos.length > 0 && typeof logos[0] === "object" && logos[0] !== null ? (logos[0] as Obj).href : undefined;
-  const name = str(team.displayName, "team.displayName");
   return {
     teamId: str(team.id, "team.id"),
-    name,
-    shortName: optStr(team.shortDisplayName) ?? name,
-    abbreviation: optStr(team.abbreviation) ?? name.slice(0, 3).toUpperCase(),
+    name: str(team.displayName, "team.displayName"),
+    shortName: str(team.shortDisplayName, "team.shortDisplayName"),
+    abbreviation: str(team.abbreviation, "team.abbreviation"),
     logo: optStr(firstLogo) ?? optStr(team.logo),
   };
 }
