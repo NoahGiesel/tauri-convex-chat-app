@@ -1,0 +1,275 @@
+{
+ "sports": [
+  {
+   "leagues": [
+    {
+     "slug": "eng.1",
+     "name": "English Premier League",
+     "abbreviation": "Premier League",
+     "teams": [
+      {
+       "team": {
+        "id": "349",
+        "abbreviation": "BOU",
+        "displayName": "AFC Bournemouth",
+        "shortDisplayName": "Bournemouth",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/349.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "359",
+        "abbreviation": "ARS",
+        "displayName": "Arsenal",
+        "shortDisplayName": "Arsenal",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/359.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "362",
+        "abbreviation": "AVL",
+        "displayName": "Aston Villa",
+        "shortDisplayName": "Aston Villa",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/362.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "337",
+        "abbreviation": "BRE",
+        "displayName": "Brentford",
+        "shortDisplayName": "Brentford",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/337.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "331",
+        "abbreviation": "BHA",
+        "displayName": "Brighton & Hove Albion",
+        "shortDisplayName": "Brighton",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/331.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "363",
+        "abbreviation": "CHE",
+        "displayName": "Chelsea",
+        "shortDisplayName": "Chelsea",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/363.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "388",
+        "abbreviation": "COV",
+        "displayName": "Coventry City",
+        "shortDisplayName": "Coventry",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/388.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "384",
+        "abbreviation": "CRY",
+        "displayName": "Crystal Palace",
+        "shortDisplayName": "C Palace",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/384.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "368",
+        "abbreviation": "EVE",
+        "displayName": "Everton",
+        "shortDisplayName": "Everton",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/368.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "370",
+        "abbreviation": "FUL",
+        "displayName": "Fulham",
+        "shortDisplayName": "Fulham",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/370.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "306",
+        "abbreviation": "HUL",
+        "displayName": "Hull City",
+        "shortDisplayName": "Hull",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/306.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "373",
+        "abbreviation": "IPS",
+        "displayName": "Ipswich Town",
+        "shortDisplayName": "Ipswich",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/373.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "357",
+        "abbreviation": "LEE",
+        "displayName": "Leeds United",
+        "shortDisplayName": "Leeds",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/357.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "364",
+        "abbreviation": "LIV",
+        "displayName": "Liverpool",
+        "shortDisplayName": "Liverpool",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/364.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "382",
+        "abbreviation": "MNC",
+        "displayName": "Manchester City",
+        "shortDisplayName": "Man City",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/382.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "360",
+        "abbreviation": "MAN",
+        "displayName": "Manchester United",
+        "shortDisplayName": "Man Utd",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/360.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "361",
+        "abbreviation": "NEW",
+        "displayName": "Newcastle United",
+        "shortDisplayName": "Newcastle",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/361.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "393",
+        "abbreviation": "NFO",
+        "displayName": "Nottingham Forest",
+        "shortDisplayName": "Nottm Forest",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/393.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "366",
+        "abbreviation": "SUN",
+        "displayName": "Sunderland",
+        "shortDisplayName": "Sunderland",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/366.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "367",
+        "abbreviation": "TOT",
+        "displayName": "Tottenham Hotspur",
+        "shortDisplayName": "Spurs",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/367.png"
+         }
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

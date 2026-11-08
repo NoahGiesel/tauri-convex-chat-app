@@ -1,0 +1,483 @@
+{
+ "sports": [
+  {
+   "leagues": [
+    {
+     "slug": "uefa.europa",
+     "name": "UEFA Europa League",
+     "abbreviation": "UEFA Europa League",
+     "teams": [
+      {
+       "team": {
+        "id": "103",
+        "abbreviation": "MIL",
+        "displayName": "AC Milan",
+        "shortDisplayName": "Milan",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/103.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "349",
+        "abbreviation": "BOU",
+        "displayName": "AFC Bournemouth",
+        "shortDisplayName": "Bournemouth",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/349.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "140",
+        "abbreviation": "AZ",
+        "displayName": "AZ Alkmaar",
+        "shortDisplayName": "AZ Alkmaar",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/140.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "441",
+        "abbreviation": "AND",
+        "displayName": "Anderlecht",
+        "shortDisplayName": "Anderlecht",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/441.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "20024",
+        "abbreviation": "ARA",
+        "displayName": "Ararat-Armenia",
+        "shortDisplayName": "Ararat-Armenia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/20024.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "131",
+        "abbreviation": "B04",
+        "displayName": "Bayer Leverkusen",
+        "shortDisplayName": "Leverkusen",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/131.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "1929",
+        "abbreviation": "SLB",
+        "displayName": "Benfica",
+        "shortDisplayName": "Benfica",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/1929.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "1895",
+        "abbreviation": "BES",
+        "displayName": "Besiktas",
+        "shortDisplayName": "Besiktas",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/1895.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "85",
+        "abbreviation": "CEL",
+        "displayName": "Celta Vigo",
+        "shortDisplayName": "Celta Vigo",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/85.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "256",
+        "abbreviation": "CEL",
+        "displayName": "Celtic",
+        "shortDisplayName": "Celtic",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/256.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "384",
+        "abbreviation": "CRY",
+        "displayName": "Crystal Palace",
+        "shortDisplayName": "C Palace",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/384.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "597",
+        "abbreviation": "DZG",
+        "displayName": "Dinamo Zagreb",
+        "shortDisplayName": "Dinamo Zagreb",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/597.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "622",
+        "abbreviation": "FER",
+        "displayName": "Ferencvaros",
+        "shortDisplayName": "Ferencvaros",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/622.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "13083",
+        "abbreviation": "HBE",
+        "displayName": "Hapoel Be'er",
+        "shortDisplayName": "Hapoel Be'er",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/13083.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "11505",
+        "abbreviation": "JAG",
+        "displayName": "Jagiellonia Bialystok",
+        "shortDisplayName": "Jagiellonia ",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/11505.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "111",
+        "abbreviation": "JUV",
+        "displayName": "Juventus",
+        "shortDisplayName": "Juventus",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/111.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2990",
+        "abbreviation": "LECH",
+        "displayName": "Lech Poznan",
+        "shortDisplayName": "Lech Poznan",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/2990.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "490",
+        "abbreviation": "LEV",
+        "displayName": "Levski Sofia",
+        "shortDisplayName": "Levski Sofia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/490.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "987",
+        "abbreviation": "LSK",
+        "displayName": "Lillestrom",
+        "shortDisplayName": "Lillestrom",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/987.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "167",
+        "abbreviation": "LYON",
+        "displayName": "Lyon",
+        "shortDisplayName": "Lyon",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/167.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "176",
+        "abbreviation": "OLM",
+        "displayName": "Marseille",
+        "shortDisplayName": "Marseille",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/176.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "147",
+        "abbreviation": "NEC",
+        "displayName": "NEC Nijmegen",
+        "shortDisplayName": "NEC",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/147.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "3362",
+        "abbreviation": "NKC",
+        "displayName": "NK Celje",
+        "shortDisplayName": "NK Celje",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/3362.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "1010",
+        "abbreviation": "OFI",
+        "displayName": "OFI Crete",
+        "shortDisplayName": "OFI Crete",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/1010.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "435",
+        "abbreviation": "OLY",
+        "displayName": "Olympiacos",
+        "shortDisplayName": "Olympiacos",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/435.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "617",
+        "abbreviation": "OMON",
+        "displayName": "Omonia Nicosia",
+        "shortDisplayName": "Omonia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/617.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2790",
+        "abbreviation": "SLZ",
+        "displayName": "RB Salzburg",
+        "shortDisplayName": "RB Salzburg",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/2790.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "89",
+        "abbreviation": "RSO",
+        "displayName": "Real Sociedad",
+        "shortDisplayName": "Real Sociedad",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/89.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "3746",
+        "abbreviation": "STG",
+        "displayName": "SK Sturm Graz",
+        "shortDisplayName": "Sturm Graz",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/3746.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "433",
+        "abbreviation": "SPP",
+        "displayName": "Sparta Prague",
+        "shortDisplayName": "Sparta",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/433.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "169",
+        "abbreviation": "REN",
+        "displayName": "Stade Rennais",
+        "shortDisplayName": "Rennes",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/169.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "366",
+        "abbreviation": "SUN",
+        "displayName": "Sunderland",
+        "shortDisplayName": "Sunderland",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/366.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "7911",
+        "abbreviation": "TSG",
+        "displayName": "TSG Hoffenheim",
+        "shortDisplayName": "Hoffenheim",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/7911.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "21615",
+        "abbreviation": "TOR",
+        "displayName": "Torreense",
+        "shortDisplayName": "Torreense",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/21615.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "5807",
+        "abbreviation": "USG",
+        "displayName": "Union St.-Gilloise",
+        "shortDisplayName": "Union SG",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/5807.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "11706",
+        "abbreviation": "PLZ",
+        "displayName": "Viktoria Plzen",
+        "shortDisplayName": "Viktoria Plzen",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/11706.png"
+         }
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

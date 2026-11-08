@@ -1,0 +1,2589 @@
+{
+ "sports": [
+  {
+   "leagues": [
+    {
+     "slug": "fifa.friendly",
+     "name": "International Friendly",
+     "abbreviation": "Men's International Friendly",
+     "teams": [
+      {
+       "team": {
+        "id": "5780",
+        "abbreviation": "AFG",
+        "displayName": "Afghanistan",
+        "shortDisplayName": "Afghanistan",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/afg.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "585",
+        "abbreviation": "ALB",
+        "displayName": "Albania",
+        "shortDisplayName": "Albania",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/alb.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "624",
+        "abbreviation": "ALG",
+        "displayName": "Algeria",
+        "shortDisplayName": "Algeria",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/alg.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "4886",
+        "abbreviation": "ASA",
+        "displayName": "American Samoa",
+        "shortDisplayName": "American Samoa",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/asa.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "587",
+        "abbreviation": "AND",
+        "displayName": "Andorra",
+        "shortDisplayName": "Andorra",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/and.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "653",
+        "abbreviation": "ANG",
+        "displayName": "Angola",
+        "shortDisplayName": "Angola",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/ang.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "8942",
+        "abbreviation": "AIA",
+        "displayName": "Anguilla",
+        "shortDisplayName": "Anguilla",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/aia.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "202",
+        "abbreviation": "ARG",
+        "displayName": "Argentina",
+        "shortDisplayName": "Argentina",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/arg.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "579",
+        "abbreviation": "ARM",
+        "displayName": "Armenia",
+        "shortDisplayName": "Armenia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/fifa.armenia.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2642",
+        "abbreviation": "ARU",
+        "displayName": "Aruba",
+        "shortDisplayName": "Aruba",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/aru.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "628",
+        "abbreviation": "AUS",
+        "displayName": "Australia",
+        "shortDisplayName": "Australia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/aus.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "474",
+        "abbreviation": "AUT",
+        "displayName": "Austria",
+        "shortDisplayName": "Austria",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/aut.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "581",
+        "abbreviation": "AZE",
+        "displayName": "Azerbaijan",
+        "shortDisplayName": "Azerbaijan",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/aze.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2640",
+        "abbreviation": "BAH",
+        "displayName": "Bahamas",
+        "shortDisplayName": "Bahamas",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/bah.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "4381",
+        "abbreviation": "BHR",
+        "displayName": "Bahrain",
+        "shortDisplayName": "Bahrain",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/bhr.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "5783",
+        "abbreviation": "BAN",
+        "displayName": "Bangladesh",
+        "shortDisplayName": "Bangladesh",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/ban.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2637",
+        "abbreviation": "BRB",
+        "displayName": "Barbados",
+        "shortDisplayName": "Barbados",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/brb.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "583",
+        "abbreviation": "BLR",
+        "displayName": "Belarus",
+        "shortDisplayName": "Belarus",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/blr.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "459",
+        "abbreviation": "BEL",
+        "displayName": "Belgium",
+        "shortDisplayName": "Belgium",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/bel.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2641",
+        "abbreviation": "BLZ",
+        "displayName": "Belize",
+        "shortDisplayName": "Belize",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/blz.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2844",
+        "abbreviation": "BEN",
+        "displayName": "Benin",
+        "shortDisplayName": "Benin",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/ben.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2643",
+        "abbreviation": "BER",
+        "displayName": "Bermuda",
+        "shortDisplayName": "Bermuda",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/ber.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "5784",
+        "abbreviation": "BHU",
+        "displayName": "Bhutan",
+        "shortDisplayName": "Bhutan",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/5784.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "204",
+        "abbreviation": "BOL",
+        "displayName": "Bolivia",
+        "shortDisplayName": "Bolivia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/bol.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "19314",
+        "abbreviation": "BOE",
+        "displayName": "Bonaire",
+        "shortDisplayName": "Bonaire",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/boe.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "452",
+        "abbreviation": "BIH",
+        "displayName": "Bosnia-Herzegovina",
+        "shortDisplayName": "Bosnia-Herz",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/bih.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "4245",
+        "abbreviation": "BOT",
+        "displayName": "Botswana",
+        "shortDisplayName": "Botswana",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/bot.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "205",
+        "abbreviation": "BRA",
+        "displayName": "Brazil",
+        "shortDisplayName": "Brazil",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/bra.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2644",
+        "abbreviation": "BVI",
+        "displayName": "British Virgin Islands",
+        "shortDisplayName": "Br Virgin Isl",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/bvr.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "462",
+        "abbreviation": "BUL",
+        "displayName": "Bulgaria",
+        "shortDisplayName": "Bulgaria",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/bul.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2845",
+        "abbreviation": "BKA",
+        "displayName": "Burkina Faso",
+        "shortDisplayName": "Burkina Faso",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/bka.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "5779",
+        "abbreviation": "BDI",
+        "displayName": "Burundi",
+        "shortDisplayName": "Burundi",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/bdi.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "5518",
+        "abbreviation": "CAM",
+        "displayName": "Cambodia",
+        "shortDisplayName": "Cambodia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/cam.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "656",
+        "abbreviation": "CMR",
+        "displayName": "Cameroon",
+        "shortDisplayName": "Cameroon",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/crm.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "206",
+        "abbreviation": "CAN",
+        "displayName": "Canada",
+        "shortDisplayName": "Canada",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/can.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2597",
+        "abbreviation": "CPV",
+        "displayName": "Cape Verde",
+        "shortDisplayName": "Cape Verde",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/cpv.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2646",
+        "abbreviation": "CAY",
+        "displayName": "Cayman Islands",
+        "shortDisplayName": "Cayman Isl",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/cay.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "10528",
+        "abbreviation": "CTA",
+        "displayName": "Central African Republic",
+        "shortDisplayName": "Cent Afr Rep",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/10528.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "207",
+        "abbreviation": "CHI",
+        "displayName": "Chile",
+        "shortDisplayName": "Chile",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/chi.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "658",
+        "abbreviation": "CHN",
+        "displayName": "China",
+        "shortDisplayName": "China",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/chn.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "14561",
+        "abbreviation": "TPE",
+        "displayName": "Chinese Taipei",
+        "shortDisplayName": "Taipei",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/14561.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "208",
+        "abbreviation": "COL",
+        "displayName": "Colombia",
+        "shortDisplayName": "Colombia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/col.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "8601",
+        "abbreviation": "COM",
+        "displayName": "Comoros",
+        "shortDisplayName": "Comoros",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/com.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2850",
+        "abbreviation": "COD",
+        "displayName": "Congo DR",
+        "shortDisplayName": "Congo DR",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/rdc.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "4884",
+        "abbreviation": "COK",
+        "displayName": "Cook Islands",
+        "shortDisplayName": "Cook Isl",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/cok.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "214",
+        "abbreviation": "CRC",
+        "displayName": "Costa Rica",
+        "shortDisplayName": "Costa Rica",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/crc.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "477",
+        "abbreviation": "CRO",
+        "displayName": "Croatia",
+        "shortDisplayName": "Croatia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/cro.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2647",
+        "abbreviation": "CUB",
+        "displayName": "Cuba",
+        "shortDisplayName": "Cuba",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/cub.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "11678",
+        "abbreviation": "CUW",
+        "displayName": "Curaçao",
+        "shortDisplayName": "Curaçao",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/11678.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "445",
+        "abbreviation": "CYP",
+        "displayName": "Cyprus",
+        "shortDisplayName": "Cyprus",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/cyp.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "450",
+        "abbreviation": "CZE",
+        "displayName": "Czechia",
+        "shortDisplayName": "Czechia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/cze.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "479",
+        "abbreviation": "DEN",
+        "displayName": "Denmark",
+        "shortDisplayName": "Denmark",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/den.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "5775",
+        "abbreviation": "DJI",
+        "displayName": "Djibouti",
+        "shortDisplayName": "Djibouti",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/dji.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "13582",
+        "abbreviation": "DMA",
+        "displayName": "Dominica",
+        "shortDisplayName": "Dominica",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/dma.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2649",
+        "abbreviation": "DOM",
+        "displayName": "Dominican Republic",
+        "shortDisplayName": "Dominican Rep",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/dom.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "209",
+        "abbreviation": "ECU",
+        "displayName": "Ecuador",
+        "shortDisplayName": "Ecuador",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/ecu.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2620",
+        "abbreviation": "EGY",
+        "displayName": "Egypt",
+        "shortDisplayName": "Egypt",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/egy.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2650",
+        "abbreviation": "SLV",
+        "displayName": "El Salvador",
+        "shortDisplayName": "El Salvador",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/slv.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "448",
+        "abbreviation": "ENG",
+        "displayName": "England",
+        "shortDisplayName": "England",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/eng.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "8938",
+        "abbreviation": "EQG",
+        "displayName": "Equatorial Guinea",
+        "shortDisplayName": "Eq. Guinea",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/eqg.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "444",
+        "abbreviation": "EST",
+        "displayName": "Estonia",
+        "shortDisplayName": "Estonia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/est.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "6686",
+        "abbreviation": "SWZ",
+        "displayName": "Eswatini",
+        "shortDisplayName": "Eswatini",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/swz.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "5777",
+        "abbreviation": "ETH",
+        "displayName": "Ethiopia",
+        "shortDisplayName": "Ethiopia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/eth.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "447",
+        "abbreviation": "FRO",
+        "displayName": "Faroe Islands",
+        "shortDisplayName": "Faroe Islands",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/fro.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "4862",
+        "abbreviation": "FIJ",
+        "displayName": "Fiji",
+        "shortDisplayName": "Fiji",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/fij.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "458",
+        "abbreviation": "FIN",
+        "displayName": "Finland",
+        "shortDisplayName": "Finland",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/fin.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "478",
+        "abbreviation": "FRA",
+        "displayName": "France",
+        "shortDisplayName": "France",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/fra.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "4231",
+        "abbreviation": "GAB",
+        "displayName": "Gabon",
+        "shortDisplayName": "Gabon",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/gab.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "7368",
+        "abbreviation": "GAM",
+        "displayName": "Gambia",
+        "shortDisplayName": "Gambia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/gam.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "584",
+        "abbreviation": "GEO",
+        "displayName": "Georgia",
+        "shortDisplayName": "Georgia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/geo.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "481",
+        "abbreviation": "GER",
+        "displayName": "Germany",
+        "shortDisplayName": "Germany",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/ger.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "4469",
+        "abbreviation": "GHA",
+        "displayName": "Ghana",
+        "shortDisplayName": "Ghana",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/gha.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "16721",
+        "abbreviation": "GIB",
+        "displayName": "Gibraltar",
+        "shortDisplayName": "Gibraltar",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/gib.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "455",
+        "abbreviation": "GRE",
+        "displayName": "Greece",
+        "shortDisplayName": "Greece",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/gre.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2651",
+        "abbreviation": "GRN",
+        "displayName": "Grenada",
+        "shortDisplayName": "Grenada",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/grn.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "10529",
+        "abbreviation": "GUA",
+        "displayName": "Guam",
+        "shortDisplayName": "Guam",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/10529.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2652",
+        "abbreviation": "GUA",
+        "displayName": "Guatemala",
+        "shortDisplayName": "Guatemala",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/gua.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2847",
+        "abbreviation": "GUI",
+        "displayName": "Guinea",
+        "shortDisplayName": "Guinea",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/gui.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2653",
+        "abbreviation": "GUY",
+        "displayName": "Guyana",
+        "shortDisplayName": "Guyana",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/guy.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2654",
+        "abbreviation": "HAI",
+        "displayName": "Haiti",
+        "shortDisplayName": "Haiti",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/hai.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "215",
+        "abbreviation": "HON",
+        "displayName": "Honduras",
+        "shortDisplayName": "Honduras",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/hon.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "1928",
+        "abbreviation": "HKG",
+        "displayName": "Hong Kong",
+        "shortDisplayName": "Hong Kong",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/hkg.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "480",
+        "abbreviation": "HUN",
+        "displayName": "Hungary",
+        "shortDisplayName": "Hungary",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/hun.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "470",
+        "abbreviation": "ISL",
+        "displayName": "Iceland",
+        "shortDisplayName": "Iceland",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/isl.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "4385",
+        "abbreviation": "IND",
+        "displayName": "India",
+        "shortDisplayName": "India",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/ind.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "4895",
+        "abbreviation": "IDN",
+        "displayName": "Indonesia",
+        "shortDisplayName": "Indonesia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/idn.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "469",
+        "abbreviation": "IRN",
+        "displayName": "Iran",
+        "shortDisplayName": "Iran",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/irn.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "4375",
+        "abbreviation": "IRQ",
+        "displayName": "Iraq",
+        "shortDisplayName": "Iraq",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/irq.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "461",
+        "abbreviation": "ISR",
+        "displayName": "Israel",
+        "shortDisplayName": "Israel",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/isr.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "162",
+        "abbreviation": "ITA",
+        "displayName": "Italy",
+        "shortDisplayName": "Italy",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/ita.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "4789",
+        "abbreviation": "CIV",
+        "displayName": "Ivory Coast",
+        "shortDisplayName": "Ivory Coast",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/civ.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "1038",
+        "abbreviation": "JAM",
+        "displayName": "Jamaica",
+        "shortDisplayName": "Jamaica",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/jam.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "627",
+        "abbreviation": "JPN",
+        "displayName": "Japan",
+        "shortDisplayName": "Japan",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/jpn.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2917",
+        "abbreviation": "JOR",
+        "displayName": "Jordan",
+        "shortDisplayName": "Jordan",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/jor.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2619",
+        "abbreviation": "KAZ",
+        "displayName": "Kazakhstan",
+        "shortDisplayName": "Kazakhstan",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/kaz.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2848",
+        "abbreviation": "KEN",
+        "displayName": "Kenya",
+        "shortDisplayName": "Kenya",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/ken.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "18272",
+        "abbreviation": "KOS",
+        "displayName": "Kosovo",
+        "shortDisplayName": "Kosovo",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/kosovo.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "841",
+        "abbreviation": "KUW",
+        "displayName": "Kuwait",
+        "shortDisplayName": "Kuwait",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/kuw.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "6724",
+        "abbreviation": "KGZ",
+        "displayName": "Kyrgyz Republic",
+        "shortDisplayName": "Kyrgyz Rep.",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/kgz.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "4388",
+        "abbreviation": "LIB",
+        "displayName": "Lebanon",
+        "shortDisplayName": "Lebanon",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/lib.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "6640",
+        "abbreviation": "LES",
+        "displayName": "Lesotho",
+        "shortDisplayName": "Lesotho",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/les.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "4205",
+        "abbreviation": "LBR",
+        "displayName": "Liberia",
+        "shortDisplayName": "Liberia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/lbr.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2621",
+        "abbreviation": "LBY",
+        "displayName": "Libya",
+        "shortDisplayName": "Libya",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/lby.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "589",
+        "abbreviation": "LIE",
+        "displayName": "Liechtenstein",
+        "shortDisplayName": "Liechtenstein",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/lie.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "460",
+        "abbreviation": "LTU",
+        "displayName": "Lithuania",
+        "shortDisplayName": "Lithuania",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/ltu.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "582",
+        "abbreviation": "LUX",
+        "displayName": "Luxembourg",
+        "shortDisplayName": "Luxembourg",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/lux.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "6722",
+        "abbreviation": "MAC",
+        "displayName": "Macau",
+        "shortDisplayName": "Macau",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/mac.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "5533",
+        "abbreviation": "MAD",
+        "displayName": "Madagascar",
+        "shortDisplayName": "Madagascar",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/mad.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "4325",
+        "abbreviation": "MWI",
+        "displayName": "Malawi",
+        "shortDisplayName": "Malawi",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/mwi.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2405",
+        "abbreviation": "MAS",
+        "displayName": "Malaysia",
+        "shortDisplayName": "Malaysia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/mas.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "4390",
+        "abbreviation": "MDV",
+        "displayName": "Maldives",
+        "shortDisplayName": "Maldives",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/mdv.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2849",
+        "abbreviation": "MLI",
+        "displayName": "Mali",
+        "shortDisplayName": "Mali",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/mli.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "453",
+        "abbreviation": "MLT",
+        "displayName": "Malta",
+        "shortDisplayName": "Malta",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/mlt.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2728",
+        "abbreviation": "MTQ",
+        "displayName": "Martinique",
+        "shortDisplayName": "Martinique",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/marq.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "8940",
+        "abbreviation": "MTN",
+        "displayName": "Mauritania",
+        "shortDisplayName": "Mauritania",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/mtn.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "5534",
+        "abbreviation": "MRI",
+        "displayName": "Mauritius",
+        "shortDisplayName": "Mauritius",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/mri.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "203",
+        "abbreviation": "MEX",
+        "displayName": "Mexico",
+        "shortDisplayName": "Mexico",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/mex.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "483",
+        "abbreviation": "MDA",
+        "displayName": "Moldova",
+        "shortDisplayName": "Moldova",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/mda.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "8663",
+        "abbreviation": "MGL",
+        "displayName": "Mongolia",
+        "shortDisplayName": "Mongolia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/mgl.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "6775",
+        "abbreviation": "MNE",
+        "displayName": "Montenegro",
+        "shortDisplayName": "Montenegro",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/mtg.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2869",
+        "abbreviation": "MAR",
+        "displayName": "Morocco",
+        "shortDisplayName": "Morocco",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/mar.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "8939",
+        "abbreviation": "MOZ",
+        "displayName": "Mozambique",
+        "shortDisplayName": "Mozambique",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/moz.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "6770",
+        "abbreviation": "MYA",
+        "displayName": "Myanmar",
+        "shortDisplayName": "Myanmar",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/mya.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "6725",
+        "abbreviation": "NAM",
+        "displayName": "Namibia",
+        "shortDisplayName": "Namibia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/nam.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "449",
+        "abbreviation": "NED",
+        "displayName": "Netherlands",
+        "shortDisplayName": "Netherlands",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/ned.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "4888",
+        "abbreviation": "NCD",
+        "displayName": "New Caledonia",
+        "shortDisplayName": "New Caledonia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/ncd.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2666",
+        "abbreviation": "NZL",
+        "displayName": "New Zealand",
+        "shortDisplayName": "New Zealand",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/nzl.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2658",
+        "abbreviation": "NCA",
+        "displayName": "Nicaragua",
+        "shortDisplayName": "Nicaragua",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/nca.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "8937",
+        "abbreviation": "NIG",
+        "displayName": "Niger",
+        "shortDisplayName": "Niger",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/nig.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "657",
+        "abbreviation": "NGA",
+        "displayName": "Nigeria",
+        "shortDisplayName": "Nigeria",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/nga.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "463",
+        "abbreviation": "MKD",
+        "displayName": "North Macedonia",
+        "shortDisplayName": "North Macedonia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/mkd.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "586",
+        "abbreviation": "NIR",
+        "displayName": "Northern Ireland",
+        "shortDisplayName": "N Ireland",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/nir.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "464",
+        "abbreviation": "NOR",
+        "displayName": "Norway",
+        "shortDisplayName": "Norway",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/nor.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2841",
+        "abbreviation": "OMA",
+        "displayName": "Oman",
+        "shortDisplayName": "Oman",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/oma.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "5781",
+        "abbreviation": "PAK",
+        "displayName": "Pakistan",
+        "shortDisplayName": "Pakistan",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/pak.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "6167",
+        "abbreviation": "PLE",
+        "displayName": "Palestine",
+        "shortDisplayName": "Palestine",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/pal.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2659",
+        "abbreviation": "PAN",
+        "displayName": "Panama",
+        "shortDisplayName": "Panama",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/pan.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "4885",
+        "abbreviation": "PNG",
+        "displayName": "Papua New Guinea",
+        "shortDisplayName": "Papua New Guinea",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/png.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "210",
+        "abbreviation": "PAR",
+        "displayName": "Paraguay",
+        "shortDisplayName": "Paraguay",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/par.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "211",
+        "abbreviation": "PER",
+        "displayName": "Peru",
+        "shortDisplayName": "Peru",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/per.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "7347",
+        "abbreviation": "PHI",
+        "displayName": "Philippines",
+        "shortDisplayName": "Philippines",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/phi.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "471",
+        "abbreviation": "POL",
+        "displayName": "Poland",
+        "shortDisplayName": "Poland",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/pol.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "482",
+        "abbreviation": "POR",
+        "displayName": "Portugal",
+        "shortDisplayName": "Portugal",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/por.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "11766",
+        "abbreviation": "PUR",
+        "displayName": "Puerto Rico",
+        "shortDisplayName": "Puerto Rico",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/11766.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "4398",
+        "abbreviation": "QAT",
+        "displayName": "Qatar",
+        "shortDisplayName": "Qatar",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/qat.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "476",
+        "abbreviation": "IRL",
+        "displayName": "Republic of Ireland",
+        "shortDisplayName": "Rep Ireland",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/irl.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "473",
+        "abbreviation": "ROU",
+        "displayName": "Romania",
+        "shortDisplayName": "Romania",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/rom.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "454",
+        "abbreviation": "RUS",
+        "displayName": "Russia",
+        "shortDisplayName": "Russia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/rus.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2851",
+        "abbreviation": "RWA",
+        "displayName": "Rwanda",
+        "shortDisplayName": "Rwanda",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/rwa.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "588",
+        "abbreviation": "SMR",
+        "displayName": "San Marino",
+        "shortDisplayName": "San Marino",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/smr.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "11808",
+        "abbreviation": "STP",
+        "displayName": "Sao Tome and Principe",
+        "shortDisplayName": "Sao Tome & P",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/11808.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "655",
+        "abbreviation": "KSA",
+        "displayName": "Saudi Arabia",
+        "shortDisplayName": "Saudi Arabia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/ksa.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "580",
+        "abbreviation": "SCO",
+        "displayName": "Scotland",
+        "shortDisplayName": "Scotland",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/sco.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "654",
+        "abbreviation": "SEN",
+        "displayName": "Senegal",
+        "shortDisplayName": "Senegal",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/sen.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "6757",
+        "abbreviation": "SRB",
+        "displayName": "Serbia",
+        "shortDisplayName": "Serbia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/sba.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "6726",
+        "abbreviation": "SEY",
+        "displayName": "Seychelles",
+        "shortDisplayName": "Seychelles",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/sey.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "8600",
+        "abbreviation": "SLE",
+        "displayName": "Sierra Leone",
+        "shortDisplayName": "Sierra Leone",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/sle.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "4384",
+        "abbreviation": "SIN",
+        "displayName": "Singapore",
+        "shortDisplayName": "Singapore",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/sin.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "18243",
+        "abbreviation": "SMA",
+        "displayName": "Sint Maarten",
+        "shortDisplayName": "Sint Maarten",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/sma.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "468",
+        "abbreviation": "SVK",
+        "displayName": "Slovakia",
+        "shortDisplayName": "Slovakia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/svk.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "472",
+        "abbreviation": "SVN",
+        "displayName": "Slovenia",
+        "shortDisplayName": "Slovenia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/svn.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "4861",
+        "abbreviation": "SOL",
+        "displayName": "Solomon Islands",
+        "shortDisplayName": "Solomon Islands",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/sol.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "467",
+        "abbreviation": "RSA",
+        "displayName": "South Africa",
+        "shortDisplayName": "South Africa",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/rsa.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "451",
+        "abbreviation": "KOR",
+        "displayName": "South Korea",
+        "shortDisplayName": "South Korea",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/kors.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "164",
+        "abbreviation": "ESP",
+        "displayName": "Spain",
+        "shortDisplayName": "Spain",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/esp.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "5782",
+        "abbreviation": "SRI",
+        "displayName": "Sri Lanka",
+        "shortDisplayName": "Sri Lanka",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/sri.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2662",
+        "abbreviation": "SKN",
+        "displayName": "St. Kitts and Nevis",
+        "shortDisplayName": "St Kitts & Nevis",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/skn.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2661",
+        "abbreviation": "LCA",
+        "displayName": "St. Lucia",
+        "shortDisplayName": "St Lucia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/lca.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "10596",
+        "abbreviation": "SMN",
+        "displayName": "St. Martin",
+        "shortDisplayName": "St. Martin",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/stm.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "13584",
+        "abbreviation": "VIN",
+        "displayName": "St. Vincent and the Grenadines",
+        "shortDisplayName": "St. Vincent ",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/vin.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "4319",
+        "abbreviation": "SUD",
+        "displayName": "Sudan",
+        "shortDisplayName": "Sudan",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/sud.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2664",
+        "abbreviation": "SUR",
+        "displayName": "Suriname",
+        "shortDisplayName": "Suriname",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/sur.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "466",
+        "abbreviation": "SWE",
+        "displayName": "Sweden",
+        "shortDisplayName": "Sweden",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/swe.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "475",
+        "abbreviation": "SUI",
+        "displayName": "Switzerland",
+        "shortDisplayName": "Switzerland",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/sui.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "4380",
+        "abbreviation": "SYR",
+        "displayName": "Syria",
+        "shortDisplayName": "Syria",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/syr.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "4863",
+        "abbreviation": "TAH",
+        "displayName": "Tahiti",
+        "shortDisplayName": "Tahiti",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/tah.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "6723",
+        "abbreviation": "TJK",
+        "displayName": "Tajikistan",
+        "shortDisplayName": "Tajikistan",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/tjk.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "5778",
+        "abbreviation": "TAN",
+        "displayName": "Tanzania",
+        "shortDisplayName": "Tanzania",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/tan.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "4396",
+        "abbreviation": "THA",
+        "displayName": "Thailand",
+        "shortDisplayName": "Thailand",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/tha.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "4356",
+        "abbreviation": "TOG",
+        "displayName": "Togo",
+        "shortDisplayName": "Togo",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/tog.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2627",
+        "abbreviation": "TRI",
+        "displayName": "Trinidad and Tobago",
+        "shortDisplayName": "Trin & Tob",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/tri.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "659",
+        "abbreviation": "TUN",
+        "displayName": "Tunisia",
+        "shortDisplayName": "Tunisia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/tun.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "7507",
+        "abbreviation": "TKM",
+        "displayName": "Turkmenistan",
+        "shortDisplayName": "Turkmenistan",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/tkm.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "465",
+        "abbreviation": "TUR",
+        "displayName": "Türkiye",
+        "shortDisplayName": "Türkiye",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/tur.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2645",
+        "abbreviation": "USVI",
+        "displayName": "US Virgin Islands",
+        "shortDisplayName": "US Virgin Isl",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/vir.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "4211",
+        "abbreviation": "UGA",
+        "displayName": "Uganda",
+        "shortDisplayName": "Uganda",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/uga.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "457",
+        "abbreviation": "UKR",
+        "displayName": "Ukraine",
+        "shortDisplayName": "Ukraine",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/ukr.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "4397",
+        "abbreviation": "UAE",
+        "displayName": "United Arab Emirates",
+        "shortDisplayName": "UAE",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/uae.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "660",
+        "abbreviation": "USA",
+        "displayName": "United States",
+        "shortDisplayName": "USA",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/usa.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "212",
+        "abbreviation": "URU",
+        "displayName": "Uruguay",
+        "shortDisplayName": "Uruguay",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/uru.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2570",
+        "abbreviation": "UZB",
+        "displayName": "Uzbekistan",
+        "shortDisplayName": "Uzbekistan",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/uzb.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "4864",
+        "abbreviation": "VAN",
+        "displayName": "Vanuatu",
+        "shortDisplayName": "Vanuatu",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/van.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "213",
+        "abbreviation": "VEN",
+        "displayName": "Venezuela",
+        "shortDisplayName": "Venezuela",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/ven.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "7349",
+        "abbreviation": "VIE",
+        "displayName": "Vietnam",
+        "shortDisplayName": "Vietnam",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/vie.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "578",
+        "abbreviation": "WAL",
+        "displayName": "Wales",
+        "shortDisplayName": "Wales",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/wal.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "6014",
+        "abbreviation": "YEM",
+        "displayName": "Yemen",
+        "shortDisplayName": "Yemen",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/yem.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "4277",
+        "abbreviation": "ZAM",
+        "displayName": "Zambia",
+        "shortDisplayName": "Zambia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/countries/500/zam.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "4214",
+        "abbreviation": "ZIM",
+        "displayName": "Zimbabwe",
+        "shortDisplayName": "Zimbabwe",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/4214.png"
+         }
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

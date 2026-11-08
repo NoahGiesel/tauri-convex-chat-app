@@ -1,0 +1,483 @@
+{
+ "sports": [
+  {
+   "leagues": [
+    {
+     "slug": "uefa.europa.conf",
+     "name": "UEFA Conference League",
+     "abbreviation": "UEFA Conference League",
+     "teams": [
+      {
+       "team": {
+        "id": "7853",
+        "abbreviation": "AGF",
+        "displayName": "AGF",
+        "shortDisplayName": "AGF",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/7853.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "174",
+        "abbreviation": "MON",
+        "displayName": "AS Monaco",
+        "shortDisplayName": "Monaco",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/174.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "139",
+        "abbreviation": "AJA",
+        "displayName": "Ajax Amsterdam",
+        "shortDisplayName": "Ajax",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/139.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "105",
+        "abbreviation": "ATA",
+        "displayName": "Atalanta",
+        "shortDisplayName": "Atalanta",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/105.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "20710",
+        "abbreviation": "BBL",
+        "displayName": "Borac Banja Luka",
+        "shortDisplayName": "Borac",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/20710.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2994",
+        "abbreviation": "SCB",
+        "displayName": "Braga",
+        "shortDisplayName": "Braga",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/2994.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "331",
+        "abbreviation": "BHA",
+        "displayName": "Brighton & Hove Albion",
+        "shortDisplayName": "Brighton",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/331.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "10834",
+        "abbreviation": "CSKA",
+        "displayName": "CSKA Sofia",
+        "shortDisplayName": "CSKA Sofia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/10834.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "8089",
+        "abbreviation": "UCRA",
+        "displayName": "CSU Craiova",
+        "shortDisplayName": "CSU Craiova",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/8089.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "21943",
+        "abbreviation": "EGN",
+        "displayName": "Egnatia",
+        "shortDisplayName": "Egnatia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/21943.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "909",
+        "abbreviation": "KBH",
+        "displayName": "F.C. København",
+        "shortDisplayName": "København",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/909.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "7672",
+        "abbreviation": "LUG",
+        "displayName": "FC Lugano",
+        "shortDisplayName": "FC Lugano",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/7672.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "572",
+        "abbreviation": "MID",
+        "displayName": "FC Midtjylland",
+        "shortDisplayName": "Midtjylland",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/572.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "3101",
+        "abbreviation": "FCN",
+        "displayName": "FC Nordsjælland",
+        "shortDisplayName": "Nordsjælland",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/3101.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "3024",
+        "abbreviation": "THUN",
+        "displayName": "FC Thun",
+        "shortDisplayName": "FC Thun",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/3024.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "152",
+        "abbreviation": "TWE",
+        "displayName": "FC Twente",
+        "shortDisplayName": "FC Twente",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/152.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2922",
+        "abbreviation": "GET",
+        "displayName": "Getafe",
+        "shortDisplayName": "Getafe",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/2922.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "489",
+        "abbreviation": "HAJ",
+        "displayName": "Hajduk Split",
+        "shortDisplayName": "Hajduk Split",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/489.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "262",
+        "abbreviation": "HOM",
+        "displayName": "Heart of Midlothian",
+        "shortDisplayName": "Hearts",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/262.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "20025",
+        "abbreviation": "IBE",
+        "displayName": "Iberia 1999",
+        "shortDisplayName": "Iberia 1999",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/20025.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "20703",
+        "abbreviation": "IDE",
+        "displayName": "Inter D'Escaldes",
+        "shortDisplayName": "Inter D'Escaldes",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/20703.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "7922",
+        "abbreviation": "JABL",
+        "displayName": "Jablonec",
+        "shortDisplayName": "Jablonec",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/7922.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "3611",
+        "abbreviation": "GENT",
+        "displayName": "KAA Gent",
+        "shortDisplayName": "KAA Gent",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/3611.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2528",
+        "abbreviation": "KAI",
+        "displayName": "Kairat Almaty",
+        "shortDisplayName": "Kairat Almaty",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/2528.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "20028",
+        "abbreviation": "ZAL",
+        "displayName": "Kauno Zalgiris",
+        "shortDisplayName": "Kauno Zalgiris",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/20028.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "8169",
+        "abbreviation": "KUPS",
+        "displayName": "KuPS Kuopio",
+        "shortDisplayName": "KuPS Kuopio",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/8169.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "17856",
+        "abbreviation": "LRI",
+        "displayName": "Lincoln Red Imps",
+        "shortDisplayName": "Red Imps",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/17856.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "20301",
+        "abbreviation": "MJA",
+        "displayName": "Mjällby AIF",
+        "shortDisplayName": "Mjällby",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/20301.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "22281",
+        "abbreviation": "PAF",
+        "displayName": "Pafos",
+        "shortDisplayName": "Pafos",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/22281.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "443",
+        "abbreviation": "PAO",
+        "displayName": "Panathinaikos",
+        "shortDisplayName": "Panathinaikos",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/443.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2290",
+        "abbreviation": "RSB",
+        "displayName": "Red Star Belgrade",
+        "shortDisplayName": "Red Star",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/2290.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "19246",
+        "abbreviation": "RIG",
+        "displayName": "Riga FC",
+        "shortDisplayName": "Riga FC",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/19246.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "126",
+        "abbreviation": "SCF",
+        "displayName": "SC Freiburg",
+        "shortDisplayName": "Freiburg",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/126.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "620",
+        "abbreviation": "SKBR",
+        "displayName": "SK Brann",
+        "shortDisplayName": "SK Brann",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/620.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "936",
+        "abbreviation": "STVV",
+        "displayName": "Sint-Truidense",
+        "shortDisplayName": "Sint-Truidense",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/936.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "997",
+        "abbreviation": "TRAB",
+        "displayName": "Trabzonspor",
+        "shortDisplayName": "Trabzonspor",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/997.png"
+         }
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

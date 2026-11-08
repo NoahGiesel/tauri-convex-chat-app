@@ -1,0 +1,198 @@
+{
+ "leagues": [
+  {
+   "slug": "ger.1",
+   "name": "German Bundesliga",
+   "abbreviation": "Bundesliga"
+  }
+ ],
+ "events": [
+  {
+   "id": "401884738",
+   "date": "2026-11-08T14:30Z",
+   "name": "Bayer Leverkusen at FC Cologne",
+   "shortName": "B04 @ KOE",
+   "status": {
+    "displayClock": "90'+6'",
+    "period": 2,
+    "type": {
+     "name": "STATUS_FULL_TIME",
+     "state": "post",
+     "completed": true,
+     "detail": "FT",
+     "shortDetail": "FT"
+    }
+   },
+   "competitions": [
+    {
+     "id": "401884738",
+     "date": "2026-11-08T14:30Z",
+     "status": {
+      "displayClock": "90'+6'",
+      "period": 2,
+      "type": {
+       "name": "STATUS_FULL_TIME",
+       "state": "post",
+       "completed": true,
+       "detail": "FT",
+       "shortDetail": "FT"
+      }
+     },
+     "venue": {
+      "fullName": "RheinEnergieStadion"
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "score": "1",
+       "winner": false,
+       "team": {
+        "id": "122",
+        "abbreviation": "KOE",
+        "displayName": "FC Cologne",
+        "shortDisplayName": "Cologne",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/122.png"
+       }
+      },
+      {
+       "homeAway": "away",
+       "score": "2",
+       "winner": true,
+       "team": {
+        "id": "131",
+        "abbreviation": "B04",
+        "displayName": "Bayer Leverkusen",
+        "shortDisplayName": "Leverkusen",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/131.png"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401884741",
+   "date": "2026-11-08T16:30Z",
+   "name": "1. FC Union Berlin at SC Freiburg",
+   "shortName": "FCU @ SCF",
+   "status": {
+    "displayClock": "76'",
+    "period": 2,
+    "type": {
+     "name": "STATUS_SECOND_HALF",
+     "state": "in",
+     "completed": false,
+     "detail": "76'",
+     "shortDetail": "76'"
+    }
+   },
+   "competitions": [
+    {
+     "id": "401884741",
+     "date": "2026-11-08T16:30Z",
+     "status": {
+      "displayClock": "76'",
+      "period": 2,
+      "type": {
+       "name": "STATUS_SECOND_HALF",
+       "state": "in",
+       "completed": false,
+       "detail": "76'",
+       "shortDetail": "76'"
+      }
+     },
+     "venue": {
+      "fullName": "Europa-Park Stadion"
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "score": "2",
+       "winner": false,
+       "team": {
+        "id": "126",
+        "abbreviation": "SCF",
+        "displayName": "SC Freiburg",
+        "shortDisplayName": "Freiburg",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/126.png"
+       }
+      },
+      {
+       "homeAway": "away",
+       "score": "0",
+       "winner": false,
+       "team": {
+        "id": "598",
+        "abbreviation": "FCU",
+        "displayName": "1. FC Union Berlin",
+        "shortDisplayName": "Union Berlin",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/598.png"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401884742",
+   "date": "2026-11-08T18:30Z",
+   "name": "Schalke 04 at TSG Hoffenheim",
+   "shortName": "S04 @ TSG",
+   "status": {
+    "displayClock": "0'",
+    "type": {
+     "name": "STATUS_SCHEDULED",
+     "state": "pre",
+     "completed": false,
+     "detail": "Sun, November 8th at 1:30 PM EST",
+     "shortDetail": "Scheduled"
+    }
+   },
+   "competitions": [
+    {
+     "id": "401884742",
+     "date": "2026-11-08T18:30Z",
+     "status": {
+      "displayClock": "0'",
+      "type": {
+       "name": "STATUS_SCHEDULED",
+       "state": "pre",
+       "completed": false,
+       "detail": "Sun, November 8th at 1:30 PM EST",
+       "shortDetail": "Scheduled"
+      }
+     },
+     "venue": {
+      "fullName": "PreZero Arena"
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "score": "0",
+       "winner": false,
+       "team": {
+        "id": "7911",
+        "abbreviation": "TSG",
+        "displayName": "TSG Hoffenheim",
+        "shortDisplayName": "Hoffenheim",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/7911.png"
+       }
+      },
+      {
+       "homeAway": "away",
+       "score": "0",
+       "winner": false,
+       "team": {
+        "id": "133",
+        "abbreviation": "S04",
+        "displayName": "Schalke 04",
+        "shortDisplayName": "Schalke",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/133.png"
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
