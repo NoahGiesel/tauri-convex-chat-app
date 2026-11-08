@@ -184,6 +184,8 @@ The release notes get one Team pins item in English and Italian, in the `"next"`
 
 ## Release gate
 
+_The Launch ticket (#117) removed the gate: `/calcio` now shows in every build, in direct chats only. What follows is how it worked until then._
+
 Implementation tickets merge into `master` one by one, and a release can be cut between them. So `/calcio` shows only when `import.meta.env.DEV` is true or `VITE_E2E` is `"1"`, until the Launch ticket removes the gate.
 
 - **The Test build sets `VITE_E2E`,** so the E2E scenarios run before Launch. The release guard already refuses `VITE_E2E` in a release.
