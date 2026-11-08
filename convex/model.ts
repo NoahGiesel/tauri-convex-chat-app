@@ -57,7 +57,11 @@ export type ErrorCode =
   | "cannot_pin"
   | "already_pinned"
   | "too_many_pins"
-  | "not_pin_owner";
+  | "not_pin_owner"
+  | "team_pins_direct_only"
+  | "too_many_team_pins"
+  | "team_already_pinned"
+  | "unknown_team";
 
 export const fail = (code: ErrorCode) => new ConvexError({ code });
 

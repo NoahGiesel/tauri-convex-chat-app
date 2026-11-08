@@ -72,11 +72,12 @@ export const list = query({
           )
           .order("desc")
           .take(MAX_UNREAD_COUNT);
-        const unreadCount = sinceRead.filter((m) => m.authorId !== me._id).length;
+        // Le righe di sistema ("📌 Stefan ha pinnato Inter") sono silenziose: non contano e non fanno notifica.
+        const unreadCount = sinceRead.filter((m) => m.authorId !== me._id && m.kind !== "system").length;
 
         // Ultimo messaggio non letto di un altro: serve per le notifiche del sistema (titolo, testo, suono).
         // I messaggi dell'AI (riassunti) non fanno notifica: restano solo tra i non letti.
-        const newest = sinceRead.find((m) => m.authorId !== me._id && m.kind !== "ai");
+        const newest = sinceRead.find((m) => m.authorId !== me._id && m.kind !== "ai" && m.kind !== "system");
         const latest = newest
           ? {
               id: newest._id,

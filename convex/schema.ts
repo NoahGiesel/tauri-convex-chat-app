@@ -15,6 +15,15 @@ const wordleRun = v.object({
   endReason: v.optional(v.union(v.literal("solved"), v.literal("missed"), v.literal("timeout"), v.literal("gaveUp"))),
 });
 
+/** Una delle due squadre di una partita, con quanto serve per mostrarla anche se non è nell'indice. */
+const footballSide = v.object({
+  teamId: v.string(),
+  name: v.string(),
+  shortName: v.string(),
+  abbreviation: v.string(),
+  logo: v.optional(v.string()),
+});
+
 // Gli utenti veri (email, password, sessioni) vivono nel componente Better Auth.
 // Qui teniamo il profilo dell'app, collegato all'identità tramite `tokenIdentifier`.
 export default defineSchema({
@@ -115,7 +124,7 @@ export default defineSchema({
     authorId: v.optional(v.id("profiles")),
     /** Quando l'autore ha modificato il testo; assente se il messaggio è originale. */
     editedAt: v.optional(v.number()),
-    kind: v.union(v.literal("text"), v.literal("ai"), v.literal("gif"), v.literal("media"), v.literal("game")),
+    kind: v.union(v.literal("text"), v.literal("ai"), v.literal("gif"), v.literal("media"), v.literal("game"), v.literal("system")),
     /** Testo cercato con /giphy (solo per kind "gif" inviate col comando). */
     gifQuery: v.optional(v.string()),
     /** Allegato su Cloudflare R2 (solo per kind "media"; `body` contiene il nome del file). */
@@ -173,6 +182,17 @@ export default defineSchema({
     requestedBy: v.optional(v.id("profiles")),
     /** true se il messaggio contiene link (alimenta l'elenco "Media e link"); assente altrimenti. */
     hasLink: v.optional(v.boolean()),
+    /**
+     * Per `kind: "system"`: le parti della riga di sistema ("📌 Stefan ha pinnato Inter"), che ogni client
+     * scrive nella sua lingua. Una riga di sistema non ha autore, non conta come non letta e non sposta la chat.
+     */
+    system: v.optional(
+      v.object({
+        action: v.union(v.literal("pinned"), v.literal("unpinned")),
+        profileId: v.id("profiles"),
+        teamName: v.string(),
+      }),
+    ),
   })
     .index("by_conversation", ["conversationId"])
     .index("by_conversation_and_kind", ["conversationId", "kind"])
@@ -332,7 +352,43 @@ export default defineSchema({
     keys: v.array(v.string()),
     /** false se la squadra non è più nelle liste ESPN: resta per i pin già messi, ma non si cerca. */
     listed: v.boolean(),
+    /** Solo per le squadre pinnate: l'ultima partita giocata e la prossima (assente se non ce n'è una in programma). */
+    lastMatchId: v.optional(v.id("footballMatches")),
+    nextMatchId: v.optional(v.id("footballMatches")),
   })
     .index("by_teamId", ["teamId"])
     .index("by_listed", ["listed"]),
+
+  /** Le squadre di calcio pinnate in una chat diretta, al massimo 3 per chat (docs/TEAM-PINS-SPEC.md). */
+  teamPins: defineTable({
+    conversationId: v.id("conversations"),
+    /** Id ESPN della squadra, come in `footballTeams`. */
+    teamId: v.string(),
+    pinnedBy: v.id("profiles"),
+    pinnedAt: v.number(),
+  })
+    .index("by_conversation", ["conversationId"])
+    .index("by_conversation_and_team", ["conversationId", "teamId"])
+    .index("by_team", ["teamId"]),
+
+  /** Una riga per partita ESPN, condivisa da tutte le chat che pinnano una delle due squadre. */
+  footballMatches: defineTable({
+    eventId: v.string(),
+    /** Slug ESPN della competizione (es. "ita.1"): serve per chiedere il tabellone giusto. */
+    league: v.string(),
+    home: footballSide,
+    away: footballSide,
+    kickoff: v.number(),
+    /** `pre`, `in` o `post`: decide se la partita va seguita. */
+    state: v.union(v.literal("pre"), v.literal("in"), v.literal("post")),
+    /** Nome ESPN dello stato (es. "STATUS_HALFTIME"): decide l'etichetta. */
+    statusName: v.string(),
+    score: v.optional(v.object({ home: v.number(), away: v.number() })),
+    shootout: v.optional(v.object({ home: v.number(), away: v.number() })),
+    /** Minuto mostrato da ESPN (es. "67'"). */
+    clock: v.optional(v.string()),
+    fetchedAt: v.number(),
+  })
+    .index("by_eventId", ["eventId"])
+    .index("by_league_and_state", ["league", "state"]),
 });

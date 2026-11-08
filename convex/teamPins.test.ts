@@ -1,0 +1,218 @@
+/// <reference types="vite/client" />
+import { convexTest } from "convex-test";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { api, internal } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
+import { espnFetchStub, loadFixture } from "./espnStub.test-helper";
+import schema from "./schema";
+
+const modules = import.meta.glob("./**/*.ts");
+
+/** Alice e Bob con una chat diretta; Carol con loro in un gruppo, e in una chat diretta con Alice. L'indice è già costruito. */
+async function twoFriends() {
+  const t = convexTest(schema, modules);
+  await t.action(internal.footballTeams.rebuildIndex, {});
+  const ids = await t.run(async (ctx) => {
+    const profile = (name: string) =>
+      ctx.db.insert("profiles", { tokenIdentifier: `test|${name}`, name, email: `${name}@example.com`, avatarIndex: 0 });
+    const alice = await profile("alice");
+    const bob = await profile("bob");
+    const carol = await profile("carol");
+    const then = Date.now() - 60_000;
+    const direct = await ctx.db.insert("conversations", { kind: "direct", createdBy: alice, directKey: `${alice}_${bob}`, lastMessageAt: then });
+    const other = await ctx.db.insert("conversations", { kind: "direct", createdBy: alice, directKey: `${alice}_${carol}`, lastMessageAt: then });
+    const group = await ctx.db.insert("conversations", { kind: "group", name: "Weekend", createdBy: alice, lastMessageAt: then });
+    for (const [conversationId, profileId] of [
+      [direct, alice],
+      [direct, bob],
+      [other, alice],
+      [other, carol],
+      [group, alice],
+      [group, bob],
+      [group, carol],
+    ] as const) {
+      await ctx.db.insert("members", { conversationId, profileId, lastReadAt: then, lastMessageAt: then });
+    }
+    return { direct, other, group, then };
+  });
+  return {
+    t,
+    ...ids,
+    alice: t.withIdentity({ tokenIdentifier: "test|alice" }),
+    bob: t.withIdentity({ tokenIdentifier: "test|bob" }),
+    carol: t.withIdentity({ tokenIdentifier: "test|carol" }),
+  };
+}
+
+type Friends = Awaited<ReturnType<typeof twoFriends>>;
+
+const errorCode = (e: unknown) => (e as { data?: { code?: string } }).data?.code;
+const refused = (code: string) => (e: unknown) => errorCode(e) === code;
+
+const INTER = "110";
+const MILAN = "103";
+const JUVENTUS = "111";
+const NAPOLI = "114";
+
+const systemLines = (f: Friends, conversationId: Id<"conversations">) =>
+  f.t.run((ctx) =>
+    ctx.db
+      .query("messages")
+      .withIndex("by_conversation_and_kind", (q) => q.eq("conversationId", conversationId).eq("kind", "system"))
+      .collect(),
+  );
+
+let stub: ReturnType<typeof espnFetchStub>;
+beforeEach(() => {
+  vi.useFakeTimers();
+  stub = espnFetchStub();
+  vi.stubGlobal("fetch", stub.fetch);
+});
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+});
+
+describe("aggiungere una squadra", () => {
+  it("la pinna nella chat, con una riga di sistema silenziosa", async () => {
+    const f = await twoFriends();
+    await f.alice.mutation(api.teamPins.add, { conversationId: f.direct, teamId: INTER });
+
+    for (const who of [f.alice, f.bob]) {
+      expect(await who.query(api.teamPins.list, { conversationId: f.direct })).toMatchObject([
+        { team: { teamId: INTER, name: "Internazionale", abbreviation: "INT" } },
+      ]);
+    }
+    const lines = await systemLines(f, f.direct);
+    expect(lines).toHaveLength(1);
+    expect(lines[0].system).toMatchObject({ action: "pinned", teamName: "Internazionale" });
+
+    // Silenziosa: la chat non sale nell'elenco e Bob non ha messaggi da leggere.
+    const conversation = await f.t.run((ctx) => ctx.db.get("conversations", f.direct));
+    expect(conversation?.lastMessageAt).toBe(f.then);
+    const bobsChats = await f.bob.query(api.conversations.list, {});
+    expect(bobsChats?.find((c) => c._id === f.direct)).toMatchObject({ unreadCount: 0, latest: null });
+  });
+
+  it("cerca la prossima partita della squadra", async () => {
+    const f = await twoFriends();
+    await f.alice.mutation(api.teamPins.add, { conversationId: f.direct, teamId: INTER });
+    await f.t.finishAllScheduledFunctions(vi.runAllTimers);
+
+    const [pin] = await f.alice.query(api.teamPins.list, { conversationId: f.direct });
+    expect(pin.nextMatch).toMatchObject({
+      kickoff: Date.parse("2026-11-22T19:45Z"),
+      state: "pre",
+      home: { teamId: "105", abbreviation: "ATA" },
+      away: { teamId: INTER, abbreviation: "INT" },
+    });
+    expect(stub.calls.filter((c) => c.includes("/all/teams/110"))).toHaveLength(1);
+  });
+
+  it("senza partite in programma la squadra resta pinnata senza prossima partita", async () => {
+    const f = await twoFriends();
+    const inter = loadFixture("team-110");
+    inter.team.nextEvent = [];
+    stub.reply("/site/v2/sports/soccer/all/teams/110", inter);
+    await f.alice.mutation(api.teamPins.add, { conversationId: f.direct, teamId: INTER });
+    await f.t.finishAllScheduledFunctions(vi.runAllTimers);
+
+    expect(await f.alice.query(api.teamPins.list, { conversationId: f.direct })).toMatchObject([{ nextMatch: null }]);
+  });
+});
+
+describe("rifiuti", () => {
+  it("non in un gruppo", async () => {
+    const f = await twoFriends();
+    await expect(f.alice.mutation(api.teamPins.add, { conversationId: f.group, teamId: INTER })).rejects.toSatisfy(refused("team_pins_direct_only"));
+  });
+
+  it("non più di 3 squadre per chat", async () => {
+    const f = await twoFriends();
+    for (const teamId of [INTER, MILAN, JUVENTUS]) await f.alice.mutation(api.teamPins.add, { conversationId: f.direct, teamId });
+    await expect(f.bob.mutation(api.teamPins.add, { conversationId: f.direct, teamId: NAPOLI })).rejects.toSatisfy(refused("too_many_team_pins"));
+    expect(await f.alice.query(api.teamPins.list, { conversationId: f.direct })).toHaveLength(3);
+  });
+
+  it("non la stessa squadra due volte", async () => {
+    const f = await twoFriends();
+    await f.alice.mutation(api.teamPins.add, { conversationId: f.direct, teamId: INTER });
+    await expect(f.bob.mutation(api.teamPins.add, { conversationId: f.direct, teamId: INTER })).rejects.toSatisfy(refused("team_already_pinned"));
+  });
+
+  it("non una squadra fuori dall'indice", async () => {
+    const f = await twoFriends();
+    await expect(f.alice.mutation(api.teamPins.add, { conversationId: f.direct, teamId: "999999" })).rejects.toSatisfy(refused("unknown_team"));
+  });
+
+  it("chi non è nella chat non aggiunge, non toglie e non vede", async () => {
+    const f = await twoFriends();
+    const pinId = await f.alice.mutation(api.teamPins.add, { conversationId: f.direct, teamId: INTER });
+
+    await expect(f.carol.mutation(api.teamPins.add, { conversationId: f.direct, teamId: MILAN })).rejects.toSatisfy(refused("not_member"));
+    await expect(f.carol.mutation(api.teamPins.remove, { pinId })).rejects.toSatisfy(refused("not_member"));
+    expect(await f.carol.query(api.teamPins.list, { conversationId: f.direct })).toEqual([]);
+    expect(await f.alice.query(api.teamPins.list, { conversationId: f.direct })).toHaveLength(1);
+  });
+});
+
+describe("togliere una squadra", () => {
+  it("può farlo chiunque dei due, con una riga di sistema", async () => {
+    const f = await twoFriends();
+    const inter = await f.alice.mutation(api.teamPins.add, { conversationId: f.direct, teamId: INTER });
+    const milan = await f.bob.mutation(api.teamPins.add, { conversationId: f.direct, teamId: MILAN });
+
+    await f.bob.mutation(api.teamPins.remove, { pinId: inter });
+    await f.alice.mutation(api.teamPins.remove, { pinId: milan });
+
+    expect(await f.alice.query(api.teamPins.list, { conversationId: f.direct })).toEqual([]);
+    const lines = await systemLines(f, f.direct);
+    expect(lines.map((l) => l.system?.action)).toEqual(["pinned", "pinned", "unpinned", "unpinned"]);
+    expect(lines[2].system).toMatchObject({ teamName: "Internazionale" });
+  });
+
+  it("una squadra tolta si può pinnare di nuovo", async () => {
+    const f = await twoFriends();
+    const pinId = await f.alice.mutation(api.teamPins.add, { conversationId: f.direct, teamId: INTER });
+    await f.alice.mutation(api.teamPins.remove, { pinId });
+    await f.bob.mutation(api.teamPins.add, { conversationId: f.direct, teamId: INTER });
+    expect(await f.alice.query(api.teamPins.list, { conversationId: f.direct })).toHaveLength(1);
+  });
+});
+
+describe("aggiornamento ogni 6 ore", () => {
+  it("vede un calcio d'inizio spostato, con una sola richiesta per squadra", async () => {
+    const f = await twoFriends();
+    await f.alice.mutation(api.teamPins.add, { conversationId: f.direct, teamId: INTER });
+    await f.alice.mutation(api.teamPins.add, { conversationId: f.other, teamId: INTER });
+    await f.t.finishAllScheduledFunctions(vi.runAllTimers);
+
+    const moved = loadFixture("team-110");
+    moved.team.nextEvent[0].date = "2026-11-23T17:00Z";
+    stub.reply("/site/v2/sports/soccer/all/teams/110", moved);
+    const before = stub.calls.length;
+    await f.t.mutation(internal.footballMatches.refreshPinnedTeams, {});
+    await f.t.finishAllScheduledFunctions(vi.runAllTimers);
+
+    expect(stub.calls.slice(before)).toEqual([expect.stringContaining("/all/teams/110")]);
+    for (const conversationId of [f.direct, f.other]) {
+      const [pin] = await f.alice.query(api.teamPins.list, { conversationId });
+      expect(pin.nextMatch?.kickoff).toBe(Date.parse("2026-11-23T17:00Z"));
+    }
+    const matches = await f.t.run((ctx) => ctx.db.query("footballMatches").collect());
+    expect(matches).toHaveLength(1);
+  });
+
+  it("se ESPN non risponde la prossima partita resta com'era", async () => {
+    const f = await twoFriends();
+    await f.alice.mutation(api.teamPins.add, { conversationId: f.direct, teamId: INTER });
+    await f.t.finishAllScheduledFunctions(vi.runAllTimers);
+
+    stub.reply("/site/v2/sports/soccer/all/teams/110", "down", 503);
+    await f.t.mutation(internal.footballMatches.refreshPinnedTeams, {});
+    await f.t.finishAllScheduledFunctions(vi.runAllTimers);
+
+    const [pin] = await f.alice.query(api.teamPins.list, { conversationId: f.direct });
+    expect(pin.nextMatch?.kickoff).toBe(Date.parse("2026-11-22T19:45Z"));
+  });
+});
