@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { AlertTriangle, X } from "lucide-react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { Crest } from "@/components/team-pins/crest";
 import { MatchDrawer } from "@/components/team-pins/match-drawer";
-import { LIVE_KINDS, LiveDot, StateLabel } from "@/components/team-pins/match-label";
+import { StateLabel, StatusDot, useMatchTimes } from "@/components/team-pins/match-label";
 import { useI18n } from "@/i18n/i18n-provider";
 import { chipState, isUnavailable, type ChipState } from "@/lib/match-chip";
 import { teamChips, type TeamChip, type TeamPin } from "@/lib/team-pins";
@@ -30,24 +30,25 @@ export function TeamPinRow({ conversationId }: { conversationId: Id<"conversatio
   const now = useNow(CLOCK_TICK_MS);
   /** Il chip il cui drawer è aperto (la partita si rilegge a ogni aggiornamento, così il drawer segue la diretta). */
   const [openKey, setOpenKey] = useState<string | null>(null);
+  const close = useCallback(() => setOpenKey(null), []);
   if (!pins || pins.length === 0) return null;
   const chips = teamChips(pins, now);
   const open = chips.find((c) => c.key === openKey)?.match;
 
   return (
-    <div className="shrink-0 border-b border-app-border">
+    <div data-team-pin-row className="shrink-0 border-b border-app-border">
       <div role="list" aria-label={t("teamPins.row")} className="flex h-11 items-center gap-2 overflow-x-auto px-5">
         {chips.map((chip) => (
           <Chip key={chip.key} chip={chip} now={now} open={chip.key === openKey} onOpen={() => setOpenKey(chip.key === openKey ? null : chip.key)} />
         ))}
       </div>
-      {open && <MatchDrawer match={open} now={now} onClose={() => setOpenKey(null)} />}
+      {open && <MatchDrawer conversationId={conversationId} match={open} now={now} onClose={close} />}
     </div>
   );
 }
 
 function Chip({ chip, now, open, onOpen }: { chip: TeamChip; now: number; open: boolean; onOpen: () => void }) {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const { match } = chip;
   if (!match) {
     const team = chip.pins[0].team;
@@ -62,22 +63,20 @@ function Chip({ chip, now, open, onOpen }: { chip: TeamChip; now: number; open: 
 
   const state = chipState(match);
   const stale = isUnavailable(match, now);
-  const time = (ts: number) => new Date(ts).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
-  const when = new Date(match.kickoff).toLocaleString(locale, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-  const unavailable = stale ? t("teamPins.unavailable", { time: time(match.fetchedAt) }) : undefined;
+  const { when, time, clock } = useMatchTimes(match);
+  const unavailable = stale ? t("teamPins.unavailable", { time: clock(match.fetchedAt) }) : undefined;
   const winner = state.kind === "finished" ? state.winner : null;
 
   return (
     <ChipFrame chip={chip} title={unavailable} stateKind={state.kind} open={open}>
       <button
         type="button"
-        aria-label={t("teamPins.details")}
+        aria-haspopup="dialog"
         aria-expanded={open}
         onClick={onOpen}
         className={cn("flex items-center gap-1.5 rounded-full text-left", stale && "opacity-50")}
       >
-        {LIVE_KINDS.includes(state.kind) && <LiveDot still={stale} />}
-        {state.kind === "suspended" && <LiveDot still />}
+        <StatusDot state={state} stale={stale} />
         <Crest logo={match.home.logo} abbreviation={match.home.abbreviation} />
         <span className={cn("text-app-text-strong", winner === "away" ? "font-medium" : "font-bold")}>{match.home.abbreviation}</span>
         <span className={cn("tabular-nums", "score" in state ? "font-black text-app-text-strong" : "text-app-text-muted")}>
@@ -86,7 +85,7 @@ function Chip({ chip, now, open, onOpen }: { chip: TeamChip; now: number; open: 
         <span className={cn("text-app-text-strong", winner === "home" ? "font-medium" : "font-bold")}>{match.away.abbreviation}</span>
         <Crest logo={match.away.logo} abbreviation={match.away.abbreviation} />
         <span className="ml-1 text-app-text-muted">
-          <StateLabel state={state} when={when} time={time(match.kickoff)} />
+          <StateLabel state={state} when={when} time={time} />
         </span>
       </button>
       {stale && <AlertTriangle aria-label={unavailable} className="size-3.5 shrink-0 text-amber-500" strokeWidth={2.2} />}

@@ -1,5 +1,5 @@
 import { useI18n } from "@/i18n/i18n-provider";
-import type { ChipState } from "@/lib/match-chip";
+import type { ChipState, PinMatch } from "@/lib/match-chip";
 import { cn } from "@/lib/utils";
 
 /** Gli stati in cui si sta giocando: il pallino rosso pulsa. */
@@ -13,6 +13,21 @@ export function LiveDot({ still }: { still: boolean }) {
       <span className={cn("relative inline-flex size-2 rounded-full", still ? "bg-app-text-dim" : "bg-red-500")} />
     </span>
   );
+}
+
+/** Il pallino accanto al punteggio: pulsa dal vivo, fermo se la partita è sospesa o il dato non arriva più. */
+export function StatusDot({ state, stale }: { state: ChipState; stale: boolean }) {
+  if (LIVE_KINDS.includes(state.kind)) return <LiveDot still={stale} />;
+  if (state.kind === "suspended") return <LiveDot still />;
+  return null;
+}
+
+/** Il calcio d'inizio come lo mostrano chip e drawer: `when` col giorno, `time` solo l'ora; `clock` formatta un'altra ora. */
+export function useMatchTimes(match: PinMatch) {
+  const { locale } = useI18n();
+  const clock = (ts: number) => new Date(ts).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+  const when = new Date(match.kickoff).toLocaleString(locale, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  return { when, time: clock(match.kickoff), clock };
 }
 
 /** L'etichetta accanto al punteggio: minuto, Intervallo, Finale, d.t.s., rigori, rinvii… */

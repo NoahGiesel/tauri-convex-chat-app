@@ -25,7 +25,7 @@ const footballSide = v.object({
 });
 
 const footballSideKey = v.union(v.literal("home"), v.literal("away"));
-const lineupPlayer = v.object({ name: v.string(), jersey: v.optional(v.string()), position: v.optional(v.string()) });
+const lineupPlayer = v.object({ name: v.string(), jersey: v.optional(v.string()) });
 
 // Gli utenti veri (email, password, sessioni) vivono nel componente Better Auth.
 // Qui teniamo il profilo dell'app, collegato all'identità tramite `tokenIdentifier`.
