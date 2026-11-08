@@ -67,12 +67,18 @@ function RemoveButton({ pins }: { pins: TeamPin[] }) {
 
   useEffect(() => {
     if (!menuAt) return;
+    // Il menu è fisso sullo schermo: si chiude a ogni clic fuori, con Esc e appena qualcosa scorre.
     const close = () => setMenuAt(null);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && close();
     window.addEventListener("pointerdown", close);
     window.addEventListener("resize", close);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("keydown", onKey);
     return () => {
       window.removeEventListener("pointerdown", close);
       window.removeEventListener("resize", close);
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("keydown", onKey);
     };
   }, [menuAt]);
 
@@ -85,6 +91,8 @@ function RemoveButton({ pins }: { pins: TeamPin[] }) {
         aria-label={label}
         title={label}
         aria-expanded={pins.length > 1 ? menuAt !== null : undefined}
+        // Senza questo, il clic sulla X chiuderebbe il menu (pointerdown) e lo riaprirebbe subito (click).
+        onPointerDown={(e) => e.stopPropagation()}
         onClick={() => {
           if (pins.length === 1) return unpin(pins[0]);
           const rect = button.current!.getBoundingClientRect();

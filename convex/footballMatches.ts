@@ -1,33 +1,16 @@
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
-import type { Doc, Id } from "./_generated/dataModel";
-import { internalAction, internalMutation, type MutationCtx, type QueryCtx } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
+import { internalAction, internalMutation, type MutationCtx } from "./_generated/server";
 import { fetchNextMatch, type ProviderMatch } from "./espn";
+import { teamRow } from "./footballTeams";
+import schema from "./schema";
 
 /** Più pin di quanti l'app ne avrà mai: ogni chat ne ha al massimo 3. */
 const MAX_PINS_SCANNED = 5000;
 
-const sideValidator = v.object({
-  teamId: v.string(),
-  name: v.string(),
-  shortName: v.string(),
-  abbreviation: v.string(),
-  logo: v.optional(v.string()),
-});
-const scoreValidator = v.object({ home: v.number(), away: v.number() });
-
-export const matchValidator = v.object({
-  eventId: v.string(),
-  league: v.string(),
-  home: sideValidator,
-  away: sideValidator,
-  kickoff: v.number(),
-  state: v.union(v.literal("pre"), v.literal("in"), v.literal("post")),
-  statusName: v.string(),
-  score: v.optional(scoreValidator),
-  shootout: v.optional(scoreValidator),
-  clock: v.optional(v.string()),
-});
+/** Una partita come la manda il fornitore: la riga di `footballMatches` senza `fetchedAt`. */
+export const matchValidator = schema.tables.footballMatches.validator.omit("fetchedAt");
 
 /** Scrive (o aggiorna) una partita, una sola riga per partita ESPN. */
 export async function upsertMatch(ctx: MutationCtx, match: ProviderMatch, fetchedAt: number): Promise<Id<"footballMatches">> {
@@ -41,13 +24,6 @@ export async function upsertMatch(ctx: MutationCtx, match: ProviderMatch, fetche
     return existing._id;
   }
   return await ctx.db.insert("footballMatches", row);
-}
-
-export async function teamRow(ctx: QueryCtx, teamId: string): Promise<Doc<"footballTeams"> | null> {
-  return await ctx.db
-    .query("footballTeams")
-    .withIndex("by_teamId", (q) => q.eq("teamId", teamId))
-    .unique();
 }
 
 /** Chiede a ESPN la prossima partita di una squadra. Se la richiesta fallisce non cambia niente: riprova il prossimo giro. */

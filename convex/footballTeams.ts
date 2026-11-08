@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
-import { internalAction, internalMutation, query } from "./_generated/server";
+import type { Doc } from "./_generated/dataModel";
+import { internalAction, internalMutation, query, type QueryCtx } from "./_generated/server";
 import { CLUB_COMPETITIONS, fetchTeamList, NATIONAL_TEAMS_LEAGUE } from "./espn";
 import { foldText, matchRank, searchKeys } from "./footballSearch";
 import { getProfile } from "./model";
@@ -18,6 +19,14 @@ const teamValidator = v.object({
   competition: v.optional(v.string()),
   national: v.boolean(),
 });
+
+/** La riga dell'indice di una squadra, anche se non è più nelle liste. */
+export async function teamRow(ctx: QueryCtx, teamId: string): Promise<Doc<"footballTeams"> | null> {
+  return await ctx.db
+    .query("footballTeams")
+    .withIndex("by_teamId", (q) => q.eq("teamId", teamId))
+    .unique();
+}
 
 /**
  * Ricostruisce l'indice di `/calcio` dalle liste ESPN: i club delle competizioni coperte

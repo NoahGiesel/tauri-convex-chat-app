@@ -368,8 +368,8 @@ export default defineSchema({
     pinnedAt: v.number(),
   })
     .index("by_conversation", ["conversationId"])
-    .index("by_conversation_and_team", ["conversationId", "teamId"])
-    .index("by_team", ["teamId"]),
+    .index("by_conversation_and_teamId", ["conversationId", "teamId"])
+    .index("by_teamId", ["teamId"]),
 
   /** Una riga per partita ESPN, condivisa da tutte le chat che pinnano una delle due squadre. */
   footballMatches: defineTable({

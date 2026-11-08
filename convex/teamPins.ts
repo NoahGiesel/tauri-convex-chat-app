@@ -2,21 +2,15 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { mutation, query, type MutationCtx } from "./_generated/server";
-import { teamRow } from "./footballMatches";
+import { teamRow } from "./footballTeams";
 import { fail, getProfile, requireMember, requireProfile } from "./model";
 
 /** Squadre pinnate al massimo in una chat (docs/TEAM-PINS-SPEC.md, Rules). */
 export const MAX_TEAM_PINS = 3;
 
 /** La riga di sistema che racconta un pin aggiunto o tolto. Non sposta la chat e non conta come non letta. */
-async function insertSystemLine(
-  ctx: MutationCtx,
-  conversationId: Id<"conversations">,
-  action: "pinned" | "unpinned",
-  profileId: Id<"profiles">,
-  teamName: string,
-) {
-  await ctx.db.insert("messages", { conversationId, kind: "system", body: "", system: { action, profileId, teamName } });
+async function insertSystemLine(ctx: MutationCtx, conversationId: Id<"conversations">, system: NonNullable<Doc<"messages">["system"]>) {
+  await ctx.db.insert("messages", { conversationId, kind: "system", body: "", system });
 }
 
 /** `/calcio`: pinna una squadra in una chat diretta. Chiunque dei due può farlo. */
@@ -33,7 +27,7 @@ export const add = mutation({
     if (!team?.listed) throw fail("unknown_team");
     const duplicate = await ctx.db
       .query("teamPins")
-      .withIndex("by_conversation_and_team", (q) => q.eq("conversationId", args.conversationId).eq("teamId", args.teamId))
+      .withIndex("by_conversation_and_teamId", (q) => q.eq("conversationId", args.conversationId).eq("teamId", args.teamId))
       .first();
     if (duplicate) throw fail("team_already_pinned");
     const pins = await ctx.db
@@ -48,7 +42,7 @@ export const add = mutation({
       pinnedBy: me._id,
       pinnedAt: Date.now(),
     });
-    await insertSystemLine(ctx, args.conversationId, "pinned", me._id, team.name);
+    await insertSystemLine(ctx, args.conversationId, { action: "pinned", profileId: me._id, teamName: team.name });
     await ctx.scheduler.runAfter(0, internal.footballMatches.refreshNextMatch, { teamId: args.teamId });
     return pinId;
   },
@@ -64,12 +58,13 @@ export const remove = mutation({
     await requireMember(ctx, pin.conversationId, me._id);
     const team = await teamRow(ctx, pin.teamId);
     await ctx.db.delete("teamPins", pin._id);
-    await insertSystemLine(ctx, pin.conversationId, "unpinned", me._id, team?.name ?? pin.teamId);
+    await insertSystemLine(ctx, pin.conversationId, { action: "unpinned", profileId: me._id, teamName: team?.name ?? pin.teamId });
     return null;
   },
 });
 
-const side = (s: Doc<"footballMatches">["home"]) => ({
+/** Quanto il client mostra di una squadra (nell'indice o in una partita). */
+const teamView = (s: Doc<"footballMatches">["home"]) => ({
   teamId: s.teamId,
   name: s.name,
   shortName: s.shortName,
@@ -101,20 +96,20 @@ export const list = query({
       result.push({
         pinId: pin._id,
         pinnedAt: pin.pinnedAt,
-        team: side(team),
+        team: teamView(team),
         nextMatch: next
           ? {
               eventId: next.eventId,
               kickoff: next.kickoff,
               state: next.state,
               statusName: next.statusName,
-              home: side(next.home),
-              away: side(next.away),
+              home: teamView(next.home),
+              away: teamView(next.away),
               fetchedAt: next.fetchedAt,
             }
           : null,
       });
     }
-    return result.sort((a, b) => a.pinnedAt - b.pinnedAt);
+    return result; // l'indice le dà già nell'ordine in cui sono state aggiunte
   },
 });

@@ -1,16 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
-import { ConvexError } from "convex/values";
 import { X } from "lucide-react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { Crest } from "@/components/team-pins/crest";
 import { useI18n } from "@/i18n/i18n-provider";
-import { errorKey } from "@/lib/errors";
+import { errorCode, errorKey } from "@/lib/errors";
 import { cn } from "@/lib/utils";
-
-const codeOf = (e: unknown) =>
-  e instanceof ConvexError && typeof e.data === "object" && e.data !== null && "code" in e.data ? String(e.data.code) : null;
 
 /**
  * Il picker di `/calcio`, sopra il campo del messaggio (dove compaiono i suggerimenti dei comandi).
@@ -47,7 +43,7 @@ export function CalcioPicker({
       await add({ conversationId, teamId: team.teamId });
       onClose();
     } catch (e) {
-      setRefusal(codeOf(e) === "team_already_pinned" ? t("teamPins.alreadyPinned", { team: team.name }) : t(errorKey(e)));
+      setRefusal(errorCode(e) === "team_already_pinned" ? t("teamPins.alreadyPinned", { team: team.name }) : t(errorKey(e)));
     } finally {
       setBusy(false);
     }
