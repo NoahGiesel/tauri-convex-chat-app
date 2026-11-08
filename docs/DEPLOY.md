@@ -86,8 +86,9 @@ Windows SmartScreen needs "Run anyway". Later updates do not warn.
 7. Drag a tab out of the window.
 8. Hover a message and see its actions.
 9. Play a Wordle Run with the physical keyboard.
-10. Get a system notification.
-11. See the Dock badge, on macOS.
+10. In a release build, pin a football team with `/calcio` and check that its chip shows the real next match from ESPN.
+11. Get a system notification.
+12. See the Dock badge, on macOS.
 
 **Short Manual smoke,** on the other system: install, open, get a system notification, and see the
 Dock badge if that system is macOS. A releaser without access to the other system says so in the
