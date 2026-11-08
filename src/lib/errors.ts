@@ -6,12 +6,14 @@ import { en, type MessageKey } from "@/i18n/en";
  * `error.<code>`. Qualsiasi altro errore (rete, bug) usa il messaggio generico.
  */
 export function errorKey(error: unknown): MessageKey {
-  if (error instanceof ConvexError) {
-    const data: unknown = error.data;
-    if (typeof data === "object" && data !== null && "code" in data && typeof data.code === "string") {
-      const key = `error.${data.code}`;
-      if (key in en) return key as MessageKey;
-    }
-  }
-  return "error.generic";
+  const code = errorCode(error);
+  const key = `error.${code}`;
+  return code !== null && key in en ? (key as MessageKey) : "error.generic";
+}
+
+/** Il codice di un `ConvexError({ code })` del backend; null per ogni altro errore. */
+export function errorCode(error: unknown): string | null {
+  if (!(error instanceof ConvexError)) return null;
+  const data: unknown = error.data;
+  return typeof data === "object" && data !== null && "code" in data && typeof data.code === "string" ? data.code : null;
 }

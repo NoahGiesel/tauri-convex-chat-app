@@ -13,6 +13,9 @@ import { QuizCard } from "@/components/quiz-card";
 import { WordleDuelCard } from "@/components/wordle/duel-card";
 import { WordleResultLine } from "@/components/wordle/result-line";
 import { WordleSetupPopover } from "@/components/wordle/setup-popover";
+import { CalcioPicker } from "@/components/team-pins/calcio-picker";
+import { TeamPinRow } from "@/components/team-pins/pin-row";
+import { SystemLine } from "@/components/team-pins/system-line";
 import { EmbedPlayer, LinkPreview } from "@/components/link-preview";
 import { embedFor, htmlEmbed } from "@/lib/embeds";
 import { MediaLibrary } from "@/components/media-library";
@@ -31,6 +34,7 @@ import { fetchGifs } from "@/lib/giphy";
 import { compressImage } from "@/lib/image-compress";
 import { dayLabel } from "@/lib/day-label";
 import { splitLinks } from "@/lib/links";
+import { TEAM_PINS_ENABLED } from "@/lib/team-pins";
 import { uploadFile } from "@/lib/media-upload";
 import { classifyMedia, MEDIA_ACCEPT } from "../../convex/mediaRules";
 import { cn } from "@/lib/utils";
@@ -54,10 +58,11 @@ const COMMANDS = [
   { name: "quiz3", description: "composer.cmdQuiz3" },
   { name: "quiz5", description: "composer.cmdQuiz5" },
   { name: "wordle", description: "composer.cmdWordle" },
+  ...(TEAM_PINS_ENABLED ? ([{ name: "calcio", description: "composer.cmdCalcio" }] as const) : []),
 ] as const;
 
 /** Comandi che si usano solo in una chat diretta (sono sfide 1 contro 1). */
-const DIRECT_ONLY: ReadonlySet<string> = new Set<(typeof COMMANDS)[number]["name"]>(["stone-paper-scissors", "quiz3", "quiz5", "wordle"]);
+const DIRECT_ONLY: ReadonlySet<string> = new Set<(typeof COMMANDS)[number]["name"]>(["stone-paper-scissors", "quiz3", "quiz5", "wordle", "calcio"]);
 
 type TextStyle = "me" | "code" | "pre" | "spoiler" | "quote";
 const MAX_ATTACHMENTS = 10;
@@ -144,6 +149,7 @@ export function ConversationView({
         gameId: null,
         quizId: null,
         wordleDuelId: null,
+        system: null,
         summarizable: false,
         summaryBlocked: null,
         summarized: false,
@@ -175,6 +181,8 @@ export function ConversationView({
   const startQuiz = useMutation(api.quizzes.start);
   const startWordle = useMutation(api.wordleDuels.start);
   const [wordleSetup, setWordleSetup] = useState(false);
+  /** Il testo di `/calcio` mentre il picker delle squadre è aperto; null se è chiuso. */
+  const [calcioText, setCalcioText] = useState<string | null>(null);
   const rollDice = useMutation(api.messages.roll);
   const flipCoin = useMutation(api.messages.flip);
   const [picked, setPicked] = useState({ prefix: "", index: 0 });
@@ -617,6 +625,12 @@ export function ConversationView({
       void startQuiz({ conversationId, size: name === "quiz3" ? 3 : 5, language }).catch((e) => setError(t(errorKey(e))));
       return;
     }
+    if (name === "calcio" && TEAM_PINS_ENABLED) {
+      setDraft("");
+      setError(null);
+      setCalcioText(arg);
+      return;
+    }
     if (name === "wordle") {
       setDraft("");
       setError(null);
@@ -760,6 +774,7 @@ export function ConversationView({
 
       {/* Messaggi e campo di scrittura restano montati (così non si perde la posizione) ma nascosti mentre si guarda l'elenco. */}
       <div className={cn("flex min-h-0 flex-1 flex-col", libraryOpen && "hidden")}>
+      {TEAM_PINS_ENABLED && info && !isGroup && <TeamPinRow conversationId={conversationId} />}
       <div ref={scrollRef} onScroll={onScroll} className={cn("min-h-0 flex-1 overflow-y-auto px-6 pt-5 pb-3", !revealed && "opacity-0")}>
         {!showHeader && (
           <div className="pointer-events-none sticky top-0 z-10 h-0">
@@ -809,6 +824,7 @@ export function ConversationView({
           }
 
           const m = row.message;
+          if (m.kind === "system" && m.system) return <SystemLine key={m._id} system={m.system} />;
           // Il messaggio di chiusura di un Wordle Duel non ha autore: è una riga al centro, non una risposta dell'AI.
           if (m.kind === "game" && m.wordleDuelId && m.authorId === null) {
             const duelId = m.wordleDuelId;
@@ -1098,6 +1114,16 @@ export function ConversationView({
                 </button>
               ))}
             </div>
+          )}
+          {calcioText !== null && (
+            <CalcioPicker
+              conversationId={conversationId}
+              initialText={calcioText}
+              onClose={() => {
+                setCalcioText(null);
+                composerRef.current?.focus();
+              }}
+            />
           )}
           {wordleSetup && (
             <WordleSetupPopover

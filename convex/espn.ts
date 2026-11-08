@@ -94,6 +94,87 @@ function parseTeam(value: unknown): ProviderTeam {
   };
 }
 
+export type MatchState = "pre" | "in" | "post";
+
+export type ProviderMatch = {
+  eventId: string;
+  league: string;
+  home: ProviderTeam;
+  away: ProviderTeam;
+  kickoff: number;
+  state: MatchState;
+  statusName: string;
+  score?: { home: number; away: number };
+  shootout?: { home: number; away: number };
+  clock?: string;
+};
+
+/** Il punteggio di una squadra: stringa nei tabelloni ("2"), oggetto in `nextEvent` ({ value: 2 }). */
+function readScore(value: unknown, what: string): number {
+  const raw = typeof value === "object" && value !== null ? (value as Obj).value : value;
+  const n = typeof raw === "string" ? Number(raw) : raw;
+  if (typeof n !== "number" || !Number.isFinite(n)) throw new EspnError(`ESPN: ${what} missing`);
+  return n;
+}
+
+function readState(value: unknown): MatchState {
+  if (value === "pre" || value === "in" || value === "post") return value;
+  throw new EspnError("ESPN: status.type.state missing");
+}
+
+/** Una partita, da un tabellone o da `nextEvent`. `league` è lo slug, che i tabelloni non ripetono per partita. */
+function parseEvent(value: unknown, league: string): ProviderMatch {
+  const event = obj(value, "event");
+  const competition = obj(arr(event.competitions, "competitions")[0], "competitions[0]");
+  const status = obj(competition.status ?? event.status, "status");
+  const type = obj(status.type, "status.type");
+  const state = readState(type.state);
+  const competitors = arr(competition.competitors, "competitors").map((c) => obj(c, "competitors[]"));
+  const side = (homeAway: "home" | "away") => {
+    const found = competitors.find((c) => c.homeAway === homeAway);
+    if (!found) throw new EspnError(`ESPN: ${homeAway} competitor missing`);
+    return found;
+  };
+  const home = side("home");
+  const away = side("away");
+  const kickoff = Date.parse(str(event.date, "event.date"));
+  if (Number.isNaN(kickoff)) throw new EspnError("ESPN: event.date missing");
+
+  const match: ProviderMatch = {
+    eventId: str(event.id, "event.id"),
+    league,
+    home: parseTeam(home.team),
+    away: parseTeam(away.team),
+    kickoff,
+    state,
+    statusName: str(type.name, "status.type.name"),
+  };
+  // Prima del calcio d'inizio il punteggio non c'è (o è 0-0): si legge solo da quando si gioca.
+  if (state !== "pre") {
+    match.score = { home: readScore(home.score, "home score"), away: readScore(away.score, "away score") };
+    if (home.shootoutScore !== undefined || away.shootoutScore !== undefined) {
+      match.shootout = { home: readScore(home.shootoutScore, "home shootoutScore"), away: readScore(away.shootoutScore, "away shootoutScore") };
+    }
+    const clock = optStr(status.displayClock);
+    if (clock) match.clock = clock;
+  }
+  return match;
+}
+
+/**
+ * La prossima partita di una squadra, in qualunque competizione (`nextEvent` di `/all/teams/{id}`).
+ * `null` se non ne ha in programma: ESPN manda allora una lista vuota.
+ */
+export async function fetchNextMatch(teamId: string): Promise<ProviderMatch | null> {
+  const json = obj(await getJson(`/site/v2/sports/soccer/all/teams/${encodeURIComponent(teamId)}`), "team response");
+  const team = obj(json.team, "team");
+  const events = arr(team.nextEvent, "team.nextEvent");
+  if (events.length === 0) return null;
+  const event = obj(events[0], "nextEvent[0]");
+  const league = str(obj(event.league, "nextEvent.league").slug, "nextEvent.league.slug");
+  return parseEvent(event, league);
+}
+
 /** Le squadre di una competizione, senza giovanili e femminili. */
 export async function fetchTeamList(league: string): Promise<ProviderTeam[]> {
   const json = obj(await getJson(`/site/v2/sports/soccer/${league}/teams`), "teams");

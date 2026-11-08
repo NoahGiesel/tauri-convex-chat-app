@@ -137,6 +137,10 @@ export const list = query({
         gameId: message.gameId ?? null,
         quizId: message.quizId ?? null,
         wordleDuelId: message.wordleDuelId ?? null,
+        /** Per le righe di sistema: chi, cosa e quale squadra; il client le scrive nella sua lingua. */
+        system: message.system
+          ? { action: message.system.action, name: await nameOf(message.system.profileId), teamName: message.system.teamName }
+          : null,
         summarized,
         summaryBlocked: message.summaryBlocked ?? null,
         summaryOf: message.summaryOf ?? null,
