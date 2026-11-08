@@ -14,6 +14,13 @@ export const RELEASE_NOTES: ReleaseNote[] = [
     },
   },
   {
+    version: "0.1.33",
+    items: {
+      en: ["A team pin keeps showing the match being played instead of jumping ahead to the team's following fixture"],
+      it: ["La squadra pinnata continua a mostrare la partita in corso invece di passare a quella successiva"],
+    },
+  },
+  {
     version: "0.1.31",
     items: {
       en: [

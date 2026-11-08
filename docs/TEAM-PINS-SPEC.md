@@ -71,6 +71,7 @@ Facts the provider module relies on, all checked on real responses:
 - **Polling logic branches on `status.type.state`** (`pre`, `in` or `post`), never on the status name. The same live match came back once as `STATUS_IN_PROGRESS` instead of `STATUS_FIRST_HALF`.
 - **Labels branch on the status name:** `STATUS_HALFTIME`, `STATUS_FINAL_AET`, `STATUS_FINAL_PEN`, `STATUS_POSTPONED`, and so on.
 - **A shoot-out** has `shootoutScore` on each competitor (2022 World Cup final: ARG 3 (4), FRA 3 (2)).
+- **`nextEvent` skips the match being played.** The recorded response for team 110, taken during Como–Inter, already pointed to Atalanta–Inter two weeks later. So a next-match lookup must never replace a match that is live, and a pin added during a match finds it in the competition's scoreboard of the day.
 - **Every fetch checks the fields we read.** A missing field counts as a failure, like a non-200 response.
 
 ## Data model
@@ -92,7 +93,7 @@ Four new tables. Each match is stored once, however many chats pin either team.
 |---|---|---|
 | Live tick | cron, every 30 s | A mutation reads the last and next match of every pinned team, deduped across chats. It picks the matches that are `in`, or `pre` with kick-off less than 60 min away (a delayed kick-off still counts), and schedules **one fetch action per league involved**. That action reads the scoreboard, updates the picked matches, and fetches each one's summary. With nothing to poll, the tick costs one index read and schedules nothing. |
 | At FT | when a match turns `post` | One final summary fetch, then the details stay cached. The team's `lastMatchId` becomes that match, and the next-match lookup runs. A postponed or cancelled match triggers the same lookup. |
-| Next-match lookup | when a pin is added, at FT, and by a cron every 6 h for every pinned team | Calls `/all/teams/{id}` and upserts the match and the team's `nextMatchId`. The 6 h cron catches moved kick-offs. |
+| Next-match lookup | when a pin is added, at FT, and by a cron every 6 h for every pinned team | Calls `/all/teams/{id}` and upserts the match and the team's `nextMatchId`. The 6 h cron catches moved kick-offs. A match that is live (or about to start) is never replaced by the lookup, because `nextEvent` already skips it. When a pin is added, the lookup also reads the team competition's scoreboard of the day, so a pin added mid-match shows that match. |
 | Team index rebuild | cron, weekly; also run once by hand at setup | Rebuilds `footballTeams` from the team lists of `ita.1`, `eng.1`, `esp.1`, `ger.1`, `fra.1`, `uefa.champions`, `uefa.europa` and `uefa.europa.conf`, plus all national teams from `fifa.friendly` (198). Rows are deduped by `teamId`, and the last and next match ids are kept. |
 | Cleanup | cron, daily | Deletes finished matches, and their details, older than 7 days that are no team's `lastMatchId`. |
 
@@ -208,6 +209,7 @@ Implementation tickets merge into `master` one by one, and a release can be cut 
 11. Team-index rebuild and search: accents, partial names, aliases ("italia", "bayern monaco"), no women's or youth teams, all nations present.
 12. The daily cleanup keeps each team's last match.
 13. The parser on the fixtures: HT, AET, and pens with `shootoutScore`.
+14. A pin added during a live match shows it even though `nextEvent` points to the following fixture, and a lookup during a match never replaces it (or clears it).
 
 **Vitest unit tests on the chip-state function:**
 - Which match the chip shows: FT until 6 a.m., an earlier switch when the next match is within 60 min, and a postponed match until kick-off + 3 h.
@@ -265,5 +267,6 @@ The work is split into vertical tickets, one PR each. GitHub holds the blocking 
 - **Which `state` ESPN gives postponed, cancelled and suspended matches.** No real one was seen. Check it against a real one in [The Match bar follows a live match](https://github.com/NoahGiesel/tauri-convex-chat-app/issues/114).
 - **How long goals take to reach ESPN.** This was measured only from a home IP, against FotMob and LiveScore: 21 s to 1 min 45 s. From Convex, a goal showed on the first poll after it, but its delay was not measured.
 - **Euros coverage.** `uefa.euro` still shows Euro 2024. Check it once Euro 2028 appears.
+- **A pin added during a cup match.** The live-match lookup reads the scoreboard of the team's index competition (its domestic league), because `nextEvent` gives no competition for the match being played. A pin added during a match in another competition can still start on the following fixture.
 - **A future block.** ESPN may block Convex's shared egress IPs (AWS eu-west-1) at any time. Today they are not blocked.
 - **The terms.** These readings are not legal advice.

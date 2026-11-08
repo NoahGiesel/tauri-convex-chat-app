@@ -13,6 +13,7 @@ const INTER = "110";
 const COMO = "2572";
 const MAN_UTD = "360";
 const JUVENTUS = "111";
+const VENEZIA = "17530";
 /** Como-Inter (ita.1), all'intervallo nel tabellone registrato. */
 const COMO_INTER = "401874808";
 /** Manchester United-Aston Villa (eng.1), nel secondo tempo. */
@@ -28,6 +29,49 @@ function scoreboardWith(league: string, eventId: string, patch: (event: any) => 
   const board = loadFixture(`scoreboard-${league}-today`);
   patch(board.events.find((e: { id: string }) => e.id === eventId));
   return board;
+}
+
+/**
+ * La risposta vera di `/all/teams/{id}` registrata mentre la squadra gioca: `nextEvent` è già la partita dopo,
+ * non quella in corso (`team-110.json` è stato registrato durante Como-Inter e dà già Atalanta-Inter).
+ */
+function teamWithNextEvent(
+  teamId: string,
+  eventId: string,
+  date: string,
+  home: { id: string; name: string; abbreviation: string },
+  away: { id: string; name: string; abbreviation: string },
+) {
+  const team = (t: { id: string; name: string; abbreviation: string }) => ({
+    id: t.id,
+    displayName: t.name,
+    shortDisplayName: t.name,
+    abbreviation: t.abbreviation,
+  });
+  return {
+    team: {
+      id: teamId,
+      displayName: `team ${teamId}`,
+      shortDisplayName: `team ${teamId}`,
+      abbreviation: "TST",
+      nextEvent: [
+        {
+          id: eventId,
+          date,
+          league: { slug: "ita.1" },
+          competitions: [
+            {
+              status: { displayClock: "0'", type: { state: "pre", name: "STATUS_SCHEDULED" } },
+              competitors: [
+                { homeAway: "home", team: team(home) },
+                { homeAway: "away", team: team(away) },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  };
 }
 
 /** Imposta lo stato ESPN di una partita (sia sull'evento sia sulla competizione, come fa ESPN). */
@@ -237,6 +281,56 @@ describe("risposte che si incrociano", () => {
 
     expect(stub.calls).toContain("/site/v2/sports/soccer/all/teams/111");
     expect((await team(t, JUVENTUS))?.lastMatchId).toBe((await match(t, FIO_JUV))?._id);
+  });
+
+  it("una ricerca della prossima durante la partita non mostra quella dopo", async () => {
+    const t = await setup([[JUVENTUS]]);
+    vi.setSystemTime(Date.parse("2026-11-08T20:15Z")); // Fiorentina-Juventus è in corso
+    stub.reply(
+      "/site/v2/sports/soccer/ita.1/scoreboard",
+      scoreboardWith("ita.1", FIO_JUV, (e) => {
+        setStatus(e, "in", "STATUS_SECOND_HALF", "60'");
+        setScore(e, 1, 0);
+      }),
+    );
+    await runTick(t);
+    const live = (await match(t, FIO_JUV))!;
+    expect(live).toMatchObject({ state: "in" });
+
+    // Il cron delle 6 ore, mentre si gioca: ESPN dà già come prossima la partita dopo (Venezia).
+    stub.reply(
+      "/site/v2/sports/soccer/all/teams/111",
+      teamWithNextEvent(
+        JUVENTUS,
+        "401875099",
+        "2026-11-22T11:30Z",
+        { id: JUVENTUS, name: "Juventus", abbreviation: "JUV" },
+        { id: VENEZIA, name: "Venezia", abbreviation: "VEN" },
+      ),
+    );
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    await t.action(internal.footballMatches.refreshNextMatch, { teamId: JUVENTUS });
+    await t.finishAllScheduledFunctions(vi.runAllTimers);
+
+    // La partita in corso resta la prossima (e quindi quella che il chip mostra), non quella fra due settimane.
+    expect((await team(t, JUVENTUS))?.nextMatchId).toBe(live._id);
+
+    // Anche se ESPN non dà nessuna prossima partita, la diretta resta.
+    stub.reply("/site/v2/sports/soccer/all/teams/111", { team: { nextEvent: [] } });
+    await t.action(internal.footballMatches.refreshNextMatch, { teamId: JUVENTUS });
+    expect((await team(t, JUVENTUS))?.nextMatchId).toBe(live._id);
+
+    // E il giro dei 30 secondi continua ad aggiornarla.
+    vi.setSystemTime(Date.parse("2026-11-08T20:15:30Z"));
+    stub.reply(
+      "/site/v2/sports/soccer/ita.1/scoreboard",
+      scoreboardWith("ita.1", FIO_JUV, (e) => {
+        setStatus(e, "in", "STATUS_SECOND_HALF", "61'");
+        setScore(e, 1, 1);
+      }),
+    );
+    await runTick(t);
+    expect(await match(t, FIO_JUV)).toMatchObject({ state: "in", score: { home: 1, away: 1 }, clock: "61'" });
   });
 
   it("una risposta più vecchia di quella già scritta si scarta", async () => {

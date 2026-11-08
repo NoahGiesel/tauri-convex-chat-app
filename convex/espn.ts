@@ -179,6 +179,12 @@ export async function fetchNextMatch(teamId: string): Promise<ProviderMatch | nu
   return parseEvent(event, league);
 }
 
+/** La competizione ESPN di una squadra dell'indice, per cercarne la partita in corso. */
+export function competitionLeague(team: { competition?: string; national: boolean }): string | undefined {
+  if (team.competition) return CLUB_COMPETITIONS.find((c) => c.label === team.competition)?.league;
+  return team.national ? NATIONAL_TEAMS_LEAGUE : undefined;
+}
+
 /** Le partite di un tabellone ESPN già scaricato. Una partita illeggibile rende illeggibile tutto il tabellone. */
 export function parseScoreboard(json: unknown, league: string): ProviderMatch[] {
   return arr(obj(json, "scoreboard").events, "events").map((event) => parseEvent(event, league));

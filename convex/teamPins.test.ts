@@ -53,6 +53,35 @@ const INTER = "110";
 const MILAN = "103";
 const JUVENTUS = "111";
 const NAPOLI = "114";
+const VENEZIA = "17530";
+/** Fiorentina-Juventus (ita.1), calcio d'inizio alle 19:45 UTC. */
+const FIO_JUV = "401875003";
+
+/** La risposta vera di `/all/teams/{id}` mentre la squadra gioca: `nextEvent` è già la partita dopo. */
+function teamPlayingNext(teamId: string, opponent: { id: string; name: string; abbreviation: string }) {
+  const team = (id: string, name: string, abbreviation: string) => ({ id, displayName: name, shortDisplayName: name, abbreviation });
+  return {
+    team: {
+      ...team(teamId, "Juventus", "JUV"),
+      nextEvent: [
+        {
+          id: "401875099",
+          date: "2026-11-22T11:30Z",
+          league: { slug: "ita.1" },
+          competitions: [
+            {
+              status: { displayClock: "0'", type: { state: "pre", name: "STATUS_SCHEDULED" } },
+              competitors: [
+                { homeAway: "home", team: team(JUVENTUS, "Juventus", "JUV") },
+                { homeAway: "away", team: team(opponent.id, opponent.name, opponent.abbreviation) },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  };
+}
 
 const systemLines = (f: Friends, conversationId: Id<"conversations">) =>
   f.t.run((ctx) =>
@@ -65,6 +94,8 @@ const systemLines = (f: Friends, conversationId: Id<"conversations">) =>
 let stub: ReturnType<typeof espnFetchStub>;
 beforeEach(() => {
   vi.useFakeTimers();
+  // Dopo la partita registrata nei fixture (Como-Inter, in corso alle 17:50), così non risulta più in corso.
+  vi.setSystemTime(Date.parse("2026-11-09T00:30Z"));
   stub = espnFetchStub();
   vi.stubGlobal("fetch", stub.fetch);
 });
@@ -107,6 +138,36 @@ describe("aggiungere una squadra", () => {
       away: { teamId: INTER, abbreviation: "INT" },
     });
     expect(stub.calls.filter((c) => c.includes("/all/teams/110"))).toHaveLength(1);
+  });
+
+  it("messo mentre la squadra gioca, mostra la partita in corso", async () => {
+    vi.setSystemTime(Date.parse("2026-11-08T20:15Z"));
+    const f = await twoFriends();
+    const board = loadFixture("scoreboard-ita.1-today");
+    const event = board.events.find((e: { id: string }) => e.id === FIO_JUV);
+    for (const status of [event.status, event.competitions[0].status]) {
+      status.type.state = "in";
+      status.type.name = "STATUS_SECOND_HALF";
+      status.displayClock = "60'";
+    }
+    const [fiorentina, juventus] = event.competitions[0].competitors;
+    fiorentina.score = "1";
+    juventus.score = "0";
+    stub.reply("/site/v2/sports/soccer/ita.1/scoreboard", board);
+    // Mentre si gioca, ESPN dà già come prossima la partita dopo.
+    stub.reply("/site/v2/sports/soccer/all/teams/111", teamPlayingNext(JUVENTUS, { id: VENEZIA, name: "Venezia", abbreviation: "VEN" }));
+
+    await f.alice.mutation(api.teamPins.add, { conversationId: f.direct, teamId: JUVENTUS });
+    await f.t.finishAllScheduledFunctions(vi.runAllTimers);
+
+    const [pin] = await f.alice.query(api.teamPins.list, { conversationId: f.direct });
+    expect(pin.nextMatch).toMatchObject({
+      eventId: FIO_JUV,
+      state: "in",
+      score: { home: 1, away: 0 },
+      home: { teamId: "109", abbreviation: "FIO" },
+      away: { teamId: JUVENTUS, abbreviation: "JUV" },
+    });
   });
 
   it("senza partite in programma la squadra resta pinnata senza prossima partita", async () => {

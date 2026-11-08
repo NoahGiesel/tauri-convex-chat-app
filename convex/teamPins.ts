@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { mutation, query, type MutationCtx } from "./_generated/server";
+import { competitionLeague } from "./espn";
 import { teamRow } from "./footballTeams";
 import { fail, getProfile, requireMember, requireProfile } from "./model";
 
@@ -43,7 +44,8 @@ export const add = mutation({
       pinnedAt: Date.now(),
     });
     await insertSystemLine(ctx, args.conversationId, { action: "pinned", profileId: me._id, teamName: team.name });
-    await ctx.scheduler.runAfter(0, internal.footballMatches.refreshNextMatch, { teamId: args.teamId });
+    // La competizione serve a trovare la partita in corso, se il pin arriva a partita iniziata.
+    await ctx.scheduler.runAfter(0, internal.footballMatches.refreshNextMatch, { teamId: args.teamId, league: competitionLeague(team) });
     return pinId;
   },
 });

@@ -100,9 +100,25 @@ async function pinnedSides(ctx: QueryCtx, match: Pick<ProviderMatch, "home" | "a
   return sides;
 }
 
+/**
+ * La partita di una squadra che si sta giocando adesso, dal tabellone di oggi della sua competizione.
+ * Serve quando il pin arriva a partita iniziata: `nextEvent` dà già quella dopo (vedi `fetchNextMatch`).
+ */
+async function fetchCurrentMatch(league: string, teamId: string, now: number): Promise<ProviderMatch | null> {
+  for (const day of espnDays(now)) {
+    for (const match of await fetchScoreboard(league, day)) {
+      if (match.home.teamId !== teamId && match.away.teamId !== teamId) continue;
+      // In corso, oppure in ritardo (il calcio d'inizio è passato ma ESPN la dà ancora `pre`).
+      if (match.state === "in" && match.kickoff > now - MAX_LIVE_MS) return match;
+      if (match.state === "pre" && match.kickoff <= now && match.kickoff > now - MAX_DELAY_MS) return match;
+    }
+  }
+  return null;
+}
+
 /** Chiede a ESPN la prossima partita di una squadra. Se la richiesta fallisce non cambia niente: riprova il prossimo giro. */
 export const refreshNextMatch = internalAction({
-  args: { teamId: v.string() },
+  args: { teamId: v.string(), force: v.optional(v.boolean()), league: v.optional(v.string()) },
   handler: async (ctx, args) => {
     let match: ProviderMatch | null;
     const fetchedAt = Date.now();
@@ -112,16 +128,41 @@ export const refreshNextMatch = internalAction({
       console.error(`Prossima partita di ${args.teamId}:`, e instanceof Error ? e.message : e);
       return null;
     }
-    await ctx.runMutation(internal.footballMatches.saveNextMatch, { teamId: args.teamId, match, fetchedAt });
+    // `league` arriva quando il pin è appena stato messo: se la squadra sta giocando, `nextEvent` non lo dice.
+    if (args.league) {
+      try {
+        match = (await fetchCurrentMatch(args.league, args.teamId, fetchedAt)) ?? match;
+      } catch (e) {
+        // Il tabellone è un'informazione in più: senza, resta la prossima partita.
+        console.error(`Partita in corso di ${args.teamId}:`, e instanceof Error ? e.message : e);
+      }
+    }
+    await ctx.runMutation(internal.footballMatches.saveNextMatch, { teamId: args.teamId, match, fetchedAt, force: args.force });
     return null;
   },
 });
 
+/**
+ * La partita della squadra che si sta giocando adesso (o sta per iniziare): la ricerca della prossima non deve nasconderla.
+ * ESPN, mentre una partita è in corso, dà già come `nextEvent` quella dopo: senza questo controllo il chip passerebbe
+ * alla partita seguente e la diretta non verrebbe più aggiornata.
+ */
+async function matchOnNow(ctx: MutationCtx, team: Doc<"footballTeams">, now: number): Promise<Doc<"footballMatches"> | null> {
+  if (!team.nextMatchId) return null;
+  const current = await ctx.db.get("footballMatches", team.nextMatchId);
+  if (!current || isClosed(current)) return null;
+  return current.kickoff > now - MAX_LIVE_MS && current.kickoff < now + POLL_BEFORE_KICKOFF_MS ? current : null;
+}
+
 export const saveNextMatch = internalMutation({
-  args: { teamId: v.string(), match: v.union(matchValidator, v.null()), fetchedAt: v.number() },
+  args: { teamId: v.string(), match: v.union(matchValidator, v.null()), fetchedAt: v.number(), force: v.optional(v.boolean()) },
   handler: async (ctx, args) => {
     const team = await teamRow(ctx, args.teamId);
     if (!team) return null;
+    // Una partita diversa (o nessuna) mentre se ne gioca una: si tiene quella in corso, che il giro dei 30 secondi aggiorna.
+    // `force` arriva quando la partita è sparita dal tabellone: lì vale la ricerca nuova, perché è stata spostata.
+    const onNow = args.force ? null : await matchOnNow(ctx, team, args.fetchedAt);
+    if (onNow && onNow.eventId !== args.match?.eventId) return null;
     const nextMatchId = args.match ? await recordMatch(ctx, args.match, args.fetchedAt) : undefined;
     await ctx.db.patch("footballTeams", team._id, { nextMatchId });
     return null;
@@ -258,7 +299,7 @@ export const applyPoll = internalMutation({
       if (!row || args.fetchedAt - row.fetchedAt < MISSING_RETRY_MS) continue;
       console.warn(`Partita ${eventId} non più nel tabellone del suo giorno: cerco di nuovo la prossima`);
       for (const team of await pinnedSides(ctx, row)) {
-        await ctx.scheduler.runAfter(0, internal.footballMatches.refreshNextMatch, { teamId: team.teamId });
+        await ctx.scheduler.runAfter(0, internal.footballMatches.refreshNextMatch, { teamId: team.teamId, force: true });
       }
     }
     return null;
