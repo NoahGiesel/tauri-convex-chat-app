@@ -40,6 +40,16 @@ _Avoid_: Manual QA, sanity test
 A ready-made scenario handed to a test, such as two friends signed in with their chat open. A Fixture consumes exactly one Seed.
 _Avoid_: Test setup, Seed
 
+### Messages
+
+**Pinned message**:
+A message fixed at the top of a chat or group so that every member can find it again. It is not a Team pin, which fixes a football team, not a message.
+_Avoid_: Pin (alone)
+
+**System line**:
+A short line in a chat's timeline that reports something that happened in the chat, such as who added or removed a Team pin. Nobody sent it, and it does not count as an unread message.
+_Avoid_: System message, notice, event
+
 ### Games
 
 **Wordle Duel**:
@@ -61,3 +71,13 @@ _Avoid_: Expiry, timeout
 **Rematch**:
 A new invite sent from a finished game's card to the same person, with the same settings. Whoever sends it becomes the challenger, and the other person accepts or declines it as usual.
 _Avoid_: Replay, revenge, new game
+
+### Football
+
+**Team pin**:
+A football team fixed at the top of a direct chat, so that its match shows there. Either person of the chat can add or remove it, and both see it. A chat can hold more than one Team pin.
+_Avoid_: Pinned team, followed team, subscription
+
+**Match bar**:
+The strip at the top of a direct chat that shows a Team pin's match: the next match before kick-off, the live score while it is played, and the final score for a while after. When two pinned teams play each other, one Match bar shows that match.
+_Avoid_: Score banner, live widget, header
