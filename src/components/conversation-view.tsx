@@ -34,6 +34,8 @@ import { splitLinks } from "@/lib/links";
 import { uploadFile } from "@/lib/media-upload";
 import { classifyMedia, MEDIA_ACCEPT } from "../../convex/mediaRules";
 import { cn } from "@/lib/utils";
+// PROTOTYPE (#101): Team pins / Match bar variants, dev builds only. Never merged.
+import { CalcioPickerPrototype, PinLinesPrototype, TeamPinsPrototype, protoOpenPicker } from "@/components/team-pins.prototype";
 
 const PAGE_SIZE = 30;
 const NEAR_BOTTOM_PX = 80;
@@ -573,6 +575,11 @@ export function ConversationView({
     const name = parsed?.[1].toLowerCase();
     const arg = (parsed?.[2] ?? "").trim();
 
+    if (import.meta.env.DEV && name === "calcio" && !isGroup) {
+      setDraft("");
+      protoOpenPicker(arg);
+      return;
+    }
     if (name === "giphy") {
       void runGiphy(arg);
       return;
@@ -746,6 +753,7 @@ export function ConversationView({
 
       {/* Messaggi e campo di scrittura restano montati (così non si perde la posizione) ma nascosti mentre si guarda l'elenco. */}
       <div className={cn("flex min-h-0 flex-1 flex-col", libraryOpen && "hidden")}>
+      {import.meta.env.DEV && info && !isGroup && <TeamPinsPrototype />}
       <div ref={scrollRef} onScroll={onScroll} className={cn("min-h-0 flex-1 overflow-y-auto px-6 pt-5 pb-3", !revealed && "opacity-0")}>
         {!showHeader && (
           <div className="pointer-events-none sticky top-0 z-10 h-0">
@@ -978,6 +986,7 @@ export function ConversationView({
             </div>
           );
         })}
+        {import.meta.env.DEV && !isGroup && <PinLinesPrototype />}
         </div>
         <div className="pointer-events-none sticky bottom-0 h-0">
           <button
@@ -1044,6 +1053,7 @@ export function ConversationView({
           {typingNames.length > 2 && t("chat.typing.many")}
         </div>
         <div className="relative flex items-end gap-1 rounded-2xl border border-app-border bg-app-bg p-1.5">
+          {import.meta.env.DEV && !isGroup && <CalcioPickerPrototype />}
           {suggestions.length > 0 && (
             <div role="listbox" className="absolute right-0 bottom-full left-0 z-30 mb-2 overflow-hidden rounded-xl border border-app-border-strong bg-app-panel p-1 shadow-xl">
               {suggestions.map((c, i) => (
