@@ -72,6 +72,20 @@ const teamView = (s: Doc<"footballMatches">["home"]) => ({
   logo: s.logo ?? null,
 });
 
+/** Quanto il client mostra di una partita: squadre, stato, punteggio e quando è stata letta l'ultima volta. */
+const matchView = (m: Doc<"footballMatches">) => ({
+  eventId: m.eventId,
+  kickoff: m.kickoff,
+  state: m.state,
+  statusName: m.statusName,
+  home: teamView(m.home),
+  away: teamView(m.away),
+  score: m.score ?? null,
+  shootout: m.shootout ?? null,
+  clock: m.clock ?? null,
+  fetchedAt: m.fetchedAt,
+});
+
 /** Le squadre pinnate in una chat, nell'ordine in cui sono state aggiunte, ognuna con la sua prossima partita. */
 export const list = query({
   args: { conversationId: v.id("conversations") },
@@ -93,21 +107,14 @@ export const list = query({
       const team = await teamRow(ctx, pin.teamId);
       if (!team) continue;
       const next = team.nextMatchId ? await ctx.db.get("footballMatches", team.nextMatchId) : null;
+      const last = team.lastMatchId ? await ctx.db.get("footballMatches", team.lastMatchId) : null;
       result.push({
         pinId: pin._id,
         pinnedAt: pin.pinnedAt,
         team: teamView(team),
-        nextMatch: next
-          ? {
-              eventId: next.eventId,
-              kickoff: next.kickoff,
-              state: next.state,
-              statusName: next.statusName,
-              home: teamView(next.home),
-              away: teamView(next.away),
-              fetchedAt: next.fetchedAt,
-            }
-          : null,
+        // Quale delle due mostrare lo decide il client, che conosce l'ora (le query non la leggono).
+        lastMatch: last ? matchView(last) : null,
+        nextMatch: next ? matchView(next) : null,
       });
     }
     return result; // l'indice le dà già nell'ordine in cui sono state aggiunte

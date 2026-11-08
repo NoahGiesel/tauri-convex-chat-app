@@ -357,7 +357,9 @@ export default defineSchema({
     nextMatchId: v.optional(v.id("footballMatches")),
   })
     .index("by_teamId", ["teamId"])
-    .index("by_listed", ["listed"]),
+    .index("by_listed", ["listed"])
+    .index("by_lastMatchId", ["lastMatchId"])
+    .index("by_nextMatchId", ["nextMatchId"]),
 
   /** Le squadre di calcio pinnate in una chat diretta, al massimo 3 per chat (docs/TEAM-PINS-SPEC.md). */
   teamPins: defineTable({
@@ -390,5 +392,6 @@ export default defineSchema({
     fetchedAt: v.number(),
   })
     .index("by_eventId", ["eventId"])
-    .index("by_league_and_state", ["league", "state"]),
+    // Il giro dei 30 secondi cerca le partite in corso e quelle che stanno per iniziare; la pulizia quelle finite da tempo.
+    .index("by_state_and_kickoff", ["state", "kickoff"]),
 });

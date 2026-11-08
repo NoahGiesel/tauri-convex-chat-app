@@ -175,6 +175,25 @@ export async function fetchNextMatch(teamId: string): Promise<ProviderMatch | nu
   return parseEvent(event, league);
 }
 
+/** Le partite di un tabellone ESPN già scaricato. Una partita illeggibile rende illeggibile tutto il tabellone. */
+export function parseScoreboard(json: unknown, league: string): ProviderMatch[] {
+  return arr(obj(json, "scoreboard").events, "events").map((event) => parseEvent(event, league));
+}
+
+/**
+ * I giorni ESPN (`YYYYMMDD`) in cui può stare un calcio d'inizio. ESPN divide i giorni sull'ora della costa est
+ * degli Stati Uniti, UTC-5 d'inverno e UTC-4 d'estate: se le due danno giorni diversi si chiedono entrambi.
+ */
+export function espnDays(kickoff: number): string[] {
+  const day = (offsetHours: number) => new Date(kickoff - offsetHours * 3_600_000).toISOString().slice(0, 10).replaceAll("-", "");
+  return [...new Set([day(4), day(5)])];
+}
+
+/** Le partite di una competizione in un giorno ESPN (`YYYYMMDD`). */
+export async function fetchScoreboard(league: string, day: string): Promise<ProviderMatch[]> {
+  return parseScoreboard(await getJson(`/site/v2/sports/soccer/${league}/scoreboard?dates=${day}`), league);
+}
+
 /** Le squadre di una competizione, senza giovanili e femminili. */
 export async function fetchTeamList(league: string): Promise<ProviderTeam[]> {
   const json = obj(await getJson(`/site/v2/sports/soccer/${league}/teams`), "teams");
