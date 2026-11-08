@@ -34,7 +34,6 @@ import { fetchGifs } from "@/lib/giphy";
 import { compressImage } from "@/lib/image-compress";
 import { dayLabel } from "@/lib/day-label";
 import { splitLinks } from "@/lib/links";
-import { TEAM_PINS_ENABLED } from "@/lib/team-pins";
 import { uploadFile } from "@/lib/media-upload";
 import { classifyMedia, MEDIA_ACCEPT } from "../../convex/mediaRules";
 import { cn } from "@/lib/utils";
@@ -58,7 +57,7 @@ const COMMANDS = [
   { name: "quiz3", description: "composer.cmdQuiz3" },
   { name: "quiz5", description: "composer.cmdQuiz5" },
   { name: "wordle", description: "composer.cmdWordle" },
-  ...(TEAM_PINS_ENABLED ? ([{ name: "calcio", description: "composer.cmdCalcio" }] as const) : []),
+  { name: "calcio", description: "composer.cmdCalcio" },
 ] as const;
 
 /** Comandi che si usano solo in una chat diretta (sono sfide 1 contro 1). */
@@ -625,7 +624,7 @@ export function ConversationView({
       void startQuiz({ conversationId, size: name === "quiz3" ? 3 : 5, language }).catch((e) => setError(t(errorKey(e))));
       return;
     }
-    if (name === "calcio" && TEAM_PINS_ENABLED) {
+    if (name === "calcio") {
       setDraft("");
       setError(null);
       setCalcioText(arg);
@@ -774,7 +773,7 @@ export function ConversationView({
 
       {/* Messaggi e campo di scrittura restano montati (così non si perde la posizione) ma nascosti mentre si guarda l'elenco. */}
       <div className={cn("flex min-h-0 flex-1 flex-col", libraryOpen && "hidden")}>
-      {TEAM_PINS_ENABLED && info && !isGroup && <TeamPinRow conversationId={conversationId} />}
+      {info && !isGroup && <TeamPinRow conversationId={conversationId} />}
       <div ref={scrollRef} onScroll={onScroll} className={cn("min-h-0 flex-1 overflow-y-auto px-6 pt-5 pb-3", !revealed && "opacity-0")}>
         {!showHeader && (
           <div className="pointer-events-none sticky top-0 z-10 h-0">

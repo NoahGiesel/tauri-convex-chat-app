@@ -2,9 +2,6 @@ import type { FunctionReturnType } from "convex/server";
 import type { api } from "../../convex/_generated/api";
 import { shownMatch, type PinMatch } from "./match-chip";
 
-/** `/calcio` si vede solo in sviluppo e nella build di test, finché le squadre pinnate non escono (docs/TEAM-PINS-SPEC.md, Release gate). */
-export const TEAM_PINS_ENABLED = import.meta.env.DEV || import.meta.env.VITE_E2E === "1";
-
 export type TeamPin = FunctionReturnType<typeof api.teamPins.list>[number];
 
 /** Un chip della fila: una partita (con una o due squadre pinnate, nel derby) o una squadra senza partite in programma. */
