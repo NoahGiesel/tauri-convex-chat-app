@@ -261,7 +261,7 @@ The work is split into vertical tickets, one PR each. GitHub holds the blocking 
 ## What is not verified
 
 - **Which `state` ESPN gives postponed, cancelled and suspended matches.** Still no real one was seen. [The Match bar follows a live match](https://github.com/NoahGiesel/tauri-convex-chat-app/issues/114) searched the 2024 to 2026 scoreboards of fifteen leagues and cups, and every match was scheduled or finished. ESPN seems to move a postponed match to its new date and leave nothing on the old one, and a burst of those searches got `Access Denied`. The code copes with both outcomes:
-  - A match that turns `post` with `STATUS_POSTPONED` or `STATUS_CANCELED` triggers the next-match lookup.
+  - A match whose status becomes `STATUS_POSTPONED` or `STATUS_CANCELED` triggers the next-match lookup, whether ESPN reports it as `pre` or `post`.
   - So does a match missing from its day's scoreboard.
   - Suspended is assumed to stay `in`, and delayed to stay `pre`. Both are still polled.
 
