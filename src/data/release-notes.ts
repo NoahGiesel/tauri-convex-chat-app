@@ -9,14 +9,26 @@ export const RELEASE_NOTES: ReleaseNote[] = [
   {
     version: "next",
     items: {
+      en: [],
+      it: [],
+    },
+  },
+  {
+    version: "0.1.31",
+    items: {
       en: [
-        "Pin messages in a chat or group: pinned messages are visible to everyone and only the person who pinned one can unpin it",
         "Team pins: type /calcio and a team name in a direct chat to pin up to three football teams at the top of the chat. Each shows its next match, the live score and the final score, and a click opens goals, cards, lineups and stats",
       ],
       it: [
-        "Puoi pinnare messaggi in una chat o in un gruppo: i messaggi pinnati li vedono tutti e solo chi li ha pinnati può rimuovere il pin",
         "Squadre pinnate: scrivi /calcio e il nome di una squadra in una chat diretta per fissare fino a tre squadre in cima alla chat. Ognuna mostra la prossima partita, il risultato in diretta e quello finale, e con un clic vedi gol, cartellini, formazioni e statistiche",
       ],
+    },
+  },
+  {
+    version: "0.1.30",
+    items: {
+      en: ["Pin messages in a chat or group: pinned messages are visible to everyone and only the person who pinned one can unpin it"],
+      it: ["Puoi pinnare messaggi in una chat o in un gruppo: i messaggi pinnati li vedono tutti e solo chi li ha pinnati può rimuovere il pin"],
     },
   },
   {
