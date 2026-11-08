@@ -72,3 +72,8 @@ export const USERS = {
   bob: { name: 'Bob Test', email: 'bob@e2e.invalid' },
   carol: { name: 'Carol Test', email: 'carol@e2e.invalid' },
 };
+/** Alice's friends in the `football` Seed alone, so no other Seed or test meets them. They have no app. */
+export const FOOTBALL_FRIENDS = {
+  dave: { name: 'Dave Test', email: 'dave@e2e.invalid' },
+  erin: { name: 'Erin Test', email: 'erin@e2e.invalid' },
+};

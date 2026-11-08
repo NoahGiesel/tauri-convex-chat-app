@@ -1,6 +1,8 @@
 // Copied into the stage's convex/ as e2eSeed.ts. It never lives in the repo's convex/, because `npx convex deploy` works from there.
 import { v } from "convex/values";
-import { internalMutation, type MutationCtx } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
+import { internalMutation, internalQuery, type MutationCtx } from "./_generated/server";
+import { parseScoreboard } from "./espn";
 
 /** By email, because IDs and tokens differ between runs. A Seed holds three profiles, so a scan is enough. */
 async function profileByEmail(ctx: MutationCtx, email: string) {
@@ -57,5 +59,55 @@ export const setWordleWord = internalMutation({
     }
     if (open.length !== 1) throw new Error(`expected one open Wordle Duel, found ${open.length}`);
     await ctx.db.patch("wordleDuels", open[0]._id, { word: args.word });
+  },
+});
+
+/**
+ * Scheduled functions not yet done, such as the next-match lookups that `teamPins.add` starts.
+ * A Seed waits until there are none before its snapshot, so no lookup lands after a Reset.
+ */
+export const pendingJobs = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    let pending = 0;
+    for await (const job of ctx.db.system.query("_scheduled_functions")) {
+      if (job.state.kind === "pending" || job.state.kind === "inProgress") pending++;
+    }
+    return pending;
+  },
+});
+
+/**
+ * What no public function or next-match lookup gives: a pinned team's finished or postponed last match, and a live
+ * match whose score stopped arriving (an old `fetchedAt`). The events are canned ESPN ones, read by the app's own parser.
+ */
+export const seedFootballMatches = internalMutation({
+  args: {
+    matches: v.array(v.object({ league: v.string(), event: v.any(), fetchedAt: v.number() })),
+    last: v.array(v.object({ teamId: v.string(), eventId: v.string() })),
+    next: v.array(v.object({ teamId: v.string(), eventId: v.string() })),
+  },
+  handler: async (ctx, args) => {
+    const ids = new Map<string, Id<"footballMatches">>();
+    for (const { league, event, fetchedAt } of args.matches) {
+      const [match] = parseScoreboard({ events: [event] }, league);
+      const existing = await ctx.db
+        .query("footballMatches")
+        .withIndex("by_eventId", (q) => q.eq("eventId", match.eventId))
+        .unique();
+      if (existing) await ctx.db.delete("footballMatches", existing._id);
+      ids.set(match.eventId, await ctx.db.insert("footballMatches", { ...match, fetchedAt }));
+    }
+    const point = async (teamId: string, eventId: string, field: "lastMatchId" | "nextMatchId") => {
+      const team = await ctx.db
+        .query("footballTeams")
+        .withIndex("by_teamId", (q) => q.eq("teamId", teamId))
+        .unique();
+      const matchId = ids.get(eventId);
+      if (!team || !matchId) throw new Error(`no team ${teamId} or match ${eventId} to seed`);
+      await ctx.db.patch("footballTeams", team._id, { [field]: matchId });
+    };
+    for (const { teamId, eventId } of args.last) await point(teamId, eventId, "lastMatchId");
+    for (const { teamId, eventId } of args.next) await point(teamId, eventId, "nextMatchId");
   },
 });

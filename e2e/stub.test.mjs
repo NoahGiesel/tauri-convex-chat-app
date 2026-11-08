@@ -3,7 +3,9 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
-import { readStubLog, startStub } from './stub.mjs';
+import * as espn from '../convex/espn.ts';
+import { ESPN_PREFIX, UNAVAILABLE_LEAGUE } from './football.mjs';
+import { FOOTBALL_TEAMS, LIVE_DETAILS, readStubLog, startStub } from './stub.mjs';
 
 const APP = 'http://tauri.localhost';
 let dir;
@@ -107,3 +109,60 @@ describe('the stub', () => {
     );
   });
 });
+
+// Read through the app's own ESPN client, so the canned data cannot drift from what the backend parses.
+describe('the stub as ESPN', () => {
+  const NOW = Date.parse('2026-11-08T18:00:00Z');
+  let previousBase;
+
+  beforeEach(async () => {
+    await new Promise((resolve) => stub.close(resolve));
+    stub = await startStub({ root: path.join(dir, 'espn'), logFile: path.join(dir, 'espn.jsonl'), port: 0, now: NOW });
+    previousBase = process.env.ESPN_BASE_URL;
+    process.env.ESPN_BASE_URL = `http://127.0.0.1:${stub.address().port}${ESPN_PREFIX}`;
+  });
+  afterEach(() => {
+    if (previousBase === undefined) delete process.env.ESPN_BASE_URL;
+    else process.env.ESPN_BASE_URL = previousBase;
+  });
+
+  it('lists the teams of every competition the index reads, nations included', async () => {
+    const serieA = await espn.fetchTeamList('ita.1');
+    assert.ok(serieA.some((team) => team.name === FOOTBALL_TEAMS.inter.name));
+    const nations = await espn.fetchTeamList(espn.NATIONAL_TEAMS_LEAGUE);
+    assert.deepEqual(nations.map((team) => team.name), [FOOTBALL_TEAMS.italy.name, FOOTBALL_TEAMS.spain.name]);
+    for (const { league } of espn.CLUB_COMPETITIONS) await espn.fetchTeamList(league);
+  });
+
+  it('gives Inter its live match, the derby to both sides, and no match to Atalanta', async () => {
+    const live = await espn.fetchNextMatch(FOOTBALL_TEAMS.inter.id);
+    assert.equal(live.state, 'in');
+    assert.deepEqual(live.score, { home: 1, away: 0 });
+    assert.equal(live.kickoff, NOW - 35 * 60_000);
+
+    const derby = await espn.fetchNextMatch(FOOTBALL_TEAMS.milan.id);
+    assert.equal((await espn.fetchNextMatch(FOOTBALL_TEAMS.juventus.id)).eventId, derby.eventId);
+    assert.equal(derby.state, 'pre');
+    assert.equal(await espn.fetchNextMatch(FOOTBALL_TEAMS.atalanta.id), null);
+  });
+
+  it('serves the live match on its scoreboard, with a summary for the drawer', async () => {
+    const [day] = espn.espnDays(NOW);
+    const board = await espn.fetchScoreboard('ita.1', day);
+    const live = board.find((match) => match.home.teamId === FOOTBALL_TEAMS.inter.id && match.state === 'in');
+    assert.ok(live);
+
+    const details = espn.parseSummary(await (await fetch(`${process.env.ESPN_BASE_URL}/site/v2/sports/soccer/ita.1/summary?event=${live.eventId}`)).json());
+    assert.equal(details.venue, LIVE_DETAILS.venue);
+    assert.deepEqual(details.events.map((e) => [e.kind, e.player]), [['goal', LIVE_DETAILS.scorer], ['yellowCard', LIVE_DETAILS.booked]]);
+    assert.deepEqual(details.lineups.map((l) => l.starters.length), [11, 11]);
+    assert.equal(details.stats.length, 6);
+  });
+
+  it('fails the unavailable league and its teams, so their match never refreshes', async () => {
+    await assert.rejects(espn.fetchScoreboard(UNAVAILABLE_LEAGUE, '20261108'), /HTTP 503/);
+    await assert.rejects(espn.fetchNextMatch(FOOTBALL_TEAMS.realMadrid.id), /HTTP 503/);
+    assert.ok((await espn.fetchTeamList(UNAVAILABLE_LEAGUE)).length > 0); // the index still lists its teams
+  });
+});
+

@@ -11,7 +11,7 @@ import { ASSET_TYPES, ASSETS, EXPIRED_INVITE_TOKEN, INTERFACE_WAIT_MS, MAIN_WIND
 import { reset } from './reset.mjs';
 import { scriptedUser } from './scripted-user.mjs';
 import { convexInStage } from './stage.mjs';
-import { gifAddress, gifTitles, readStubLog } from './stub.mjs';
+import { FOOTBALL_TEAMS, gifAddress, gifTitles, readStubLog } from './stub.mjs';
 import { waitUntil } from './wait.mjs';
 
 const WAIT = { timeout: INTERFACE_WAIT_MS, interval: POLL_MS };
@@ -137,6 +137,25 @@ const PREVIEW_CARD = '//*[@data-testid="message"]//a[@href][not(normalize-space(
 const photo = (name) => `//img[starts-with(@alt, "${name}.")]`;
 const sentPhoto = (name) => `//*[@data-testid="message"]${photo(name)}`;
 /** A file from `e2e/assets`, ready to hand to the page, under its own name or another. */
+const PICKER = '//*[@data-testid="calcio-picker"]';
+const PICKER_SEARCH = `${PICKER}//input[@aria-label="${en['teamPins.searchPlaceholder']}"]`;
+const pickerTeam = (team) => `${PICKER}//button[@role="option"][.//span[normalize-space(.)="${team}"]]`;
+const systemLine = (text) => `//*[@data-testid="system-line"][normalize-space(.)="${text}"]`;
+/** A chip names its teams by abbreviation, which the stub's canned data gives for each team name. */
+const abbreviationOf = (team) => {
+  const found = Object.values(FOOTBALL_TEAMS).find((t) => t.name === team);
+  if (!found) throw new Error(`the stub has no team called ${team}`);
+  return found.abbreviation;
+};
+const chip = (team) => `//*[@data-testid="team-pin-chip"][.//span[normalize-space(.)="${abbreviationOf(team)}"]]`;
+/** A chip whose score is out of date carries the warning as its tooltip. */
+const UNAVAILABLE = textBefore('teamPins.unavailable');
+const chipIn = (team, state) => `${chip(team)}[@data-state="${state}"][not(starts-with(@title, "${UNAVAILABLE}"))]`;
+const MATCH_DRAWER = '//*[@data-testid="match-drawer"]';
+const drawerSection = (key) => `${MATCH_DRAWER}//h3[normalize-space(.)="${en[key]}"]`;
+const DRAWER_SECTIONS = { Events: 'teamPins.events', Lineups: 'teamPins.lineups', Stats: 'teamPins.stats' };
+const commandOffered = (command) => `//*[@role="listbox"]//button[@role="option"][.//strong[normalize-space(.)="/${command}:"]]`;
+
 const asset = (file, name = file) => ({ name, type: ASSET_TYPES[path.extname(file)], base64: fs.readFileSync(path.join(ASSETS, file)).toString('base64') });
 
 /** The second element comes after the first in the page: lower down, or to the right of it in a row. */
@@ -788,6 +807,69 @@ function drivenUser(name) {
       await press(REDEEM_BUTTON);
     },
 
+    /** `/calcio` with a search opens the team picker on it. */
+    async searchTeams(text) {
+      await user.send(`/calcio ${text}`);
+      await waitUntilShown(PICKER_SEARCH, `${name} has no team picker`);
+    },
+    searchTeamsAgain: (text) => b.$(PICKER_SEARCH).setValue(text),
+    seesTeamInPicker: (team, detail) =>
+      waitUntilShown(
+        detail ? `${pickerTeam(team)}[.//span[normalize-space(.)="${detail}"]]` : pickerTeam(team),
+        `${name} did not see ${team}${detail ? ` (${detail})` : ''} in the team picker`,
+      ),
+    pickTeam: (team) => press(pickerTeam(team)),
+    seesPickerRefusal: (text) => waitUntilShown(`${PICKER}${roleSelector('alert', text)}`, `${name} was not told "${text}" in the team picker`),
+    seesSystemLine: (text) => waitUntilShown(systemLine(text), `${name} did not see the line "${text}"`),
+
+    /** `state` is the chip's: next, live, finished, postponed, none… A chip whose score is out of date does not count. */
+    seesChip: (team, state) => waitUntilShown(chipIn(team, state), `${name} did not see the ${team} chip as ${state}`),
+    seesUnavailableChip: (team) =>
+      waitUntilShown(`${chip(team)}[starts-with(@title, "${UNAVAILABLE}")]`, `${name} did not see the ${team} chip as unavailable`),
+    seesNoChip: (team) => waitUntilGone(chip(team), `${name} still sees a chip for ${team}`),
+    async seesOneChipFor(team, opponent) {
+      await waitUntilShown(chip(opponent), `${name} did not see ${opponent} in a chip`);
+      const chips = await b.$$(chip(team)).length;
+      if (chips !== 1 || !(await b.$(chip(team)).$(`.//span[normalize-space(.)="${abbreviationOf(opponent)}"]`).isExisting())) {
+        throw new Error(`${name} sees ${chips} chips for ${team}, not one shared with ${opponent}`);
+      }
+    },
+    unpin: (team) => press(`${chip(team)}//button[@aria-label="${en['teamPins.unpin'].replace('{team}', team)}"]`),
+    /** A derby's chip holds two pins, so its X asks which one goes. */
+    async seesUnpinChoices(team, teams) {
+      await press(`${chip(team)}//button[@aria-label="${en['teamPins.unpinWhich']}"]`);
+      const expected = teams.map((t) => en['teamPins.unpin'].replace('{team}', t)).join(', ');
+      const offered = async () => (await b.$$('//*[@role="menu"]//*[@role="menuitem"]').map((item) => item.getText())).join(', ');
+      await waitUntilTrue(async () => (await offered()) === expected, `${name} was not offered ${expected} to unpin`);
+    },
+
+    async openMatch(team) {
+      await press(`${chip(team)}//button[@aria-haspopup="dialog"]`);
+      await waitUntilShown(MATCH_DRAWER, `${name} did not see the ${team} match drawer`);
+    },
+    async closeMatch() {
+      await press(`${MATCH_DRAWER}//button[@aria-label="${en['common.close']}"]`);
+      await waitUntilGone(MATCH_DRAWER, `${name} still sees the match drawer`);
+    },
+    seesInDrawer: (text) => waitUntilShown(`${MATCH_DRAWER}${textSelector(text)}`, `${name} did not see "${text}" in the match drawer`),
+    async seesDrawerSections(titles) {
+      for (const title of titles) await waitUntilShown(drawerSection(DRAWER_SECTIONS[title]), `${name} did not see ${title} in the match drawer`);
+    },
+    /** Before kick-off the drawer has its header and nothing else. The names prove it rendered first. */
+    async seesOnlyDrawerHeader(...shortNames) {
+      for (const shortName of shortNames) await user.seesInDrawer(shortName);
+      for (const key of Object.values(DRAWER_SECTIONS)) {
+        if (await b.$(drawerSection(key)).isExisting()) throw new Error(`${name} sees ${en[key]} in a drawer before kick-off`);
+      }
+    },
+
+    typeInComposer: (text) => b.$(COMPOSER).setValue(text),
+    seesCommandOffered: (command) => waitUntilShown(commandOffered(command), `${name} was not offered /${command}`),
+    /** Only after `seesCommandOffered` has proved the list rendered. */
+    async isNotOfferedCommand(command) {
+      if (await b.$(commandOffered(command)).isExisting()) throw new Error(`${name} was offered /${command}`);
+    },
+
     /** `refresh()` returns before the reload ends, so a wait right after it can still read the old page. */
     async reload() {
       await b.execute(() => {
@@ -900,6 +982,21 @@ export async function mediaChatOpen() {
 
 export async function twoFriendsWithChatOpen() {
   await reset('friends');
+  const { alice, bob } = aliceAndBob();
+  await alice.openChat(USERS.bob.name);
+  await bob.openChat(USERS.alice.name);
+  return { alice, bob };
+}
+
+/**
+ * The `football` Seed: Alice and Bob in their chat, which has no Team pins. Alice's chats hold the seeded chips:
+ * with Carol a live Inter and the AC Milan–Juventus derby, with Dave a finished, a postponed and an unavailable
+ * match, and with Erin a team with no match. The live score in the snapshot is old by now, so this runs the poll
+ * the backend's cron runs every 30 s, and the stub answers it.
+ */
+export async function twoFriendsWithTeamPins() {
+  await reset('football');
+  convexInStage(['run', 'footballMatches:tick']);
   const { alice, bob } = aliceAndBob();
   await alice.openChat(USERS.bob.name);
   await bob.openChat(USERS.alice.name);

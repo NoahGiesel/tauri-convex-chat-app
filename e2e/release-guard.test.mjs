@@ -7,7 +7,7 @@ import path from 'node:path';
 import { after, before, beforeEach, describe, it } from 'node:test';
 import { ROOT } from './config.mjs';
 import { commandEnv } from './guards.mjs';
-import { checkRelease } from './release-check.mjs';
+import { checkProductionBackend, checkRelease } from './release-check.mjs';
 
 const GUARD = path.join(ROOT, 'e2e', 'release-guard.mjs');
 const VITE = path.join(ROOT, 'node_modules', 'vite', 'bin', 'vite.js');
@@ -172,5 +172,23 @@ describe('the build itself', () => {
   it('holds the compiler stop for a release profile with the e2e feature', () => {
     const lib = fs.readFileSync(path.join(ROOT, 'src-tauri', 'src', 'lib.rs'), 'utf8');
     assert.match(lib, /#\[cfg\(all\(feature = "e2e", not\(debug_assertions\)\)\)\]\s+compile_error!/);
+  });
+});
+
+describe('the backend guard', () => {
+  const answers = (value) => () => value;
+
+  it('passes when production does not set ESPN_BASE_URL', () => {
+    assert.deepEqual(checkProductionBackend(answers({ status: 0, stdout: '', stderr: 'Environment variable "ESPN_BASE_URL" not found' })), []);
+  });
+
+  it('stops a release whose production points ESPN at the stub', () => {
+    const problems = checkProductionBackend(answers({ status: 0, stdout: 'http://127.0.0.1:3312/espn\n', stderr: '' }));
+    assert.deepEqual(problems, ['production sets ESPN_BASE_URL, which points the backend at the E2E stub']);
+  });
+
+  it('stops when it cannot read production, so it never passes by saying nothing', () => {
+    assert.match(checkProductionBackend(answers({ status: 1, stdout: '', stderr: 'not logged in' }))[0], /could not read ESPN_BASE_URL on production: not logged in/);
+    assert.match(checkProductionBackend(answers({ error: new Error('spawn ENOENT'), status: null, stdout: '' }))[0], /spawn ENOENT/);
   });
 });

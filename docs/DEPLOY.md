@@ -29,7 +29,8 @@ node_modules/.bin/tsc -p tsconfig.json --noEmit
 node_modules/.bin/tsc -p convex/tsconfig.json --noEmit
 pnpm e2e
 
-# 1. Backend → production Convex
+# 1. Backend → production Convex. The guard stops if production points ESPN at the E2E stub (ESPN_BASE_URL).
+node e2e/backend-guard.mjs
 npx convex deploy
 
 # 2. Commit everything, including pnpm-lock.yaml and src-tauri/Cargo.lock (CI uses --frozen-lockfile)

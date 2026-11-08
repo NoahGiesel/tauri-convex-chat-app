@@ -14,13 +14,13 @@ Most scenarios are not written. The prototype proved the design with 8 tests and
 
 ## Scope
 
-**In scope:** 68 scenarios in two phases, plus a few unit tests.
+**In scope:** 76 scenarios in three phases, plus a few unit tests.
 
 **Out of scope:**
 
 - Automating the installer, updater, system notifications or the Dock badge. They stay manual.
 - Running the suite in CI. It runs locally only.
-- Calling live R2, GIPHY or link targets. The Manual smoke covers real services.
+- Calling live R2, GIPHY, ESPN or link targets. The Manual smoke covers real services.
 
 ## Rules that must not be broken
 
@@ -114,7 +114,7 @@ The Test backend is a fresh anonymous local Convex deployment that one run creat
 - **Prepare the stage.** Copy `convex/` and `package.json`, link `node_modules`, then copy the internal Seed file into the stage's `convex/`.
 - **Confirm the target.** Refuse to continue unless the stage's `.env.local` names the anonymous deployment on `127.0.0.1:3310`.
 - **Set `BETTER_AUTH_SECRET` before any auth call.** A later change makes every token mint return 500 while sign-in still returns 200. With no secret, Better Auth silently uses a public default.
-- **Set the fake R2 values with `convex env set --from-file`:** `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` and `R2_ENDPOINT=http://127.0.0.1:3312`.
+- **Set the fake R2 values with `convex env set --from-file`:** `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` and `R2_ENDPOINT=http://127.0.0.1:3312`. The same file sets `ESPN_BASE_URL=http://127.0.0.1:3312/espn`, which also keeps the Test backend's own crons off live ESPN.
 - **Pin the backend version** with `--local-backend-version`. The prototype used `precompiled-2026-10-22-1447815`. This flag and the port flags are hidden from `--help`, so an upgrade can change them.
 
 The CLI binds the backend to `0.0.0.0`. This is accepted, because it holds only fake data and a test-only secret.
@@ -139,12 +139,13 @@ Seeds are built at the start of every run and saved as snapshots with `convex ex
 | `history` | `friends` | 70 more messages in the direct chat, so at least two pages of 30 |
 | `expired-invite` | `base` | An expired invite from Alice, with a fixed token |
 | `media` | `friends` | A photo, a video, a link with a Seeded preview, and an avatar for Alice |
+| `football` | `groups` | Dave and Erin, friends of Alice, the team index, and Team pins in Alice's chats with Carol, Dave and Erin. See [Phase three](#phase-three) |
 
 `media` is exported with `--include-file-storage`, because avatars live in Convex file storage. Its preview row comes from the existing internal `previews:save`. Its photo and video go up the app's own way, a signed address from `media.createUpload` and then a PUT, so they land in the stub, which a Reset does not touch. `MEDIA_SEED` in `config.mjs` names what it holds.
 
 An import does not empty Convex file storage, so a file from an earlier Seed is still there after a Reset to a snapshot without it. So the avatar test first removes Alice's photo, which deletes its file, and only then checks that a Reset brings it back. Without `--include-file-storage` that test fails, and checking the photo alone did not.
 
-Carol's `lastSeenAt` and the expired invite use the internal fallback. `groups`, `history`, `media` and `expired-invite` branch from an earlier Seed, so building them needs a Reset first.
+Carol's `lastSeenAt`, the expired invite and the `football` Seed's closed and stale matches use the internal fallback. `groups`, `history`, `media` and `expired-invite` branch from an earlier Seed, so building them needs a Reset first.
 
 ## Reset
 
@@ -210,6 +211,28 @@ Every run has two Driven users, `alice` and `bob`. Single-user tests leave `bob`
 - **Theme import:** a synthetic `change` works. A test imports `e2e/assets/harbour-theme.json` through `theme-import-input`, the third of the file inputs, and sees it in use. Another imports `note.txt` and is told it is not valid JSON.
 - **Wordle Duel:** one scenario plays the core flow: Alice challenges, Bob accepts, both play their Run, and both see the closed card and the result line. Alice solves in fewer guesses, so she wins every time. The server picks the word at random, so after Bob accepts, the Fixture runs `e2eSeed:setWordleWord`, a stage-only internal function in `e2e/stage-seed.ts` that sets the open Duel's word. The test then holds literal guesses. Each player opens their Run from the card, and the Run window is found as the one new window handle, as `popOut` finds a chat's window. Guesses go through the on-screen keyboard by each key's name, which works with the window in the background, where key events would need focus. The physical keyboard stays in the Manual smoke. Decline, withdraw, rejected guesses, giving up, See your Run, timeout, forfeit and expiry are left to the unit tests.
 - **Updates:** only the notify switch is tested, off and still off after a reload. "Check for updates" would call the real endpoint. Opening Settings › Updates checks nothing, because the Test build turns automatic checks off.
+
+### Phase three
+
+| Fixture | Seed | Hands to a test | Scenarios |
+|---|---|---|---|
+| `twoFriendsWithTeamPins` | `football` | `alice`, `bob` with their chat open, which has no Team pins | Pin with `/calcio`, find a national team by an alias, the picker's refusals, remove a pin, every chip state, the match drawer, a derby, no `/calcio` in a group chat |
+
+The `football` Seed holds these chats. Carol, Dave and Erin have no UI.
+
+| Chat | Team pins |
+|---|---|
+| alice–bob | None, for the add and remove scenarios |
+| alice–carol | A live Inter, and the AC Milan–Juventus derby in the "next" state |
+| alice–dave | Napoli's finished match, Arsenal's postponed one, and Real Madrid's live one whose score stopped arriving |
+| alice–erin | Atalanta, with no match scheduled |
+
+- **Built the real way where it can be.** The team index is the real `footballTeams:rebuildIndex`, against the stub. Alice adds every pin with the public `teamPins.add`, so each has its System line, and each pin's next-match lookup reaches the stub. The Seed waits until no scheduled function is left, through the stage's `e2eSeed:pendingJobs`, so no lookup lands after a Reset.
+- **The internal fallback writes the rest.** No lookup gives a team's last match, and no public function makes an old score. So `e2eSeed:seedFootballMatches` writes Napoli's finished match, Arsenal's postponed one, and Real Madrid's live match with a `fetchedAt` 10 minutes old. It reads the canned events with the app's own parser.
+- **Kick-offs are relative to now.** The stub fixes `now` when it starts, and the Seed when it is built. The finished match kicked off 100 minutes before, so its chip shows until the next 6 a.m. The postponed match kicked off 30 minutes before, so it shows until 2.5 hours after the Seed.
+- **The live score is refreshed after each Reset.** The snapshot's score is minutes old when a test starts, which counts as unavailable after 2 minutes. So the Fixture runs `footballMatches:tick`, the poll the backend's cron runs every 30 s. The stub answers it, and the poll also stores the live match's details for the drawer. A test waits for a fresh chip before it opens the drawer.
+- **The unavailable match stays unavailable.** Its league's scoreboard and its teams' next-match lookups answer 503, so neither the tick nor a lookup can refresh it.
+- **A chip is found by a team's abbreviation,** which the stub's canned data gives for each team name, and read by its `data-state`. An unavailable chip carries the warning as its tooltip. The drawer has `data-testid="match-drawer"`, and its sections are its headings.
 
 ## Driving the app
 
@@ -290,12 +313,15 @@ The suite never depends on a live service, so a developer needs no credentials a
 |---|---|---|
 | Cloudflare R2 | Local stub | Optional `R2_ENDPOINT` |
 | GIPHY | Local stub | Optional `VITE_GIPHY_API_URL` |
+| ESPN | Local stub | Optional `ESPN_BASE_URL`, a Convex variable |
 | Link previews, YouTube oEmbed | Seeded rows, plus unit tests | None |
 
 **The stub** is one small Node server in `e2e/`, on the fixed loopback port 3312. `pnpm e2e` starts it as a process of its own, because a Seed's CLI call blocks its own process while Convex may call the stub. It keeps its files and its log in the stage, so each run starts with none. If the port is busy, the run stops.
 
 - **R2:** it stores on PUT and serves on GET, with CORS. It checks no signatures. **DELETE is only logged**, and the file stays, so a Reset cannot bring back a message whose image is gone. A test checks a deletion by reading the stub's log.
 - **GIPHY:** it returns canned `trending` and `search` results, with thumbnails from the stub. With no search the results are "Trending 1" to "Trending 3", and a search for "Happy cats" finds "Happy cats 1" to "Happy cats 3". `stub.mjs` exports the titles and each one's giphy.com address, so the Fixtures and the stub cannot disagree. The Test build points `src/lib/giphy.ts` at the stub with `VITE_GIPHY_API_URL`. A release stops if it sets that variable.
+
+- **ESPN:** it serves canned team lists, each team's next match, scoreboards, and the live match's summary, under `/espn`. The data lives in `e2e/football.mjs` and `stub.mjs` exports it, so the Seed, the Fixtures and the stub cannot disagree. The stub's own tests read it through `convex/espn.ts`, so it cannot drift from what the backend parses. The unavailable match's league answers 503. A release stops if production sets `ESPN_BASE_URL`: `e2e/backend-guard.mjs` checks it right before `npx convex deploy`, because `release.yml` cannot see Convex's variables.
 
 **Sent GIFs keep a giphy.com address**, because `messages.sendGif` accepts only `https` URLs on `*.giphy.com`, and that guard stays. So a sent GIF's image does not load in tests, and a test checks its address, not its pixels. The webview still asks media.giphy.com for it, so this is the one request a run sends out. `/giphy` picks a result at random, so its test accepts any of the three, under the line showing the search. The composer's GIF button has a name only in English, "GIF", so a Fixture finds it by that and by its `aria-expanded`.
 
@@ -367,7 +393,7 @@ These come from one machine with very little data. Treat them as orders of magni
 | Step | What happens |
 |---|---|
 | 0 | Both `tsc` checks, then `pnpm e2e`, on Windows |
-| 1 | `npx convex deploy` |
+| 1 | `node e2e/backend-guard.mjs`, then `npx convex deploy` |
 | 2 | Commit and push |
 | 3 | `pnpm version`, then push the tag |
 | 4 | `gh run watch` until the draft release is ready |
@@ -424,6 +450,7 @@ The macOS code is written (issue #49) and has not been run on a Mac yet: `pnpm e
 
 **Not built or not run anywhere:**
 
+- The backend guard against a real production deployment. Its tests fake the CLI's answers.
 - The release guard and `releaseDraft: true` with two platforms. Tags must not be pushed to test it, so the first real release is the test.
 - A `media` Seed with a video and a link message. The prototype's had neither.
 - A real video anywhere but WebView2.
@@ -464,3 +491,4 @@ The work is split into vertical tickets. Each one is verifiable alone, and GitHu
 18. [Releases go out through a draft](https://github.com/NoahGiesel/tauri-convex-chat-app/issues/47)
 19. [The suite earns trust](https://github.com/NoahGiesel/tauri-convex-chat-app/issues/48)
 20. [The suite runs on macOS](https://github.com/NoahGiesel/tauri-convex-chat-app/issues/49)
+21. [The E2E suite covers Team pins](https://github.com/NoahGiesel/tauri-convex-chat-app/issues/116)
