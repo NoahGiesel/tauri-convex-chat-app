@@ -1,8 +1,9 @@
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
-import { internalAction, internalMutation, type MutationCtx, type QueryCtx } from "./_generated/server";
-import { espnDays, fetchNextMatch, fetchScoreboard, type ProviderMatch } from "./espn";
+import { internalAction, internalMutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
+import { espnDays, fetchNextMatch, fetchScoreboard, fetchSummary, type ProviderDetails, type ProviderMatch } from "./espn";
+import { getProfile } from "./model";
 import { teamRow } from "./footballTeams";
 import schema from "./schema";
 
@@ -29,6 +30,8 @@ const MISSING_RETRY_MS = 10 * MINUTE;
 
 /** Una partita come la manda il fornitore: la riga di `footballMatches` senza `fetchedAt`. */
 export const matchValidator = schema.tables.footballMatches.validator.omit("fetchedAt");
+/** I dettagli come li manda il fornitore: la riga di `footballMatchDetails` senza partita e `fetchedAt`. */
+const detailsValidator = schema.tables.footballMatchDetails.validator.omit("matchId", "fetchedAt");
 
 /** Una partita chiusa: finita, interrotta, oppure rinviata o annullata (che ESPN dia `pre` o `post`). */
 const isClosed = (m: { state: string; statusName: string }) => m.state === "post" || /POSTPONED|CANCEL/.test(m.statusName);
@@ -57,6 +60,13 @@ async function matchByEvent(ctx: QueryCtx, eventId: string): Promise<Doc<"footba
   return await ctx.db
     .query("footballMatches")
     .withIndex("by_eventId", (q) => q.eq("eventId", eventId))
+    .unique();
+}
+
+async function detailsOf(ctx: QueryCtx, matchId: Id<"footballMatches">): Promise<Doc<"footballMatchDetails"> | null> {
+  return await ctx.db
+    .query("footballMatchDetails")
+    .withIndex("by_matchId", (q) => q.eq("matchId", matchId))
     .unique();
 }
 
@@ -160,8 +170,17 @@ export const pollLeague = internalAction({
       console.error(`Tabellone ${args.league}:`, e instanceof Error ? e.message : e);
       return null;
     }
+    // Il riassunto di ogni partita seguita, anche l'ultima volta (alla fine): poi resta salvato. Se non arriva, resta il precedente.
+    const details: { eventId: string; details: ProviderDetails }[] = [];
+    for (const match of found.values()) {
+      try {
+        details.push({ eventId: match.eventId, details: await fetchSummary(args.league, match.eventId) });
+      } catch (e) {
+        console.error(`Riassunto ${match.eventId}:`, e instanceof Error ? e.message : e);
+      }
+    }
     const missing = [...wanted].filter((eventId) => !found.has(eventId));
-    await ctx.runMutation(internal.footballMatches.applyPoll, { matches: [...found.values()], missing, fetchedAt });
+    await ctx.runMutation(internal.footballMatches.applyPoll, { matches: [...found.values()], details, missing, fetchedAt });
     return null;
   },
 });
@@ -172,9 +191,23 @@ export const pollLeague = internalAction({
  * delle sue squadre, al massimo ogni 10 minuti (la ricerca rinfresca `fetchedAt` se ESPN dà ancora la stessa partita).
  */
 export const applyPoll = internalMutation({
-  args: { matches: v.array(matchValidator), missing: v.array(v.string()), fetchedAt: v.number() },
+  args: {
+    matches: v.array(matchValidator),
+    details: v.array(v.object({ eventId: v.string(), details: detailsValidator })),
+    missing: v.array(v.string()),
+    fetchedAt: v.number(),
+  },
   handler: async (ctx, args) => {
     for (const match of args.matches) await recordMatch(ctx, match, args.fetchedAt);
+    for (const { eventId, details } of args.details) {
+      const match = await matchByEvent(ctx, eventId);
+      if (!match) continue;
+      const existing = await detailsOf(ctx, match._id);
+      if (existing && existing.fetchedAt > args.fetchedAt) continue;
+      const row = { competition: undefined, venue: undefined, ...details, matchId: match._id, fetchedAt: args.fetchedAt };
+      if (existing) await ctx.db.replace("footballMatchDetails", existing._id, row);
+      else await ctx.db.insert("footballMatchDetails", row);
+    }
     for (const eventId of args.missing) {
       const row = await matchByEvent(ctx, eventId);
       if (!row || args.fetchedAt - row.fetchedAt < MISSING_RETRY_MS) continue;
@@ -204,10 +237,31 @@ export const cleanup = internalMutation({
         const asLast = await ctx.db.query("footballTeams").withIndex("by_lastMatchId", (q) => q.eq("lastMatchId", match._id)).first();
         const asNext = await ctx.db.query("footballTeams").withIndex("by_nextMatchId", (q) => q.eq("nextMatchId", match._id)).first();
         if (asLast || asNext) continue;
+        const details = await detailsOf(ctx, match._id);
+        if (details) await ctx.db.delete("footballMatchDetails", details._id);
         await ctx.db.delete("footballMatches", match._id);
         deleted++;
       }
     }
     return null;
+  },
+});
+
+/** Il drawer di una partita: competizione, stadio, eventi, formazioni e statistiche. `null` se non sono ancora arrivati. */
+export const details = query({
+  args: { eventId: v.string() },
+  handler: async (ctx, args) => {
+    if (!(await getProfile(ctx))) return null;
+    const match = await matchByEvent(ctx, args.eventId);
+    if (!match) return null;
+    const row = await detailsOf(ctx, match._id);
+    if (!row) return null;
+    return {
+      competition: row.competition ?? null,
+      venue: row.venue ?? null,
+      events: row.events,
+      lineups: row.lineups,
+      stats: row.stats,
+    };
   },
 });

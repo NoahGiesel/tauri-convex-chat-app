@@ -24,6 +24,9 @@ const footballSide = v.object({
   logo: v.optional(v.string()),
 });
 
+const footballSideKey = v.union(v.literal("home"), v.literal("away"));
+const lineupPlayer = v.object({ name: v.string(), jersey: v.optional(v.string()), position: v.optional(v.string()) });
+
 // Gli utenti veri (email, password, sessioni) vivono nel componente Better Auth.
 // Qui teniamo il profilo dell'app, collegato all'identità tramite `tokenIdentifier`.
 export default defineSchema({
@@ -394,4 +397,46 @@ export default defineSchema({
     .index("by_eventId", ["eventId"])
     // Il giro dei 30 secondi cerca le partite in corso e quelle che stanno per iniziare; la pulizia quelle finite da tempo.
     .index("by_state_and_kickoff", ["state", "kickoff"]),
+
+  /** Eventi, formazioni e statistiche di una partita per il drawer: una copia alleggerita del riassunto ESPN. */
+  footballMatchDetails: defineTable({
+    matchId: v.id("footballMatches"),
+    competition: v.optional(v.string()),
+    venue: v.optional(v.string()),
+    /** `player` è chi segna, è ammonito o entra; `other` chi fa l'assist o esce. */
+    events: v.array(
+      v.object({
+        kind: v.union(
+          v.literal("goal"),
+          v.literal("penaltyGoal"),
+          v.literal("ownGoal"),
+          v.literal("yellowCard"),
+          v.literal("redCard"),
+          v.literal("substitution"),
+        ),
+        minute: v.string(),
+        side: footballSideKey,
+        player: v.optional(v.string()),
+        other: v.optional(v.string()),
+      }),
+    ),
+    lineups: v.array(
+      v.object({ side: footballSideKey, formation: v.optional(v.string()), starters: v.array(lineupPlayer), bench: v.array(lineupPlayer) }),
+    ),
+    stats: v.array(
+      v.object({
+        key: v.union(
+          v.literal("possession"),
+          v.literal("shots"),
+          v.literal("shotsOnTarget"),
+          v.literal("corners"),
+          v.literal("fouls"),
+          v.literal("offsides"),
+        ),
+        home: v.number(),
+        away: v.number(),
+      }),
+    ),
+    fetchedAt: v.number(),
+  }).index("by_matchId", ["matchId"]),
 });

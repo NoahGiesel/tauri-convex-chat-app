@@ -47,7 +47,12 @@ export function espnFetchStub() {
     calls.push(path);
     const reply = replies.get(path) ?? replies.get(url.pathname.slice("/apis".length));
     if (reply) return new Response(reply.body === undefined ? "" : JSON.stringify(reply.body), { status: reply.status });
-    const body = fixtureFor(url.pathname.slice("/apis".length));
+    const summary = /\/summary$/.test(url.pathname) ? `summary-${url.searchParams.get("event")}` : null;
+    const body = summary
+      ? `./espnFixtures/${summary}.json` in FIXTURES
+        ? loadFixture(summary)
+        : undefined
+      : fixtureFor(url.pathname.slice("/apis".length));
     if (body === undefined) return new Response("not found", { status: 404 });
     return new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
   };

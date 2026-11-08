@@ -4,6 +4,8 @@ import { AlertTriangle, X } from "lucide-react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { Crest } from "@/components/team-pins/crest";
+import { MatchDrawer } from "@/components/team-pins/match-drawer";
+import { LIVE_KINDS, LiveDot, StateLabel } from "@/components/team-pins/match-label";
 import { useI18n } from "@/i18n/i18n-provider";
 import { chipState, isUnavailable, type ChipState } from "@/lib/match-chip";
 import { teamChips, type TeamChip, type TeamPin } from "@/lib/team-pins";
@@ -26,31 +28,25 @@ export function TeamPinRow({ conversationId }: { conversationId: Id<"conversatio
   const { t } = useI18n();
   const pins = useQuery(api.teamPins.list, { conversationId });
   const now = useNow(CLOCK_TICK_MS);
+  /** Il chip il cui drawer è aperto (la partita si rilegge a ogni aggiornamento, così il drawer segue la diretta). */
+  const [openKey, setOpenKey] = useState<string | null>(null);
   if (!pins || pins.length === 0) return null;
+  const chips = teamChips(pins, now);
+  const open = chips.find((c) => c.key === openKey)?.match;
 
   return (
     <div className="shrink-0 border-b border-app-border">
       <div role="list" aria-label={t("teamPins.row")} className="flex h-11 items-center gap-2 overflow-x-auto px-5">
-        {teamChips(pins, now).map((chip) => (
-          <Chip key={chip.key} chip={chip} now={now} />
+        {chips.map((chip) => (
+          <Chip key={chip.key} chip={chip} now={now} open={chip.key === openKey} onOpen={() => setOpenKey(chip.key === openKey ? null : chip.key)} />
         ))}
       </div>
+      {open && <MatchDrawer match={open} now={now} onClose={() => setOpenKey(null)} />}
     </div>
   );
 }
 
-function LiveDot({ still }: { still: boolean }) {
-  return (
-    <span className="relative flex size-2 shrink-0">
-      {!still && <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-500 opacity-60" />}
-      <span className={cn("relative inline-flex size-2 rounded-full", still ? "bg-app-text-dim" : "bg-red-500")} />
-    </span>
-  );
-}
-
-const LIVE_KINDS: ChipState["kind"][] = ["live", "halftime", "shootout"];
-
-function Chip({ chip, now }: { chip: TeamChip; now: number }) {
+function Chip({ chip, now, open, onOpen }: { chip: TeamChip; now: number; open: boolean; onOpen: () => void }) {
   const { t, locale } = useI18n();
   const { match } = chip;
   if (!match) {
@@ -72,8 +68,14 @@ function Chip({ chip, now }: { chip: TeamChip; now: number }) {
   const winner = state.kind === "finished" ? state.winner : null;
 
   return (
-    <ChipFrame chip={chip} title={unavailable} stateKind={state.kind}>
-      <div className={cn("flex items-center gap-1.5", stale && "opacity-50")}>
+    <ChipFrame chip={chip} title={unavailable} stateKind={state.kind} open={open}>
+      <button
+        type="button"
+        aria-label={t("teamPins.details")}
+        aria-expanded={open}
+        onClick={onOpen}
+        className={cn("flex items-center gap-1.5 rounded-full text-left", stale && "opacity-50")}
+      >
         {LIVE_KINDS.includes(state.kind) && <LiveDot still={stale} />}
         {state.kind === "suspended" && <LiveDot still />}
         <Crest logo={match.home.logo} abbreviation={match.home.abbreviation} />
@@ -86,65 +88,35 @@ function Chip({ chip, now }: { chip: TeamChip; now: number }) {
         <span className="ml-1 text-app-text-muted">
           <StateLabel state={state} when={when} time={time(match.kickoff)} />
         </span>
-      </div>
+      </button>
       {stale && <AlertTriangle aria-label={unavailable} className="size-3.5 shrink-0 text-amber-500" strokeWidth={2.2} />}
     </ChipFrame>
   );
 }
 
-/** L'etichetta accanto al punteggio: minuto, Intervallo, Finale, d.t.s., rigori, rinvii… */
-function StateLabel({ state, when, time }: { state: ChipState; when: string; time: string }) {
-  const { t } = useI18n();
-  switch (state.kind) {
-    case "next":
-      return <span className="tabular-nums">{when}</span>;
-    case "delayed":
-      return (
-        <>
-          <span className="tabular-nums">{time}</span> · {t("teamPins.delayed")}
-        </>
-      );
-    case "live":
-      return <span className="font-bold text-red-500 tabular-nums">{state.minute}</span>;
-    case "halftime":
-      return <span className="font-bold text-red-500">{t("teamPins.ht")}</span>;
-    case "shootout":
-      return (
-        <span className="font-bold text-red-500 tabular-nums">
-          · {t("teamPins.pensLive")} {state.shootout.home}–{state.shootout.away}
-        </span>
-      );
-    case "finished":
-      if (state.ending === "pens" && state.shootout) {
-        return (
-          <span className="tabular-nums">
-            · {state.shootout.home}–{state.shootout.away} {t("teamPins.pens")}
-          </span>
-        );
-      }
-      return <>{t(state.ending === "aet" ? "teamPins.aet" : "teamPins.ft")}</>;
-    case "suspended":
-      return <>{t("teamPins.suspended")}</>;
-    case "abandoned":
-      return <>{t("teamPins.abandoned")}</>;
-    case "postponed":
-    case "cancelled":
-      return (
-        <>
-          <span className="tabular-nums line-through">{when}</span> · {t(state.kind === "postponed" ? "teamPins.postponed" : "teamPins.cancelled")}
-        </>
-      );
-  }
-}
-
-function ChipFrame({ chip, title, stateKind, children }: { chip: TeamChip; title?: string; stateKind?: ChipState["kind"]; children: React.ReactNode }) {
+function ChipFrame({
+  chip,
+  title,
+  stateKind,
+  open = false,
+  children,
+}: {
+  chip: TeamChip;
+  title?: string;
+  stateKind?: ChipState["kind"];
+  open?: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <div
       role="listitem"
       data-testid="team-pin-chip"
       data-state={stateKind ?? "none"}
       title={title}
-      className="flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-app-border bg-app-field/50 pr-1 pl-2 text-xs"
+      className={cn(
+        "flex h-8 shrink-0 items-center gap-1.5 rounded-full border pr-1 pl-2 text-xs",
+        open ? "border-app-accent bg-app-accent-soft" : "border-app-border bg-app-field/50 hover:bg-app-field",
+      )}
     >
       {children}
       <RemoveButton pins={chip.pins} />

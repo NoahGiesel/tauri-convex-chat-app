@@ -243,7 +243,7 @@ describe("risposte che si incrociano", () => {
     const t = await setup([[INTER]]);
     const before = (await match(t, COMO_INTER))!;
     const [stale] = parseScoreboard(scoreboardWith("ita.1", COMO_INTER, (e) => setScore(e, 0, 0)), "ita.1").filter((m) => m.eventId === COMO_INTER);
-    await t.mutation(internal.footballMatches.applyPoll, { matches: [stale], missing: [], fetchedAt: before.fetchedAt - 1 });
+    await t.mutation(internal.footballMatches.applyPoll, { matches: [stale], details: [], missing: [], fetchedAt: before.fetchedAt - 1 });
     expect(await match(t, COMO_INTER)).toEqual(before);
   });
 

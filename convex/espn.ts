@@ -194,6 +194,130 @@ export async function fetchScoreboard(league: string, day: string): Promise<Prov
   return parseScoreboard(await getJson(`/site/v2/sports/soccer/${league}/scoreboard?dates=${day}`), league);
 }
 
+export type Side = "home" | "away";
+export type MatchEventKind = "goal" | "penaltyGoal" | "ownGoal" | "yellowCard" | "redCard" | "substitution";
+export type StatKey = "possession" | "shots" | "shotsOnTarget" | "corners" | "fouls" | "offsides";
+
+/** I dettagli di una partita per il drawer, alleggeriti: pochi KB invece dei ~400 KB del riassunto ESPN. */
+export type ProviderDetails = {
+  competition?: string;
+  venue?: string;
+  /** `player` è chi segna, è ammonito o entra; `other` chi fa l'assist o esce. */
+  events: { kind: MatchEventKind; minute: string; side: Side; player?: string; other?: string }[];
+  lineups: { side: Side; formation?: string; starters: LineupPlayer[]; bench: LineupPlayer[] }[];
+  stats: { key: StatKey; home: number; away: number }[];
+};
+type LineupPlayer = { name: string; jersey?: string; position?: string };
+
+/** I tipi di evento ESPN che il drawer mostra; gli altri (calcio d'inizio, interruzioni…) si ignorano. */
+function eventKind(type: string): MatchEventKind | null {
+  if (type === "own-goal") return "ownGoal";
+  if (/^penalty-+scored$/.test(type)) return "penaltyGoal";
+  if (type.startsWith("goal")) return "goal";
+  if (type === "yellow-card") return "yellowCard";
+  if (type === "red-card" || type === "yellow-red-card" || type === "second-yellow-card") return "redCard";
+  if (type === "substitution") return "substitution";
+  return null;
+}
+
+/** Le statistiche del drawer, dal nome ESPN. "shots" è il totale: in porta, fuori e respinti. */
+const STAT_NAMES: Record<string, StatKey> = {
+  possessionPct: "possession",
+  totalShots: "shots",
+  shotsOnTarget: "shotsOnTarget",
+  wonCorners: "corners",
+  foulsCommitted: "fouls",
+  offsides: "offsides",
+};
+const STAT_ORDER: StatKey[] = ["possession", "shots", "shotsOnTarget", "corners", "fouls", "offsides"];
+
+/**
+ * Il riassunto ESPN di una partita. L'intestazione deve esserci; eventi, formazioni e statistiche possono mancare
+ * (prima della partita non ci sono), ma se ci sono vanno letti per intero: un campo mancante è un errore.
+ */
+export function parseSummary(json: unknown): ProviderDetails {
+  const root = obj(json, "summary");
+  const header = obj(root.header, "header");
+  const competition = obj(arr(header.competitions, "header.competitions")[0], "header.competitions[0]");
+  const sideOf = new Map<string, Side>();
+  for (const c of arr(competition.competitors, "header.competitors").map((c) => obj(c, "header.competitors[]"))) {
+    const homeAway = c.homeAway;
+    if (homeAway !== "home" && homeAway !== "away") throw new EspnError("ESPN: header.competitors[].homeAway missing");
+    sideOf.set(str(c.id, "header.competitors[].id"), homeAway);
+  }
+  const side = (teamId: unknown, what: string): Side => {
+    const found = sideOf.get(str(teamId, what));
+    if (!found) throw new EspnError(`ESPN: ${what} missing`);
+    return found;
+  };
+  const league = typeof header.league === "object" && header.league !== null ? optStr((header.league as Obj).name) : undefined;
+  const venue = typeof root.gameInfo === "object" && root.gameInfo !== null ? (root.gameInfo as Obj).venue : undefined;
+
+  const events: ProviderDetails["events"] = [];
+  for (const raw of Array.isArray(root.keyEvents) ? root.keyEvents : []) {
+    const e = obj(raw, "keyEvents[]");
+    const kind = eventKind(str(obj(e.type, "keyEvents[].type").type, "keyEvents[].type.type"));
+    if (!kind) continue;
+    const names = (Array.isArray(e.participants) ? e.participants : []).map((p) => str(obj(obj(p, "participants[]").athlete, "athlete").displayName, "athlete.displayName"));
+    events.push({
+      kind,
+      minute: str(obj(e.clock, "keyEvents[].clock").displayValue, "keyEvents[].clock.displayValue"),
+      side: side(obj(e.team, "keyEvents[].team").id, "keyEvents[].team.id"),
+      ...(names[0] ? { player: names[0] } : {}),
+      ...(names[1] ? { other: names[1] } : {}),
+    });
+  }
+
+  const lineups: ProviderDetails["lineups"] = [];
+  for (const raw of Array.isArray(root.rosters) ? root.rosters : []) {
+    const r = obj(raw, "rosters[]");
+    const players = arr(r.roster, "rosters[].roster").map((p) => obj(p, "roster[]"));
+    if (players.length === 0) continue;
+    const toPlayer = (p: Obj): LineupPlayer => {
+      const position = typeof p.position === "object" && p.position !== null ? optStr((p.position as Obj).abbreviation) : undefined;
+      const jersey = optStr(p.jersey);
+      return { name: str(obj(p.athlete, "roster[].athlete").displayName, "roster[].athlete.displayName"), ...(jersey ? { jersey } : {}), ...(position ? { position } : {}) };
+    };
+    const formation = optStr(r.formation);
+    lineups.push({
+      side: side(obj(r.team, "rosters[].team").id, "rosters[].team.id"),
+      ...(formation ? { formation } : {}),
+      starters: players.filter((p) => p.starter === true).map(toPlayer),
+      bench: players.filter((p) => p.starter !== true).map(toPlayer),
+    });
+  }
+
+  const values = new Map<StatKey, Partial<Record<Side, number>>>();
+  const boxscore = typeof root.boxscore === "object" && root.boxscore !== null ? (root.boxscore as Obj) : {};
+  for (const raw of Array.isArray(boxscore.teams) ? boxscore.teams : []) {
+    const t = obj(raw, "boxscore.teams[]");
+    const teamSide = side(obj(t.team, "boxscore.teams[].team").id, "boxscore.teams[].team.id");
+    for (const s of Array.isArray(t.statistics) ? t.statistics : []) {
+      const stat = obj(s, "statistics[]");
+      const key = STAT_NAMES[str(stat.name, "statistics[].name")];
+      if (!key) continue;
+      values.set(key, { ...values.get(key), [teamSide]: readScore(stat.displayValue, `statistics.${key}`) });
+    }
+  }
+  const stats = STAT_ORDER.flatMap((key) => {
+    const v = values.get(key);
+    return v?.home !== undefined && v.away !== undefined ? [{ key, home: v.home, away: v.away }] : [];
+  });
+
+  return {
+    ...(league ? { competition: league } : {}),
+    ...(typeof venue === "object" && venue !== null && optStr((venue as Obj).fullName) ? { venue: (venue as Obj).fullName as string } : {}),
+    events,
+    lineups,
+    stats,
+  };
+}
+
+/** Il riassunto di una partita: eventi, formazioni e statistiche. */
+export async function fetchSummary(league: string, eventId: string): Promise<ProviderDetails> {
+  return parseSummary(await getJson(`/site/v2/sports/soccer/${league}/summary?event=${encodeURIComponent(eventId)}`));
+}
+
 /** Le squadre di una competizione, senza giovanili e femminili. */
 export async function fetchTeamList(league: string): Promise<ProviderTeam[]> {
   const json = obj(await getJson(`/site/v2/sports/soccer/${league}/teams`), "teams");
