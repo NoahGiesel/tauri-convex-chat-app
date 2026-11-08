@@ -1,0 +1,74 @@
+{
+ "leagues": [
+  {
+   "slug": "fifa.world",
+   "name": "FIFA World Cup",
+   "abbreviation": "FIFA World Cup"
+  }
+ ],
+ "events": [
+  {
+   "id": "760517",
+   "date": "2026-07-19T19:00Z",
+   "name": "Argentina at Spain",
+   "shortName": "ARG @ ESP",
+   "status": {
+    "displayClock": "120'+5'",
+    "period": 4,
+    "type": {
+     "name": "STATUS_FINAL_AET",
+     "state": "post",
+     "completed": true,
+     "detail": "AET",
+     "shortDetail": "AET"
+    }
+   },
+   "competitions": [
+    {
+     "id": "760517",
+     "date": "2026-07-19T19:00Z",
+     "status": {
+      "displayClock": "120'+5'",
+      "period": 4,
+      "type": {
+       "name": "STATUS_FINAL_AET",
+       "state": "post",
+       "completed": true,
+       "detail": "AET",
+       "shortDetail": "AET"
+      }
+     },
+     "venue": {
+      "fullName": "MetLife Stadium"
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "score": "1",
+       "winner": true,
+       "team": {
+        "id": "164",
+        "abbreviation": "ESP",
+        "displayName": "Spain",
+        "shortDisplayName": "Spain",
+        "logo": "https://a.espncdn.com/i/teamlogos/countries/500/esp.png"
+       }
+      },
+      {
+       "homeAway": "away",
+       "score": "0",
+       "winner": false,
+       "team": {
+        "id": "202",
+        "abbreviation": "ARG",
+        "displayName": "Argentina",
+        "shortDisplayName": "Argentina",
+        "logo": "https://a.espncdn.com/i/teamlogos/countries/500/arg.png"
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

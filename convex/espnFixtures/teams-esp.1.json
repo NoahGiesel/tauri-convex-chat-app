@@ -1,0 +1,275 @@
+{
+ "sports": [
+  {
+   "leagues": [
+    {
+     "slug": "esp.1",
+     "name": "Spanish LALIGA",
+     "abbreviation": "LALIGA",
+     "teams": [
+      {
+       "team": {
+        "id": "96",
+        "abbreviation": "ALA",
+        "displayName": "Alavés",
+        "shortDisplayName": "Alavés",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/96.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "93",
+        "abbreviation": "ATH",
+        "displayName": "Athletic Club",
+        "shortDisplayName": "Athletic",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/93.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "1068",
+        "abbreviation": "ATM",
+        "displayName": "Atlético Madrid",
+        "shortDisplayName": "Atlético",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/1068.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "83",
+        "abbreviation": "BAR",
+        "displayName": "Barcelona",
+        "shortDisplayName": "Barcelona",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/83.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "85",
+        "abbreviation": "CEL",
+        "displayName": "Celta Vigo",
+        "shortDisplayName": "Celta Vigo",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/85.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "90",
+        "abbreviation": "DEP",
+        "displayName": "Deportivo",
+        "shortDisplayName": "Deportivo",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/90.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "3751",
+        "abbreviation": "ELC",
+        "displayName": "Elche",
+        "shortDisplayName": "Elche",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/3751.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "88",
+        "abbreviation": "ESP",
+        "displayName": "Espanyol",
+        "shortDisplayName": "Espanyol",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/88.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2922",
+        "abbreviation": "GET",
+        "displayName": "Getafe",
+        "shortDisplayName": "Getafe",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/2922.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "1538",
+        "abbreviation": "LEV",
+        "displayName": "Levante",
+        "shortDisplayName": "Levante",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/1538.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "99",
+        "abbreviation": "MCF",
+        "displayName": "Málaga",
+        "shortDisplayName": "Málaga",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/99.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "97",
+        "abbreviation": "OSA",
+        "displayName": "Osasuna",
+        "shortDisplayName": "Osasuna",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/97.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "87",
+        "abbreviation": "RAC",
+        "displayName": "Racing Santander",
+        "shortDisplayName": "Racing",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/87.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "101",
+        "abbreviation": "RAY",
+        "displayName": "Rayo Vallecano",
+        "shortDisplayName": "Rayo",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/101.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "244",
+        "abbreviation": "BET",
+        "displayName": "Real Betis",
+        "shortDisplayName": "Betis",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/244.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "86",
+        "abbreviation": "RMA",
+        "displayName": "Real Madrid",
+        "shortDisplayName": "Real Madrid",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/86.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "89",
+        "abbreviation": "RSO",
+        "displayName": "Real Sociedad",
+        "shortDisplayName": "Real Sociedad",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/89.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "243",
+        "abbreviation": "SEV",
+        "displayName": "Sevilla",
+        "shortDisplayName": "Sevilla",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/243.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "94",
+        "abbreviation": "VAL",
+        "displayName": "Valencia",
+        "shortDisplayName": "Valencia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/94.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "102",
+        "abbreviation": "VIL",
+        "displayName": "Villarreal",
+        "shortDisplayName": "Villarreal",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/102.png"
+         }
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

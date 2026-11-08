@@ -313,4 +313,26 @@ export default defineSchema({
     key: v.string(),
     body: v.string(),
   }).index("by_key", ["key"]),
+
+  /**
+   * Indice delle squadre per `/calcio`: i club delle competizioni coperte e tutte le nazionali,
+   * ricostruito ogni settimana dalle liste ESPN (vedi docs/TEAM-PINS-SPEC.md).
+   */
+  footballTeams: defineTable({
+    /** Id ESPN della squadra: è lo stesso in ogni competizione. */
+    teamId: v.string(),
+    name: v.string(),
+    shortName: v.string(),
+    abbreviation: v.string(),
+    logo: v.optional(v.string()),
+    /** Competizione da mostrare nel picker (es. "Serie A"); assente per le nazionali. */
+    competition: v.optional(v.string()),
+    national: v.boolean(),
+    /** Nomi normalizzati (senza accenti, minuscoli) più gli alias, per la ricerca. */
+    keys: v.array(v.string()),
+    /** false se la squadra non è più nelle liste ESPN: resta per i pin già messi, ma non si cerca. */
+    listed: v.boolean(),
+  })
+    .index("by_teamId", ["teamId"])
+    .index("by_listed", ["listed"]),
 });

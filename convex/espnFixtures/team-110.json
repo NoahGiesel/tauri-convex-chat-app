@@ -1,0 +1,78 @@
+{
+ "team": {
+  "id": "110",
+  "abbreviation": "INT",
+  "displayName": "Internazionale",
+  "shortDisplayName": "Inter Milan",
+  "logos": [
+   {
+    "href": "https://a.espncdn.com/i/teamlogos/soccer/500/110.png"
+   }
+  ],
+  "nextEvent": [
+   {
+    "id": "401875001",
+    "date": "2026-11-22T19:45Z",
+    "name": "Internazionale at Atalanta",
+    "shortName": "INT @ ATA",
+    "league": {
+     "slug": "ita.1",
+     "name": "Italian Serie A",
+     "abbreviation": "Serie A"
+    },
+    "competitions": [
+     {
+      "id": "401875001",
+      "date": "2026-11-22T19:45Z",
+      "status": {
+       "displayClock": "0'",
+       "period": 0,
+       "type": {
+        "name": "STATUS_SCHEDULED",
+        "state": "pre",
+        "completed": false,
+        "detail": "Sun, November 22nd at 2:45 PM EST",
+        "shortDetail": "11/22 - 2:45 PM EST"
+       }
+      },
+      "venue": {
+       "fullName": "New Balance Arena"
+      },
+      "competitors": [
+       {
+        "homeAway": "home",
+        "winner": false,
+        "team": {
+         "id": "105",
+         "abbreviation": "ATA",
+         "displayName": "Atalanta",
+         "shortDisplayName": "Atalanta",
+         "logos": [
+          {
+           "href": "https://a.espncdn.com/i/teamlogos/soccer/500/105.png"
+          }
+         ]
+        }
+       },
+       {
+        "homeAway": "away",
+        "winner": false,
+        "team": {
+         "id": "110",
+         "abbreviation": "INT",
+         "displayName": "Internazionale",
+         "shortDisplayName": "Inter Milan",
+         "logos": [
+          {
+           "href": "https://a.espncdn.com/i/teamlogos/soccer/500/110.png"
+          }
+         ]
+        }
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}
