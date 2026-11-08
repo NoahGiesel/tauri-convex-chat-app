@@ -32,6 +32,9 @@ pnpm e2e
 # 1. Backend → production Convex. The guard stops if production points ESPN at the E2E stub (ESPN_BASE_URL).
 node e2e/backend-guard.mjs
 npx convex deploy
+# A fresh production deployment has an empty team index: fill it once (about 364 teams),
+# otherwise /calcio suggests nothing.
+npx convex run footballTeams:rebuildIndex --prod
 
 # 2. Commit everything, including pnpm-lock.yaml and src-tauri/Cargo.lock (CI uses --frozen-lockfile)
 git add -A
@@ -62,6 +65,11 @@ The tag **must** equal `v<package.json version>`. `pnpm version` requires a clea
 - **During the transition,** a person still tests the whole app by hand on every release, until the
   suite has 10 full green runs in a row. An area stops being tested by hand only once its phase is
   written and trusted (`docs/E2E-SPEC.md`).
+
+The release guard also compares the `VITE_CONVEX_URL` secret with the production URL: a build that
+would embed the dev deployment fails before it compiles. `release.yml` passes the secret to the guard
+step; when running it locally, set the variable first (`$env:VITE_CONVEX_URL="https://avid-roadrunner-413.eu-west-1.convex.cloud"`),
+or it reports that the build names no deployment.
 
 ### If you are an agent
 
@@ -194,6 +202,7 @@ The repository must stay **public** so the updater can download `latest.json` wi
 | CI: `Release guard: …` | The build would ship the Test build's WebDriver server or its variables. Remove what it names. Run `node e2e/release-guard.mjs` locally to check, with no tag |
 | Notifications missing on macOS | System Settings → Notifications → allow the app (the permission prompt appears only once) |
 | Convex types missing (`api.xxx does not exist`) | `npx convex dev` regenerates `convex/_generated/`; run it once after adding backend files |
+| A chat is blank and the app shows no error | The build embeds a backend that lacks the functions it calls: the `VITE_CONVEX_URL` secret names a deployment that was never pushed (`convex dev --once` there), or the wrong one. Fix the secret, ship a patch; the release guard refuses a non-production URL |
 
 ## Related docs
 - `README.md` — first-time setup and updater key generation

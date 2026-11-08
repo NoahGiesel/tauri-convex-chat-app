@@ -4,6 +4,7 @@ import { ConvexReactClient } from "convex/react";
 import { ConvexBetterAuthProvider, type AuthClient } from "@convex-dev/better-auth/react";
 import "./index.css";
 import App from "./App";
+import { ErrorBoundary } from "@/components/error-boundary";
 import { UpdaterProvider } from "@/hooks/use-updater";
 import { I18nProvider } from "@/i18n/i18n-provider";
 import { authClient } from "@/lib/auth-client";
@@ -33,7 +34,10 @@ createRoot(document.getElementById("root")!).render(
         {/* Il tipo inferito dei plugin (convex + crossDomain) non combacia con quello del provider, ma il client è lo stesso. */}
         <ConvexBetterAuthProvider client={convex} authClient={authClient as unknown as AuthClient}>
           <UpdaterProvider>
-            <App />
+            {/* Dentro i provider, così il messaggio d'errore ha tema e lingua; fuori da App, che è ciò che può fallire. */}
+            <ErrorBoundary>
+              <App />
+            </ErrorBoundary>
           </UpdaterProvider>
         </ConvexBetterAuthProvider>
       </I18nProvider>

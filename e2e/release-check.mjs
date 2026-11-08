@@ -8,6 +8,8 @@ import { loadEnv } from 'vite';
 
 const TEST_ONLY_VARS = ['VITE_E2E', 'VITE_GIPHY_API_URL'];
 const WEBDRIVER_CRATE = /^tauri-plugin-wdio/m;
+/** Il deployment di produzione: una release che ne nomina un altro (il dev) non deve uscire. */
+export const PRODUCTION_CONVEX_URL = 'https://avid-roadrunner-413.eu-west-1.convex.cloud';
 
 const unquote = (token) => token.replace(/^["']|["']$/g, '');
 
@@ -44,10 +46,22 @@ function shipsWebDriver(root, { features, allFeatures }) {
 }
 
 /** Returns what is wrong with the release at `root`. Empty means it holds nothing reserved for tests. */
-export function checkRelease(root) {
+export function checkRelease(root, env = process.env) {
   const workflow = fs.readFileSync(path.join(root, '.github', 'workflows', 'release.yml'), 'utf8');
   const tauriConfig = JSON.parse(fs.readFileSync(path.join(root, 'src-tauri', 'tauri.conf.json'), 'utf8'));
   const problems = [];
+
+  // La build incorpora VITE_CONVEX_URL: se il secret punta al dev, l'app pubblicata legge e scrive i dati del dev.
+  // release.yml passa il secret al passo che esegue la guardia, così il confronto non può essere saltato.
+  const convexUrl = (env.VITE_CONVEX_URL ?? '').trim();
+  if (convexUrl !== PRODUCTION_CONVEX_URL) {
+    problems.push(`the build points the app at ${convexUrl || 'no deployment'} instead of production (${PRODUCTION_CONVEX_URL})`);
+  }
+  const guardAt = workflow.indexOf('node e2e/release-guard.mjs');
+  const guardStep = guardAt < 0 ? '' : workflow.slice(Math.max(0, guardAt - 400), guardAt);
+  if (!/VITE_CONVEX_URL:\s*\$\{\{\s*secrets\.VITE_CONVEX_URL\s*\}\}/.test(guardStep)) {
+    problems.push('the guard step does not receive VITE_CONVEX_URL, so it cannot tell which deployment the build points at');
+  }
 
   const { features, allFeatures } = requestedByWorkflow(workflow);
   try {

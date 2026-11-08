@@ -7,7 +7,7 @@ import path from 'node:path';
 import { after, before, beforeEach, describe, it } from 'node:test';
 import { ROOT } from './config.mjs';
 import { commandEnv } from './guards.mjs';
-import { checkProductionBackend, checkRelease } from './release-check.mjs';
+import { checkProductionBackend, checkRelease, PRODUCTION_CONVEX_URL } from './release-check.mjs';
 
 const GUARD = path.join(ROOT, 'e2e', 'release-guard.mjs');
 const VITE = path.join(ROOT, 'node_modules', 'vite', 'bin', 'vite.js');
@@ -47,7 +47,8 @@ function change(root, file, edit) {
 }
 
 const addFeatures = (root, lines) => change(root, CARGO, (text) => text.replace('[features]', `[features]\n${lines}`));
-const complaints = (root) => checkRelease(root).join('\n');
+const production = { VITE_CONVEX_URL: PRODUCTION_CONVEX_URL };
+const complaints = (root) => checkRelease(root, production).join('\n');
 
 describe('a release build', () => {
   let root;
@@ -57,7 +58,7 @@ describe('a release build', () => {
 
   it('passes when it is a normal one, although the e2e feature exists', () => {
     assert.match(fs.readFileSync(path.join(root, CARGO), 'utf8'), /^e2e = /m);
-    assert.deepEqual(checkRelease(root), []);
+    assert.deepEqual(checkRelease(root, production), []);
   });
 
   for (const [what, args] of [
@@ -112,12 +113,26 @@ describe('a release build', () => {
 
   it('does not count a longer name that only starts the same way', () => {
     fs.writeFileSync(path.join(root, '.env.production'), 'VITE_E2E_NOTES=1\n');
-    assert.deepEqual(checkRelease(root), []);
+    assert.deepEqual(checkRelease(root, production), []);
   });
 
   it('does not count a name that only a comment mentions', () => {
     change(root, WORKFLOW, (text) => text.replace('jobs:', '# VITE_E2E: never set this\njobs:'));
-    assert.deepEqual(checkRelease(root), []);
+    assert.deepEqual(checkRelease(root, production), []);
+  });
+
+  it('fails when the app it builds would read another deployment, such as the dev one', () => {
+    const dev = { VITE_CONVEX_URL: 'https://dutiful-stingray-468.eu-west-1.convex.cloud' };
+    assert.match(checkRelease(root, dev).join('\n'), /instead of production/);
+  });
+
+  it('fails when the build gets no deployment at all', () => {
+    assert.match(checkRelease(root, { VITE_CONVEX_URL: '' }).join('\n'), /instead of production/);
+  });
+
+  it('fails when the workflow does not pass the URL to the guard step', () => {
+    change(root, WORKFLOW, (text) => text.replaceAll('VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}', ''));
+    assert.match(complaints(root), /does not receive VITE_CONVEX_URL/);
   });
 
   it('fails, rather than passes, when it cannot tell what cargo would build', () => {
@@ -144,7 +159,7 @@ describe('the release workflow', () => {
 });
 
 describe('the guard as a command', () => {
-  const run = (extra) => spawnSync(process.execPath, [GUARD], { cwd: ROOT, encoding: 'utf8', env: commandEnv(extra) });
+  const run = (extra) => spawnSync(process.execPath, [GUARD], { cwd: ROOT, encoding: 'utf8', env: commandEnv({ VITE_CONVEX_URL: PRODUCTION_CONVEX_URL, ...extra }) });
 
   it('exits 0 for the release as it stands', () => {
     const res = run({});
