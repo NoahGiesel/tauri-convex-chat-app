@@ -29,6 +29,12 @@ export function espnFetchStub() {
     if (teams) return loadFixture(`teams-${teams[1]}`);
     const team = path.match(/^\/site\/v2\/sports\/soccer\/all\/teams\/(\d+)$/);
     if (team) return loadFixture(`team-${team[1]}`);
+    // Il tabellone del giorno, qualunque sia `?dates=`: i test fissano l'ora sul giorno registrato.
+    const scoreboard = path.match(/^\/site\/v2\/sports\/soccer\/([^/]+)\/scoreboard$/);
+    if (scoreboard) {
+      const name = `scoreboard-${scoreboard[1]}-today`;
+      return `./espnFixtures/${name}.json` in FIXTURES ? loadFixture(name) : undefined;
+    }
     return undefined;
   };
 
