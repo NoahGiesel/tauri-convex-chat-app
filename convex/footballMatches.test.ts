@@ -220,10 +220,58 @@ describe("fine della partita", () => {
     board.events = board.events.filter((e: { id: string }) => e.id !== COMO_INTER);
     stub.reply("/site/v2/sports/soccer/ita.1/scoreboard", board);
     vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.setSystemTime(AT_HALFTIME + 11 * 60_000); // dopo 10 minuti senza notizie
     await runTick(t);
 
     expect(stub.calls).toContain("/site/v2/sports/soccer/all/teams/110");
     expect((await team(t, INTER))?.nextMatchId).not.toBe((await match(t, COMO_INTER))?._id);
+  });
+});
+
+describe("risposte che si incrociano", () => {
+  it("una partita rinviata che ESPN dà ancora `pre` fa cercare la prossima", async () => {
+    const t = await setup([[JUVENTUS]]);
+    vi.setSystemTime(Date.parse("2026-11-08T19:00Z"));
+    stub.reply("/site/v2/sports/soccer/ita.1/scoreboard", scoreboardWith("ita.1", FIO_JUV, (e) => setStatus(e, "pre", "STATUS_POSTPONED")));
+    await runTick(t);
+
+    expect(stub.calls).toContain("/site/v2/sports/soccer/all/teams/111");
+    expect((await team(t, JUVENTUS))?.lastMatchId).toBe((await match(t, FIO_JUV))?._id);
+  });
+
+  it("una risposta più vecchia di quella già scritta si scarta", async () => {
+    const t = await setup([[INTER]]);
+    const before = (await match(t, COMO_INTER))!;
+    const [stale] = parseScoreboard(scoreboardWith("ita.1", COMO_INTER, (e) => setScore(e, 0, 0)), "ita.1").filter((m) => m.eventId === COMO_INTER);
+    await t.mutation(internal.footballMatches.applyPoll, { matches: [stale], missing: [], fetchedAt: before.fetchedAt - 1 });
+    expect(await match(t, COMO_INTER)).toEqual(before);
+  });
+
+  it("una partita finita che arriva dalla ricerca della prossima diventa comunque l'ultima", async () => {
+    const t = await setup([[INTER]]);
+    const [ended] = parseScoreboard(scoreboardWith("ita.1", COMO_INTER, (e) => setStatus(e, "post", "STATUS_FULL_TIME")), "ita.1").filter(
+      (m) => m.eventId === COMO_INTER,
+    );
+    await t.mutation(internal.footballMatches.saveNextMatch, { teamId: INTER, match: ended, fetchedAt: AT_HALFTIME });
+    expect((await team(t, INTER))?.lastMatchId).toBe((await match(t, COMO_INTER))?._id);
+  });
+
+  it("una partita sparita non fa cercare la prossima a ogni giro", async () => {
+    const t = await setup([[INTER]]);
+    const board = loadFixture("scoreboard-ita.1-today");
+    board.events = board.events.filter((e: { id: string }) => e.id !== COMO_INTER);
+    stub.reply("/site/v2/sports/soccer/ita.1/scoreboard", board);
+    const inter = loadFixture("team-110");
+    inter.team.nextEvent[0] = { ...loadFixture("scoreboard-ita.1-today").events.find((e: { id: string }) => e.id === COMO_INTER), league: { slug: "ita.1" } };
+    stub.reply("/site/v2/sports/soccer/all/teams/110", inter);
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    vi.setSystemTime(AT_HALFTIME + 11 * 60_000);
+    await runTick(t);
+    vi.setSystemTime(AT_HALFTIME + 12 * 60_000);
+    await runTick(t);
+
+    expect(stub.calls.filter((c) => c.endsWith("/all/teams/110"))).toHaveLength(1);
   });
 });
 
@@ -255,20 +303,25 @@ describe("errori di ESPN", () => {
 });
 
 describe("pulizia di ogni giorno", () => {
-  it("toglie le partite finite da più di 7 giorni, tranne l'ultima di una squadra", async () => {
+  it("toglie le partite di più di 7 giorni fa, tranne l'ultima o la prossima di una squadra", async () => {
     const t = await setup([]);
     vi.setSystemTime(Date.parse("2026-11-16T12:00Z"));
     const inter = (await team(t, INTER))!;
     const comoInter = (await match(t, COMO_INTER))!;
-    await t.run((ctx) => ctx.db.patch("footballTeams", inter._id, { lastMatchId: comoInter._id }));
+    const fioJuv = (await match(t, FIO_JUV))!;
     await t.run(async (ctx) => {
-      for (const m of await ctx.db.query("footballMatches").collect()) await ctx.db.patch("footballMatches", m._id, { state: "post" });
+      // Tutte le squadre perdono la prossima partita, tranne la Juventus; l'Inter tiene Como-Inter come ultima.
+      for (const row of await ctx.db.query("footballTeams").collect()) await ctx.db.patch("footballTeams", row._id, { nextMatchId: undefined });
+      await ctx.db.patch("footballTeams", inter._id, { lastMatchId: comoInter._id });
+      const juve = await ctx.db.query("footballTeams").withIndex("by_teamId", (q) => q.eq("teamId", JUVENTUS)).unique();
+      await ctx.db.patch("footballTeams", juve!._id, { nextMatchId: fioJuv._id });
+      // Le altre restano come le ha lasciate ESPN: finite, in corso o mai iniziate.
     });
 
     await t.mutation(internal.footballMatches.cleanup, {});
 
     const left = await t.run((ctx) => ctx.db.query("footballMatches").collect());
-    expect(left.map((m) => m.eventId)).toEqual([COMO_INTER]);
+    expect(left.map((m) => m.eventId).sort()).toEqual([FIO_JUV, COMO_INTER].sort());
   });
 });
 

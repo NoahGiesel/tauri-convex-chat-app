@@ -27,7 +27,6 @@ export type ChipState =
   | { kind: "postponed"; kickoff: number }
   | { kind: "cancelled"; kickoff: number };
 
-const calledOff = (m: PinMatch) => /POSTPONED/.test(m.statusName) || /CANCEL/.test(m.statusName);
 
 function winnerOf(score: Score): "home" | "away" | null {
   return score.home > score.away ? "home" : score.away > score.home ? "away" : null;
@@ -54,17 +53,23 @@ export function chipState(m: PinMatch): ChipState {
   return { kind: "finished", score, ending: /AET/.test(name) ? "aet" : "ft", shootout: null, winner: winnerOf(score) };
 }
 
-/** Le 6 del mattino (ora locale) del giorno dopo la partita. */
+/** Più o meno quando finisce una partita: serve a trovare la mattina dopo. */
+const MATCH_LENGTH_MS = 2 * HOUR;
+
+/** Le prime 6 del mattino (ora locale) dopo la fine della partita: la mattina dopo, anche per una partita dopo mezzanotte. */
 function sixNextMorning(kickoff: number): number {
-  const d = new Date(kickoff);
-  d.setDate(d.getDate() + 1);
+  const end = kickoff + MATCH_LENGTH_MS;
+  const d = new Date(end);
   d.setHours(6, 0, 0, 0);
+  if (d.getTime() <= end) d.setDate(d.getDate() + 1);
   return d.getTime();
 }
 
 /** Una partita già chiusa resta nel chip: le rinviate fino a 3 ore dopo il calcio d'inizio, le altre fino alle 6 del giorno dopo. */
 function stillShown(m: PinMatch, now: number): boolean {
-  return now < (calledOff(m) ? m.kickoff + CALLED_OFF_SHOWN_MS : sixNextMorning(m.kickoff));
+  const kind = chipState(m).kind;
+  const calledOff = kind === "postponed" || kind === "cancelled";
+  return now < (calledOff ? m.kickoff + CALLED_OFF_SHOWN_MS : sixNextMorning(m.kickoff));
 }
 
 /**

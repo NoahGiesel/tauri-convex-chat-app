@@ -33,6 +33,12 @@ describe("quale partita mostra il chip", () => {
     expect(shownMatch(pin, at(9, 6))?.eventId).toBe("next");
   });
 
+  it("una partita dopo mezzanotte resta fino alle 6 di quella stessa mattina", () => {
+    const pin = { lastMatch: finished({ kickoff: at(9, 2) }), nextMatch: match({ eventId: "next", kickoff: at(15, 18) }) };
+    expect(shownMatch(pin, at(9, 5, 59))?.eventId).toBe("last");
+    expect(shownMatch(pin, at(9, 6))?.eventId).toBe("next");
+  });
+
   it("la prossima prende il posto della finita appena è a meno di 60 minuti", () => {
     const pin = { lastMatch: finished(), nextMatch: match({ eventId: "next", kickoff: at(9, 1) }) };
     expect(shownMatch(pin, at(8, 23, 59))?.eventId).toBe("last");

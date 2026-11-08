@@ -181,11 +181,12 @@ export function parseScoreboard(json: unknown, league: string): ProviderMatch[] 
 }
 
 /**
- * Il giorno ESPN di un calcio d'inizio, come `YYYYMMDD`. ESPN divide i giorni sull'ora della costa est
- * degli Stati Uniti: qui si usa UTC-5 fisso, che basta perché nessuna partita coperta inizia tra le 4 e le 6 UTC.
+ * I giorni ESPN (`YYYYMMDD`) in cui può stare un calcio d'inizio. ESPN divide i giorni sull'ora della costa est
+ * degli Stati Uniti, UTC-5 d'inverno e UTC-4 d'estate: se le due danno giorni diversi si chiedono entrambi.
  */
-export function espnDay(kickoff: number): string {
-  return new Date(kickoff - 5 * 3_600_000).toISOString().slice(0, 10).replaceAll("-", "");
+export function espnDays(kickoff: number): string[] {
+  const day = (offsetHours: number) => new Date(kickoff - offsetHours * 3_600_000).toISOString().slice(0, 10).replaceAll("-", "");
+  return [...new Set([day(4), day(5)])];
 }
 
 /** Le partite di una competizione in un giorno ESPN (`YYYYMMDD`). */

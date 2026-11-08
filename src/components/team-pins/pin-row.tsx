@@ -111,14 +111,14 @@ function StateLabel({ state, when, time }: { state: ChipState; when: string; tim
     case "shootout":
       return (
         <span className="font-bold text-red-500 tabular-nums">
-          {t("teamPins.pensLive")} {state.shootout.home}–{state.shootout.away}
+          · {t("teamPins.pensLive")} {state.shootout.home}–{state.shootout.away}
         </span>
       );
     case "finished":
       if (state.ending === "pens" && state.shootout) {
         return (
           <span className="tabular-nums">
-            {state.shootout.home}–{state.shootout.away} {t("teamPins.pens")}
+            · {state.shootout.home}–{state.shootout.away} {t("teamPins.pens")}
           </span>
         );
       }
@@ -151,7 +151,6 @@ function ChipFrame({ chip, title, stateKind, children }: { chip: TeamChip; title
     </div>
   );
 }
-
 
 /** La X del chip. Un derby tiene due pin, quindi chiede quale togliere. */
 function RemoveButton({ pins }: { pins: TeamPin[] }) {

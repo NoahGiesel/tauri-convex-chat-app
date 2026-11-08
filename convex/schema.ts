@@ -358,7 +358,8 @@ export default defineSchema({
   })
     .index("by_teamId", ["teamId"])
     .index("by_listed", ["listed"])
-    .index("by_lastMatchId", ["lastMatchId"]),
+    .index("by_lastMatchId", ["lastMatchId"])
+    .index("by_nextMatchId", ["nextMatchId"]),
 
   /** Le squadre di calcio pinnate in una chat diretta, al massimo 3 per chat (docs/TEAM-PINS-SPEC.md). */
   teamPins: defineTable({
