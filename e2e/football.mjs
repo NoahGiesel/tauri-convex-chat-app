@@ -32,12 +32,23 @@ export const TEAMS = {
  * Every match a run knows, by name. `home` and `away` are keys of TEAMS.
  * The FT, postponed and unavailable ones are each a pinned team's last or next match, which the Seed writes itself.
  */
+/**
+ * The finished match's kick-off. Its chip shows until the first 6 a.m. (local) after kick-off + 2 h. Normally that
+ * is 100 minutes ago, and the next 6 a.m. is over an hour away. Within the last hour before 6 a.m., kick-off + 2 h
+ * goes just past it, so the chip shows until the 6 a.m. after.
+ */
+function finishedKickoff(now) {
+  const sixAm = new Date(now);
+  sixAm.setHours(6, 0, 0, 0);
+  if (sixAm.getTime() <= now) sixAm.setDate(sixAm.getDate() + 1);
+  return sixAm.getTime() - now > HOUR ? now - 100 * MINUTE : sixAm.getTime() - 2 * HOUR + MINUTE;
+}
+
 export function footballMatches(now) {
   return {
     live: { eventId: '900001', home: 'inter', away: 'como', kickoff: now - 35 * MINUTE, state: 'in', status: 'STATUS_FIRST_HALF', score: [1, 0], clock: "35'" },
     derby: { eventId: '900002', home: 'milan', away: 'juventus', kickoff: now + 2 * DAY, state: 'pre', status: 'STATUS_SCHEDULED' },
-    // Its kick-off is under 2 hours ago, so the chip shows it until the next 6 a.m. for longer than a run takes.
-    finished: { eventId: '900003', home: 'napoli', away: 'lazio', kickoff: now - 100 * MINUTE, state: 'post', status: 'STATUS_FULL_TIME', score: [1, 1] },
+    finished: { eventId: '900003', home: 'napoli', away: 'lazio', kickoff: finishedKickoff(now), state: 'post', status: 'STATUS_FULL_TIME', score: [1, 1] },
     // A closed match shows until kick-off + 3 hours.
     postponed: { eventId: '900004', home: 'arsenal', away: 'chelsea', kickoff: now - 30 * MINUTE, state: 'post', status: 'STATUS_POSTPONED', score: [0, 0] },
     unavailable: { eventId: '900005', home: 'realMadrid', away: 'barcelona', kickoff: now - 40 * MINUTE, state: 'in', status: 'STATUS_FIRST_HALF', score: [2, 2], clock: "40'" },

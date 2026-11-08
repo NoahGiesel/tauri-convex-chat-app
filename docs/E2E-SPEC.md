@@ -61,6 +61,8 @@ These are the only production files the harness needs. The prototype made all of
 | `src/hooks/use-updater.tsx` | Add `import.meta.env.VITE_E2E` to the early return of the automatic check |
 | `convex/r2.ts` | Use an optional `R2_ENDPOINT` in place of `https://${host}` |
 | `src/lib/giphy.ts` | Use an optional `VITE_GIPHY_API_URL` |
+| `convex/espn.ts` | Use an optional `ESPN_BASE_URL` |
+| `src/components/team-pins/match-drawer.tsx` | `data-details` says whether the drawer's details query has answered |
 | `pnpm-workspace.yaml` | New file, `allowBuilds` set to `false` for `esbuild`, `edgedriver` and `geckodriver` |
 | `src/components/conversation-view.tsx` | Move `dayLabel` out into a pure function that takes the current time |
 | Components | Add `data-testid` where no accessible name exists |
@@ -229,10 +231,10 @@ The `football` Seed holds these chats. Carol, Dave and Erin have no UI.
 
 - **Built the real way where it can be.** The team index is the real `footballTeams:rebuildIndex`, against the stub. Alice adds every pin with the public `teamPins.add`, so each has its System line, and each pin's next-match lookup reaches the stub. The Seed waits until no scheduled function is left, through the stage's `e2eSeed:pendingJobs`, so no lookup lands after a Reset.
 - **The internal fallback writes the rest.** No lookup gives a team's last match, and no public function makes an old score. So `e2eSeed:seedFootballMatches` writes Napoli's finished match, Arsenal's postponed one, and Real Madrid's live match with a `fetchedAt` 10 minutes old. It reads the canned events with the app's own parser.
-- **Kick-offs are relative to now.** The stub fixes `now` when it starts, and the Seed when it is built. The finished match kicked off 100 minutes before, so its chip shows until the next 6 a.m. The postponed match kicked off 30 minutes before, so it shows until 2.5 hours after the Seed.
+- **Kick-offs are relative to now.** The stub fixes `now` when it starts, and the Seed when it is built. The finished match's chip shows until the first 6 a.m. after kick-off + 2 hours. So it kicked off 100 minutes before, or, within the hour before 6 a.m., just under 2 hours before that 6 a.m., so the chip shows until the next one. The postponed match kicked off 30 minutes before, so it shows until 2.5 hours after the Seed.
 - **The live score is refreshed after each Reset.** The snapshot's score is minutes old when a test starts, which counts as unavailable after 2 minutes. So the Fixture runs `footballMatches:tick`, the poll the backend's cron runs every 30 s. The stub answers it, and the poll also stores the live match's details for the drawer. A test waits for a fresh chip before it opens the drawer.
 - **The unavailable match stays unavailable.** Its league's scoreboard and its teams' next-match lookups answer 503, so neither the tick nor a lookup can refresh it.
-- **A chip is found by a team's abbreviation,** which the stub's canned data gives for each team name, and read by its `data-state`. An unavailable chip carries the warning as its tooltip. The drawer has `data-testid="match-drawer"`, and its sections are its headings.
+- **A chip is found by a team's abbreviation,** which the stub's canned data gives for each team name, and read by its `data-state`. An unavailable chip carries the warning as its tooltip. The drawer has `data-testid="match-drawer"`, and its sections are its headings. Its `data-details` leaves `loading` once its details query has answered, so a check that a drawer before kick-off has no sections waits for that first.
 
 ## Driving the app
 

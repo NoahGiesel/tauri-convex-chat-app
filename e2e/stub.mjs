@@ -8,7 +8,7 @@ import { STUB_FILES, STUB_LOG, STUB_PORT } from './config.mjs';
 import { ESPN_PREFIX, UNAVAILABLE_LEAGUE, espnLiveSummary, espnScoreboard, espnTeamEndpoint, espnTeamList, footballMatches, TEAMS } from './football.mjs';
 
 /** What the `football` Seed and the Fixtures read, from the same canned data the stub serves. */
-export { espnEvent, footballMatches, LIVE_DETAILS, SEEDED_MATCHES, SEEDED_PINS, TEAMS as FOOTBALL_TEAMS } from './football.mjs';
+export { ESPN_PREFIX, espnEvent, footballMatches, LIVE_DETAILS, SEEDED_MATCHES, SEEDED_PINS, TEAMS as FOOTBALL_TEAMS, UNAVAILABLE_LEAGUE } from './football.mjs';
 
 export const STUB_READY = 'stub ready';
 

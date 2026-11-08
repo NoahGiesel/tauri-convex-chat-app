@@ -83,6 +83,7 @@ export function MatchDrawer({
       role="dialog"
       aria-label={t("teamPins.details")}
       data-testid="match-drawer"
+      data-details={details === undefined ? "loading" : details ? "loaded" : "none"}
       className="fixed top-0 right-0 z-40 flex h-full w-[380px] max-w-full flex-col border-l border-app-border-strong bg-app-panel shadow-2xl"
     >
       <header className="relative shrink-0 border-b border-app-border px-5 pt-4 pb-4">

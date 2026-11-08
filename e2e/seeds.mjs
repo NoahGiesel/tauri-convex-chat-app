@@ -15,6 +15,7 @@ import {
   SESSIONS_FILE,
   SITE_URL,
   SNAPSHOTS,
+  POLL_MS,
   TEST_LIMIT_MS,
   USERS,
 } from './config.mjs';
@@ -138,6 +139,7 @@ async function untilNoPendingJobs() {
   const end = Date.now() + TEST_LIMIT_MS;
   while (Number(convexInStage(['run', 'e2eSeed:pendingJobs']).stdout.trim()) > 0) {
     if (Date.now() > end) throw new Error('the football Seed still has scheduled functions running');
+    await new Promise((resolve) => setTimeout(resolve, POLL_MS));
   }
 }
 

@@ -8,8 +8,7 @@ import { buildEnv, commandEnv, confirmStage, findBusyPorts, macVersionProblem, p
 import { timingReport } from './report.mjs';
 import { buildSeeds } from './seeds.mjs';
 import { convexInStage, prepareStage, startBackend } from './stage.mjs';
-import { ESPN_PREFIX } from './football.mjs';
-import { STUB_READY } from './stub.mjs';
+import { ESPN_PREFIX, STUB_READY } from './stub.mjs';
 
 let grep;
 try {

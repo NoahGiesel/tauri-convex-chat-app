@@ -136,7 +136,6 @@ const PREVIEW_CARD = '//*[@data-testid="message"]//a[@href][not(normalize-space(
 /** By the name before the extension: a photo is sent re-encoded, and may come back as a .webp. */
 const photo = (name) => `//img[starts-with(@alt, "${name}.")]`;
 const sentPhoto = (name) => `//*[@data-testid="message"]${photo(name)}`;
-/** A file from `e2e/assets`, ready to hand to the page, under its own name or another. */
 const PICKER = '//*[@data-testid="calcio-picker"]';
 const PICKER_SEARCH = `${PICKER}//input[@aria-label="${en['teamPins.searchPlaceholder']}"]`;
 const pickerTeam = (team) => `${PICKER}//button[@role="option"][.//span[normalize-space(.)="${team}"]]`;
@@ -152,10 +151,14 @@ const chip = (team) => `//*[@data-testid="team-pin-chip"][.//span[normalize-spac
 const UNAVAILABLE = textBefore('teamPins.unavailable');
 const chipIn = (team, state) => `${chip(team)}[@data-state="${state}"][not(starts-with(@title, "${UNAVAILABLE}"))]`;
 const MATCH_DRAWER = '//*[@data-testid="match-drawer"]';
+/** Its details query has answered, with details or with none. */
+const SETTLED_DRAWER = `${MATCH_DRAWER}[@data-details!="loading"]`;
+const unpinLabel = (team) => filled('teamPins.unpin', { team });
 const drawerSection = (key) => `${MATCH_DRAWER}//h3[normalize-space(.)="${en[key]}"]`;
 const DRAWER_SECTIONS = { Events: 'teamPins.events', Lineups: 'teamPins.lineups', Stats: 'teamPins.stats' };
 const commandOffered = (command) => `//*[@role="listbox"]//button[@role="option"][.//strong[normalize-space(.)="/${command}:"]]`;
 
+/** A file from `e2e/assets`, ready to hand to the page, under its own name or another. */
 const asset = (file, name = file) => ({ name, type: ASSET_TYPES[path.extname(file)], base64: fs.readFileSync(path.join(ASSETS, file)).toString('base64') });
 
 /** The second element comes after the first in the page: lower down, or to the right of it in a row. */
@@ -834,11 +837,11 @@ function drivenUser(name) {
         throw new Error(`${name} sees ${chips} chips for ${team}, not one shared with ${opponent}`);
       }
     },
-    unpin: (team) => press(`${chip(team)}//button[@aria-label="${en['teamPins.unpin'].replace('{team}', team)}"]`),
-    /** A derby's chip holds two pins, so its X asks which one goes. */
-    async seesUnpinChoices(team, teams) {
+    unpin: (team) => press(`${chip(team)}//button[@aria-label="${unpinLabel(team)}"]`),
+    /** A derby's chip holds two pins, so its X asks which one goes. This presses the X and reads the choices. */
+    async asksWhichToUnpin(team, teams) {
       await press(`${chip(team)}//button[@aria-label="${en['teamPins.unpinWhich']}"]`);
-      const expected = teams.map((t) => en['teamPins.unpin'].replace('{team}', t)).join(', ');
+      const expected = teams.map(unpinLabel).join(', ');
       const offered = async () => (await b.$$('//*[@role="menu"]//*[@role="menuitem"]').map((item) => item.getText())).join(', ');
       await waitUntilTrue(async () => (await offered()) === expected, `${name} was not offered ${expected} to unpin`);
     },
@@ -855,9 +858,10 @@ function drivenUser(name) {
     async seesDrawerSections(titles) {
       for (const title of titles) await waitUntilShown(drawerSection(DRAWER_SECTIONS[title]), `${name} did not see ${title} in the match drawer`);
     },
-    /** Before kick-off the drawer has its header and nothing else. The names prove it rendered first. */
+    /** Before kick-off the drawer has its header and nothing else. Checked once its details query has answered. */
     async seesOnlyDrawerHeader(...shortNames) {
       for (const shortName of shortNames) await user.seesInDrawer(shortName);
+      await waitUntilExists(SETTLED_DRAWER, `${name} did not see the match drawer finish loading`);
       for (const key of Object.values(DRAWER_SECTIONS)) {
         if (await b.$(drawerSection(key)).isExisting()) throw new Error(`${name} sees ${en[key]} in a drawer before kick-off`);
       }
@@ -866,7 +870,7 @@ function drivenUser(name) {
     typeInComposer: (text) => b.$(COMPOSER).setValue(text),
     seesCommandOffered: (command) => waitUntilShown(commandOffered(command), `${name} was not offered /${command}`),
     /** Only after `seesCommandOffered` has proved the list rendered. */
-    async isNotOfferedCommand(command) {
+    async doesNotSeeCommandOffered(command) {
       if (await b.$(commandOffered(command)).isExisting()) throw new Error(`${name} was offered /${command}`);
     },
 

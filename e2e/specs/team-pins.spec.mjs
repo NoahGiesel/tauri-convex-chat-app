@@ -92,7 +92,7 @@ describe('Team pins', () => {
 
     await alice.seesOneChipFor('AC Milan', 'Juventus');
 
-    await alice.seesUnpinChoices('AC Milan', ['AC Milan', 'Juventus']);
+    await alice.asksWhichToUnpin('AC Milan', ['AC Milan', 'Juventus']);
   });
 
   it('a group chat does not offer /calcio', async () => {
@@ -104,6 +104,6 @@ describe('Team pins', () => {
     await alice.typeInComposer('/c');
 
     await alice.seesCommandOffered('code');
-    await alice.isNotOfferedCommand('calcio');
+    await alice.doesNotSeeCommandOffered('calcio');
   });
 });

@@ -4,8 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 import * as espn from '../convex/espn.ts';
-import { ESPN_PREFIX, UNAVAILABLE_LEAGUE } from './football.mjs';
-import { FOOTBALL_TEAMS, LIVE_DETAILS, readStubLog, startStub } from './stub.mjs';
+import { ESPN_PREFIX, FOOTBALL_TEAMS, LIVE_DETAILS, readStubLog, startStub, UNAVAILABLE_LEAGUE } from './stub.mjs';
 
 const APP = 'http://tauri.localhost';
 let dir;
@@ -165,4 +164,3 @@ describe('the stub as ESPN', () => {
     assert.ok((await espn.fetchTeamList(UNAVAILABLE_LEAGUE)).length > 0); // the index still lists its teams
   });
 });
-
