@@ -8,7 +8,7 @@ import { buildEnv, commandEnv, confirmStage, findBusyPorts, macVersionProblem, p
 import { timingReport } from './report.mjs';
 import { buildSeeds } from './seeds.mjs';
 import { convexInStage, prepareStage, startBackend } from './stage.mjs';
-import { STUB_READY } from './stub.mjs';
+import { ESPN_PREFIX, STUB_READY } from './stub.mjs';
 
 let grep;
 try {
@@ -161,6 +161,8 @@ async function startTestBackend() {
     'R2_SECRET_ACCESS_KEY=e2e',
     'R2_BUCKET=e2e',
     `R2_ENDPOINT=${STUB_URL}`,
+    // Also keeps the Test backend's own crons off live ESPN. A release stops if production sets it.
+    `ESPN_BASE_URL=${STUB_URL}${ESPN_PREFIX}`,
   ].join('\n'));
   convexInStage(['env', 'set', '--from-file', 'e2e.env']);
   await Promise.race([waitFor('auth routes', async () => (await fetch(`${SITE_URL}/api/auth/ok`)).ok), backend.died]);

@@ -3,9 +3,25 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { getSetCookie } from '@convex-dev/better-auth/client/plugins';
 import { api } from '../convex/_generated/api.js';
-import { APP_ORIGIN, ASSET_TYPES, ASSETS, EXPIRED_INVITE_TOKEN, HISTORY_MESSAGES, MEDIA_SEED, PASSWORD, SESSIONS_FILE, SITE_URL, SNAPSHOTS, USERS } from './config.mjs';
+import {
+  APP_ORIGIN,
+  ASSET_TYPES,
+  ASSETS,
+  EXPIRED_INVITE_TOKEN,
+  FOOTBALL_FRIENDS,
+  HISTORY_MESSAGES,
+  MEDIA_SEED,
+  PASSWORD,
+  SESSIONS_FILE,
+  SITE_URL,
+  SNAPSHOTS,
+  POLL_MS,
+  TEST_LIMIT_MS,
+  USERS,
+} from './config.mjs';
 import { clientFor } from './session-client.mjs';
 import { convexInStage, importSeed } from './stage.mjs';
+import { espnEvent, FOOTBALL_TEAMS, footballMatches, SEEDED_MATCHES, SEEDED_PINS } from './stub.mjs';
 
 /** Carol's last sign of life in the `groups` Seed. Far past the 2 minutes that count as online, so "Last online" reads the same all run. */
 const CAROL_AWAY_MS = 3 * 24 * 60 * 60_000;
@@ -118,6 +134,48 @@ async function buildMedia({ alice }, conversationId) {
   snapshot('media', { withFiles: true });
 }
 
+/** Waits until no scheduled function is left, such as the next-match lookups a pin starts. Each look is a CLI call. */
+async function untilNoPendingJobs() {
+  const end = Date.now() + TEST_LIMIT_MS;
+  while (Number(convexInStage(['run', 'e2eSeed:pendingJobs']).stdout.trim()) > 0) {
+    if (Date.now() > end) throw new Error('the football Seed still has scheduled functions running');
+    await new Promise((resolve) => setTimeout(resolve, POLL_MS));
+  }
+}
+
+/**
+ * Branches from `groups`, which has Weekend for the group-chat scenario and Alice's chat with Carol. Dave and Erin
+ * join here. The index and the pins go the real way, through the stub; the matches no lookup gives come from the stage.
+ */
+async function buildFootball(users) {
+  importSeed('groups');
+  const friends = {};
+  for (const [key, user] of Object.entries(FOOTBALL_FRIENDS)) friends[key] = await signUp(user);
+  convexInStage(['run', 'e2eSeed:fixAvatars']);
+  const carolChat = (await users.alice.client.query(api.conversations.list, {})).find((c) => c.title === USERS.carol.name);
+  const chats = { carol: carolChat._id };
+  for (const key of Object.keys(FOOTBALL_FRIENDS)) chats[key] = await befriend(users.alice, friends[key]);
+
+  convexInStage(['run', 'footballTeams:rebuildIndex']);
+  for (const [friend, teams] of Object.entries(SEEDED_PINS)) {
+    for (const team of teams) await users.alice.client.mutation(api.teamPins.add, { conversationId: chats[friend], teamId: FOOTBALL_TEAMS[team].id });
+  }
+  await untilNoPendingJobs();
+
+  const now = Date.now();
+  const matches = footballMatches(now);
+  const seeded = (name) => ({
+    league: FOOTBALL_TEAMS[matches[name].home].league,
+    event: espnEvent(matches[name]),
+    fetchedAt: now - (SEEDED_MATCHES.staleMs[name] ?? 0),
+  });
+  const pointers = (byTeam) => Object.entries(byTeam).map(([team, name]) => ({ teamId: FOOTBALL_TEAMS[team].id, eventId: matches[name].eventId }));
+  const names = [...Object.values(SEEDED_MATCHES.last), ...Object.values(SEEDED_MATCHES.next)];
+  const seed = { matches: names.map(seeded), last: pointers(SEEDED_MATCHES.last), next: pointers(SEEDED_MATCHES.next) };
+  convexInStage(['run', 'e2eSeed:seedFootballMatches', JSON.stringify(seed)]);
+  snapshot('football');
+}
+
 export async function buildSeeds() {
   fs.mkdirSync(SNAPSHOTS, { recursive: true });
   const users = await buildBase();
@@ -126,6 +184,7 @@ export async function buildSeeds() {
   await buildHistory(users, directChat);
   await buildGroups(users);
   await buildMedia(users, directChat);
+  await buildFootball(users);
 
   const sessions = Object.fromEntries(Object.entries(users).map(([key, { session }]) => [key, session]));
   fs.writeFileSync(SESSIONS_FILE, JSON.stringify(sessions));

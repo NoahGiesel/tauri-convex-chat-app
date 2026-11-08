@@ -70,3 +70,22 @@ export function checkRelease(root) {
 
   return problems;
 }
+
+/** Backend variables that point Convex at the E2E stub. Production must set none of them. */
+const STUB_ONLY_BACKEND_VARS = ['ESPN_BASE_URL'];
+
+/**
+ * Returns what is wrong with the production backend. release.yml cannot see Convex's variables, so this runs
+ * before `npx convex deploy`. `getVar(name)` runs `convex env get <name> --prod` and returns spawnSync's result:
+ * an unset variable prints nothing and exits 0.
+ */
+export function checkProductionBackend(getVar) {
+  const problems = [];
+  for (const name of STUB_ONLY_BACKEND_VARS) {
+    const res = getVar(name);
+    // A guard that cannot look must not pass.
+    if (res.error || res.status !== 0) problems.push(`could not read ${name} on production: ${(res.error?.message ?? res.stderr ?? '').trim()}`);
+    else if (res.stdout.trim()) problems.push(`production sets ${name}, which points the backend at the E2E stub`);
+  }
+  return problems;
+}
