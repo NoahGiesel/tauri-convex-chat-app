@@ -28,9 +28,17 @@ scripts/hc-worker.sh <worker> <folder>                  # reviewer, explorer, re
 scripts/hc-worker.sh <worker> <folder> --model sonnet   # implementer, merger, review fix-up
 ```
 
-Workers that write code run on Sonnet, the user's choice for implementation; the others keep the user's default model.
+Workers that write code run on Claude Code with Sonnet by default, the user's choice for implementation; the others keep the user's default model.
 
-It starts `claude --permission-mode auto` on the task file and splits the worker into your tab, where the user wants to watch it: the first worker to the right of your pane, each later one stacked below the previous one, the column kept in equal heights. It prints `<worker>: <address>`. The task rides in claude's argv, so it is the session's first message: no `hc send` to a booting agent. Use this argv form: hc templates break on Windows (0.1.19 runs them through `sh`). Launch every worker the skill runs in parallel back to back, then wait. Done when each `run` returns an address.
+When the user asks to implement with OpenCode, launch the workers that write code as OpenCode sessions instead, with the model the user names (`provider/model`, from `opencode models`):
+
+```sh
+scripts/hc-worker.sh <worker> <folder> --opencode opencode/claude-sonnet-5-5
+```
+
+Without a model, OpenCode uses its own default. The script writes the model to `$root/.hc/tasks/<worker>.opencode.json`. The worker reads the same task file and reports the same way.
+
+It starts `claude --permission-mode auto` (or `opencode --auto`) on the task file and splits the worker into your tab, where the user wants to watch it: the first worker to the right of your pane, each later one stacked below the previous one, the column kept in equal heights. It prints `<worker>: <address>`. The task rides in claude's argv, so it is the session's first message: no `hc send` to a booting agent. Use this argv form: hc templates break on Windows (0.1.19 runs them through `sh`). Launch every worker the skill runs in parallel back to back, then wait. Done when each `run` returns an address.
 
 ## 4. Wait
 
@@ -53,4 +61,4 @@ Merge a finished implementer yourself, on the integration branch in `$root`: `gi
 
 ## 6. Clean up
 
-Once you accept a worker's result: `hc kill <worker>; hc rm <worker>`. After a worktree branch is merged (or a research branch pushed): `git worktree remove .claude/worktrees/<worker>`, then `git branch -d <branch>` for merged implementer branches. Delete its `.hc/tasks/` file. Done when `hc ls` and `git worktree list` show none of your workers.
+Once you accept a worker's result: `hc kill <worker>; hc rm <worker>`. After a worktree branch is merged (or a research branch pushed): `git worktree remove .claude/worktrees/<worker>`, then `git branch -d <branch>` for merged implementer branches. Delete its `.hc/tasks/` files. Done when `hc ls` and `git worktree list` show none of your workers.
