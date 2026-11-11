@@ -35,7 +35,7 @@ Read `convex/_generated/ai/guidelines.md` before writing Convex code.
 **Out of scope:**
 - Other sports and group chats.
 - Goal notifications and any other alert beyond the Match bar.
-- Standings, player ratings and heatmaps.
+- Player ratings and heatmaps. Standings were out of scope here too; the [Match drawer spec](MATCH-DRAWER-SPEC.md) brings them in.
 - Paid APIs, and a second data provider in the first version (see [Data source](#data-source)).
 
 ## Rules
@@ -136,13 +136,7 @@ A pure client function decides each chip's state from the team's last and next m
 
 ### Drawer
 
-- **Clicking a chip opens a drawer on the right**, over the chat, without moving it. It closes with its X or a click outside.
-- From top to bottom:
-  - a header: competition, venue, crests, score and state. It spells out extra time and penalties ("After extra time", "Argentina win 4–2 on penalties").
-  - **Events:** goals with scorer, assist and minute, own goals, cards, substitutions.
-  - **Lineups:** formation, starters, bench.
-  - **Stats.** Each row shows the home value, then the label, then the away value, with a split bar underneath. The rows are possession, shots (on target + off target + blocked), shots on target, corners, fouls and offsides.
-- **A section without data is not rendered.** Before the lineups arrive, only the header shows.
+Clicking a chip opens the Match drawer. Its layout, closing rules and tabs are specified in the [Match drawer spec](MATCH-DRAWER-SPEC.md), which replaces this section.
 
 ### Picker
 
