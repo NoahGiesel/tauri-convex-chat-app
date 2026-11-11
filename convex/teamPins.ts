@@ -46,6 +46,8 @@ export const add = mutation({
     await insertSystemLine(ctx, args.conversationId, { action: "pinned", profileId: me._id, teamName: team.name });
     // La competizione serve a trovare la partita in corso, se il pin arriva a partita iniziata.
     await ctx.scheduler.runAfter(0, internal.footballMatches.refreshNextMatch, { teamId: args.teamId, league: competitionLeague(team) });
+    // I risultati e le partite in programma alimentano il tab Partite del drawer.
+    await ctx.scheduler.runAfter(0, internal.footballTeamSchedules.refresh, { teamId: args.teamId });
     return pinId;
   },
 });

@@ -1,0 +1,1191 @@
+{
+ "season": {
+  "year": 2026
+ },
+ "requestedSeason": {
+  "year": 2026
+ },
+ "team": {
+  "id": "110",
+  "isNational": false
+ },
+ "events": [
+  {
+   "id": "401874808",
+   "date": "2026-11-08T17:00Z",
+   "season": {
+    "year": 2026,
+    "displayName": "2026-27 Italian Serie A"
+   },
+   "seasonType": {
+    "name": "2026-27 Italian Serie A"
+   },
+   "league": {
+    "slug": "ita.1",
+    "name": "Italian Serie A",
+    "abbreviation": "Serie A"
+   },
+   "competitions": [
+    {
+     "status": {
+      "type": {
+       "name": "STATUS_FULL_TIME",
+       "state": "post"
+      }
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": true,
+       "score": {
+        "value": 2
+       },
+       "team": {
+        "id": "110",
+        "abbreviation": "INT",
+        "displayName": "Internazionale",
+        "shortDisplayName": "Inter Milan",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/110.png"
+       }
+      },
+      {
+       "homeAway": "away",
+       "winner": false,
+       "score": {
+        "value": 0
+       },
+       "team": {
+        "id": "2572",
+        "abbreviation": "COMO",
+        "displayName": "Como",
+        "shortDisplayName": "Como",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/2572.png"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401915307",
+   "date": "2026-11-03T20:00Z",
+   "season": {
+    "year": 2026,
+    "displayName": "2026-27 UEFA Champions League"
+   },
+   "seasonType": {
+    "name": "League Phase"
+   },
+   "league": {
+    "slug": "uefa.champions",
+    "name": "UEFA Champions League",
+    "abbreviation": "UEFA Champions League"
+   },
+   "competitions": [
+    {
+     "status": {
+      "type": {
+       "name": "STATUS_FULL_TIME",
+       "state": "post"
+      }
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": false,
+       "score": {
+        "value": 0
+       },
+       "team": {
+        "id": "142",
+        "abbreviation": "FEY",
+        "displayName": "Feyenoord Rotterdam",
+        "shortDisplayName": "Feyenoord",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/142.png"
+       }
+      },
+      {
+       "homeAway": "away",
+       "winner": true,
+       "score": {
+        "value": 3
+       },
+       "team": {
+        "id": "110",
+        "abbreviation": "INT",
+        "displayName": "Internazionale",
+        "shortDisplayName": "Inter Milan",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/110.png"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401874795",
+   "date": "2026-10-31T19:45Z",
+   "season": {
+    "year": 2026,
+    "displayName": "2026-27 Italian Serie A"
+   },
+   "seasonType": {
+    "name": "2026-27 Italian Serie A"
+   },
+   "league": {
+    "slug": "ita.1",
+    "name": "Italian Serie A",
+    "abbreviation": "Serie A"
+   },
+   "competitions": [
+    {
+     "status": {
+      "type": {
+       "name": "STATUS_FULL_TIME",
+       "state": "post"
+      }
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": true,
+       "score": {
+        "value": 3
+       },
+       "team": {
+        "id": "103",
+        "abbreviation": "MIL",
+        "displayName": "AC Milan",
+        "shortDisplayName": "Milan",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/103.png"
+       }
+      },
+      {
+       "homeAway": "away",
+       "winner": false,
+       "score": {
+        "value": 1
+       },
+       "team": {
+        "id": "110",
+        "abbreviation": "INT",
+        "displayName": "Internazionale",
+        "shortDisplayName": "Inter Milan",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/110.png"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401874773",
+   "date": "2026-10-28T17:30Z",
+   "season": {
+    "year": 2026,
+    "displayName": "2026-27 Italian Serie A"
+   },
+   "seasonType": {
+    "name": "2026-27 Italian Serie A"
+   },
+   "league": {
+    "slug": "ita.1",
+    "name": "Italian Serie A",
+    "abbreviation": "Serie A"
+   },
+   "competitions": [
+    {
+     "status": {
+      "type": {
+       "name": "STATUS_FULL_TIME",
+       "state": "post"
+      }
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": false,
+       "score": {
+        "value": 0
+       },
+       "team": {
+        "id": "17530",
+        "abbreviation": "VEN",
+        "displayName": "Venezia",
+        "shortDisplayName": "Venezia",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/17530.png"
+       }
+      },
+      {
+       "homeAway": "away",
+       "winner": true,
+       "score": {
+        "value": 2
+       },
+       "team": {
+        "id": "110",
+        "abbreviation": "INT",
+        "displayName": "Internazionale",
+        "shortDisplayName": "Inter Milan",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/110.png"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401875036",
+   "date": "2026-10-25T11:30Z",
+   "season": {
+    "year": 2026,
+    "displayName": "2026-27 Italian Serie A"
+   },
+   "seasonType": {
+    "name": "2026-27 Italian Serie A"
+   },
+   "league": {
+    "slug": "ita.1",
+    "name": "Italian Serie A",
+    "abbreviation": "Serie A"
+   },
+   "competitions": [
+    {
+     "status": {
+      "type": {
+       "name": "STATUS_FULL_TIME",
+       "state": "post"
+      }
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": true,
+       "score": {
+        "value": 2
+       },
+       "team": {
+        "id": "110",
+        "abbreviation": "INT",
+        "displayName": "Internazionale",
+        "shortDisplayName": "Inter Milan",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/110.png"
+       }
+      },
+      {
+       "homeAway": "away",
+       "winner": false,
+       "score": {
+        "value": 1
+       },
+       "team": {
+        "id": "109",
+        "abbreviation": "FIO",
+        "displayName": "Fiorentina",
+        "shortDisplayName": "Fiorentina",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/109.png"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401915390",
+   "date": "2026-10-21T19:00Z",
+   "season": {
+    "year": 2026,
+    "displayName": "2026-27 UEFA Champions League"
+   },
+   "seasonType": {
+    "name": "League Phase"
+   },
+   "league": {
+    "slug": "uefa.champions",
+    "name": "UEFA Champions League",
+    "abbreviation": "UEFA Champions League"
+   },
+   "competitions": [
+    {
+     "status": {
+      "type": {
+       "name": "STATUS_FULL_TIME",
+       "state": "post"
+      }
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": true,
+       "score": {
+        "value": 1
+       },
+       "team": {
+        "id": "110",
+        "abbreviation": "INT",
+        "displayName": "Internazionale",
+        "shortDisplayName": "Inter Milan",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/110.png"
+       }
+      },
+      {
+       "homeAway": "away",
+       "winner": false,
+       "score": {
+        "value": 0
+       },
+       "team": {
+        "id": "493",
+        "abbreviation": "SHK",
+        "displayName": "Shakhtar Donetsk",
+        "shortDisplayName": "Shakhtar",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/493.png"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401874953",
+   "date": "2026-10-17T16:00Z",
+   "season": {
+    "year": 2026,
+    "displayName": "2026-27 Italian Serie A"
+   },
+   "seasonType": {
+    "name": "2026-27 Italian Serie A"
+   },
+   "league": {
+    "slug": "ita.1",
+    "name": "Italian Serie A",
+    "abbreviation": "Serie A"
+   },
+   "competitions": [
+    {
+     "status": {
+      "type": {
+       "name": "STATUS_FULL_TIME",
+       "state": "post"
+      }
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": false,
+       "score": {
+        "value": 1
+       },
+       "team": {
+        "id": "107",
+        "abbreviation": "BOL",
+        "displayName": "Bologna",
+        "shortDisplayName": "Bologna",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/107.png"
+       }
+      },
+      {
+       "homeAway": "away",
+       "winner": true,
+       "score": {
+        "value": 3
+       },
+       "team": {
+        "id": "110",
+        "abbreviation": "INT",
+        "displayName": "Internazionale",
+        "shortDisplayName": "Inter Milan",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/110.png"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401915413",
+   "date": "2026-10-13T19:00Z",
+   "season": {
+    "year": 2026,
+    "displayName": "2026-27 UEFA Champions League"
+   },
+   "seasonType": {
+    "name": "League Phase"
+   },
+   "league": {
+    "slug": "uefa.champions",
+    "name": "UEFA Champions League",
+    "abbreviation": "UEFA Champions League"
+   },
+   "competitions": [
+    {
+     "status": {
+      "type": {
+       "name": "STATUS_FULL_TIME",
+       "state": "post"
+      }
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": false,
+       "score": {
+        "value": 3
+       },
+       "team": {
+        "id": "110",
+        "abbreviation": "INT",
+        "displayName": "Internazionale",
+        "shortDisplayName": "Inter Milan",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/110.png"
+       }
+      },
+      {
+       "homeAway": "away",
+       "winner": true,
+       "score": {
+        "value": 4
+       },
+       "team": {
+        "id": "570",
+        "abbreviation": "BRU",
+        "displayName": "Club Brugge",
+        "shortDisplayName": "Club Brugge",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/570.png"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401875021",
+   "date": "2026-10-10T16:00Z",
+   "season": {
+    "year": 2026,
+    "displayName": "2026-27 Italian Serie A"
+   },
+   "seasonType": {
+    "name": "2026-27 Italian Serie A"
+   },
+   "league": {
+    "slug": "ita.1",
+    "name": "Italian Serie A",
+    "abbreviation": "Serie A"
+   },
+   "competitions": [
+    {
+     "status": {
+      "type": {
+       "name": "STATUS_FULL_TIME",
+       "state": "post"
+      }
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": true,
+       "score": {
+        "value": 3
+       },
+       "team": {
+        "id": "110",
+        "abbreviation": "INT",
+        "displayName": "Internazionale",
+        "shortDisplayName": "Inter Milan",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/110.png"
+       }
+      },
+      {
+       "homeAway": "away",
+       "winner": false,
+       "score": {
+        "value": 0
+       },
+       "team": {
+        "id": "115",
+        "abbreviation": "PAR",
+        "displayName": "Parma",
+        "shortDisplayName": "Parma",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/115.png"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401927454",
+   "date": "2026-10-03T09:00Z",
+   "season": {
+    "year": 2026,
+    "displayName": "2026 Club Friendly"
+   },
+   "seasonType": {
+    "name": "2026 Club Friendly"
+   },
+   "league": {
+    "slug": "club.friendly",
+    "name": "Club Friendly",
+    "abbreviation": "Club Friendly"
+   },
+   "competitions": [
+    {
+     "status": {
+      "type": {
+       "name": "STATUS_FULL_TIME",
+       "state": "post"
+      }
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": true,
+       "score": {
+        "value": 2
+       },
+       "team": {
+        "id": "110",
+        "abbreviation": "INT",
+        "displayName": "Internazionale",
+        "shortDisplayName": "Inter Milan",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/110.png"
+       }
+      },
+      {
+       "homeAway": "away",
+       "winner": false,
+       "score": {
+        "value": 0
+       },
+       "team": {
+        "id": "4146",
+        "abbreviation": "LUM",
+        "displayName": "Lumezzane",
+        "shortDisplayName": "Lumezzane"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401874753",
+   "date": "2026-09-19T16:00Z",
+   "season": {
+    "year": 2026,
+    "displayName": "2026-27 Italian Serie A"
+   },
+   "seasonType": {
+    "name": "2026-27 Italian Serie A"
+   },
+   "league": {
+    "slug": "ita.1",
+    "name": "Italian Serie A",
+    "abbreviation": "Serie A"
+   },
+   "competitions": [
+    {
+     "status": {
+      "type": {
+       "name": "STATUS_FULL_TIME",
+       "state": "post"
+      }
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": false,
+       "score": {
+        "value": 2
+       },
+       "team": {
+        "id": "104",
+        "abbreviation": "ROMA",
+        "displayName": "AS Roma",
+        "shortDisplayName": "AS Roma",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/104.png"
+       }
+      },
+      {
+       "homeAway": "away",
+       "winner": false,
+       "score": {
+        "value": 2
+       },
+       "team": {
+        "id": "110",
+        "abbreviation": "INT",
+        "displayName": "Internazionale",
+        "shortDisplayName": "Inter Milan",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/110.png"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401874966",
+   "date": "2026-09-14T18:45Z",
+   "season": {
+    "year": 2026,
+    "displayName": "2026-27 Italian Serie A"
+   },
+   "seasonType": {
+    "name": "2026-27 Italian Serie A"
+   },
+   "league": {
+    "slug": "ita.1",
+    "name": "Italian Serie A",
+    "abbreviation": "Serie A"
+   },
+   "competitions": [
+    {
+     "status": {
+      "type": {
+       "name": "STATUS_FULL_TIME",
+       "state": "post"
+      }
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": true,
+       "score": {
+        "value": 5
+       },
+       "team": {
+        "id": "110",
+        "abbreviation": "INT",
+        "displayName": "Internazionale",
+        "shortDisplayName": "Inter Milan",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/110.png"
+       }
+      },
+      {
+       "homeAway": "away",
+       "winner": false,
+       "score": {
+        "value": 3
+       },
+       "team": {
+        "id": "118",
+        "abbreviation": "UDI",
+        "displayName": "Udinese",
+        "shortDisplayName": "Udinese",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/118.png"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401915451",
+   "date": "2026-09-08T19:00Z",
+   "season": {
+    "year": 2026,
+    "displayName": "2026-27 UEFA Champions League"
+   },
+   "seasonType": {
+    "name": "League Phase"
+   },
+   "league": {
+    "slug": "uefa.champions",
+    "name": "UEFA Champions League",
+    "abbreviation": "UEFA Champions League"
+   },
+   "competitions": [
+    {
+     "status": {
+      "type": {
+       "name": "STATUS_FULL_TIME",
+       "state": "post"
+      }
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": true,
+       "score": {
+        "value": 2
+       },
+       "team": {
+        "id": "86",
+        "abbreviation": "RMA",
+        "displayName": "Real Madrid",
+        "shortDisplayName": "Real Madrid",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/86.png"
+       }
+      },
+      {
+       "homeAway": "away",
+       "winner": false,
+       "score": {
+        "value": 1
+       },
+       "team": {
+        "id": "110",
+        "abbreviation": "INT",
+        "displayName": "Internazionale",
+        "shortDisplayName": "Inter Milan",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/110.png"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401874937",
+   "date": "2026-09-05T16:00Z",
+   "season": {
+    "year": 2026,
+    "displayName": "2026-27 Italian Serie A"
+   },
+   "seasonType": {
+    "name": "2026-27 Italian Serie A"
+   },
+   "league": {
+    "slug": "ita.1",
+    "name": "Italian Serie A",
+    "abbreviation": "Serie A"
+   },
+   "competitions": [
+    {
+     "status": {
+      "type": {
+       "name": "STATUS_FULL_TIME",
+       "state": "post"
+      }
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": true,
+       "score": {
+        "value": 3
+       },
+       "team": {
+        "id": "110",
+        "abbreviation": "INT",
+        "displayName": "Internazionale",
+        "shortDisplayName": "Inter Milan",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/110.png"
+       }
+      },
+      {
+       "homeAway": "away",
+       "winner": false,
+       "score": {
+        "value": 2
+       },
+       "team": {
+        "id": "114",
+        "abbreviation": "NAP",
+        "displayName": "Napoli",
+        "shortDisplayName": "Napoli",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/114.png"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401874938",
+   "date": "2026-08-30T18:45Z",
+   "season": {
+    "year": 2026,
+    "displayName": "2026-27 Italian Serie A"
+   },
+   "seasonType": {
+    "name": "2026-27 Italian Serie A"
+   },
+   "league": {
+    "slug": "ita.1",
+    "name": "Italian Serie A",
+    "abbreviation": "Serie A"
+   },
+   "competitions": [
+    {
+     "status": {
+      "type": {
+       "name": "STATUS_FULL_TIME",
+       "state": "post"
+      }
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": false,
+       "score": {
+        "value": 0
+       },
+       "team": {
+        "id": "2925",
+        "abbreviation": "CAG",
+        "displayName": "Cagliari",
+        "shortDisplayName": "Cagliari",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/2925.png"
+       }
+      },
+      {
+       "homeAway": "away",
+       "winner": true,
+       "score": {
+        "value": 1
+       },
+       "team": {
+        "id": "110",
+        "abbreviation": "INT",
+        "displayName": "Internazionale",
+        "shortDisplayName": "Inter Milan",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/110.png"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401874931",
+   "date": "2026-08-22T16:30Z",
+   "season": {
+    "year": 2026,
+    "displayName": "2026-27 Italian Serie A"
+   },
+   "seasonType": {
+    "name": "2026-27 Italian Serie A"
+   },
+   "league": {
+    "slug": "ita.1",
+    "name": "Italian Serie A",
+    "abbreviation": "Serie A"
+   },
+   "competitions": [
+    {
+     "status": {
+      "type": {
+       "name": "STATUS_FULL_TIME",
+       "state": "post"
+      }
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": true,
+       "score": {
+        "value": 4
+       },
+       "team": {
+        "id": "110",
+        "abbreviation": "INT",
+        "displayName": "Internazionale",
+        "shortDisplayName": "Inter Milan",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/110.png"
+       }
+      },
+      {
+       "homeAway": "away",
+       "winner": false,
+       "score": {
+        "value": 1
+       },
+       "team": {
+        "id": "4007",
+        "abbreviation": "MON",
+        "displayName": "Monza",
+        "shortDisplayName": "Monza",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/4007.png"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401905173",
+   "date": "2026-08-15T17:30Z",
+   "season": {
+    "year": 2026,
+    "displayName": "2026 Club Friendly"
+   },
+   "seasonType": {
+    "name": "2026 Club Friendly"
+   },
+   "league": {
+    "slug": "club.friendly",
+    "name": "Club Friendly",
+    "abbreviation": "Club Friendly"
+   },
+   "competitions": [
+    {
+     "status": {
+      "type": {
+       "name": "STATUS_FULL_TIME",
+       "state": "post"
+      }
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": true,
+       "score": {
+        "value": 1
+       },
+       "team": {
+        "id": "110",
+        "abbreviation": "INT",
+        "displayName": "Internazionale",
+        "shortDisplayName": "Inter Milan",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/110.png"
+       }
+      },
+      {
+       "homeAway": "away",
+       "winner": false,
+       "score": {
+        "value": 0
+       },
+       "team": {
+        "id": "244",
+        "abbreviation": "BET",
+        "displayName": "Real Betis",
+        "shortDisplayName": "Betis",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/244.png"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401869429",
+   "date": "2026-08-08T11:00Z",
+   "season": {
+    "year": 2026,
+    "displayName": "2026 Club Friendly"
+   },
+   "seasonType": {
+    "name": "2026 Club Friendly"
+   },
+   "league": {
+    "slug": "club.friendly",
+    "name": "Club Friendly",
+    "abbreviation": "Club Friendly"
+   },
+   "competitions": [
+    {
+     "status": {
+      "type": {
+       "name": "STATUS_FULL_TIME",
+       "state": "post"
+      }
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": false,
+       "score": {
+        "value": 1
+       },
+       "team": {
+        "id": "111",
+        "abbreviation": "JUV",
+        "displayName": "Juventus",
+        "shortDisplayName": "Juventus",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/111.png"
+       }
+      },
+      {
+       "homeAway": "away",
+       "winner": true,
+       "score": {
+        "value": 2
+       },
+       "team": {
+        "id": "110",
+        "abbreviation": "INT",
+        "displayName": "Internazionale",
+        "shortDisplayName": "Inter Milan",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/110.png"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401869428",
+   "date": "2026-08-05T11:00Z",
+   "season": {
+    "year": 2026,
+    "displayName": "2026 Club Friendly"
+   },
+   "seasonType": {
+    "name": "2026 Club Friendly"
+   },
+   "league": {
+    "slug": "club.friendly",
+    "name": "Club Friendly",
+    "abbreviation": "Club Friendly"
+   },
+   "competitions": [
+    {
+     "status": {
+      "type": {
+       "name": "STATUS_FULL_TIME",
+       "state": "post"
+      }
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": false,
+       "score": {
+        "value": 1
+       },
+       "team": {
+        "id": "103",
+        "abbreviation": "MIL",
+        "displayName": "AC Milan",
+        "shortDisplayName": "Milan",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/103.png"
+       }
+      },
+      {
+       "homeAway": "away",
+       "winner": false,
+       "score": {
+        "value": 1
+       },
+       "team": {
+        "id": "110",
+        "abbreviation": "INT",
+        "displayName": "Internazionale",
+        "shortDisplayName": "Inter Milan",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/110.png"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401871493",
+   "date": "2026-08-01T11:30Z",
+   "season": {
+    "year": 2026,
+    "displayName": "2026 Club Friendly"
+   },
+   "seasonType": {
+    "name": "2026 Club Friendly"
+   },
+   "league": {
+    "slug": "club.friendly",
+    "name": "Club Friendly",
+    "abbreviation": "Club Friendly"
+   },
+   "competitions": [
+    {
+     "status": {
+      "type": {
+       "name": "STATUS_FINAL_PEN",
+       "state": "post"
+      }
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": false,
+       "score": {
+        "value": 1,
+        "shootoutScore": 1
+       },
+       "team": {
+        "id": "382",
+        "abbreviation": "MNC",
+        "displayName": "Manchester City",
+        "shortDisplayName": "Man City",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/382.png"
+       }
+      },
+      {
+       "homeAway": "away",
+       "winner": true,
+       "score": {
+        "value": 1,
+        "shootoutScore": 3
+       },
+       "team": {
+        "id": "110",
+        "abbreviation": "INT",
+        "displayName": "Internazionale",
+        "shortDisplayName": "Inter Milan",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/110.png"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401886547",
+   "date": "2026-07-26T14:30Z",
+   "season": {
+    "year": 2026,
+    "displayName": "2026 Club Friendly"
+   },
+   "seasonType": {
+    "name": "2026 Club Friendly"
+   },
+   "league": {
+    "slug": "club.friendly",
+    "name": "Club Friendly",
+    "abbreviation": "Club Friendly"
+   },
+   "competitions": [
+    {
+     "status": {
+      "type": {
+       "name": "STATUS_FULL_TIME",
+       "state": "post"
+      }
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": false,
+       "score": {
+        "value": 1
+       },
+       "team": {
+        "id": "4471",
+        "abbreviation": "KSC",
+        "displayName": "Karlsruher SC",
+        "shortDisplayName": "Karlsruher",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/4471.png"
+       }
+      },
+      {
+       "homeAway": "away",
+       "winner": true,
+       "score": {
+        "value": 2
+       },
+       "team": {
+        "id": "110",
+        "abbreviation": "INT",
+        "displayName": "Internazionale",
+        "shortDisplayName": "Inter Milan",
+        "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/110.png"
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
