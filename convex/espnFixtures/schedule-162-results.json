@@ -13,6 +13,7 @@
   {
    "id": "401861131",
    "date": "2026-10-05T18:45Z",
+   "timeValid": true,
    "season": {
     "year": 2026,
     "displayName": "2026-27 UEFA Nations League"
@@ -69,6 +70,7 @@
   {
    "id": "401861103",
    "date": "2026-10-02T18:45Z",
+   "timeValid": true,
    "season": {
     "year": 2026,
     "displayName": "2026-27 UEFA Nations League"
@@ -125,6 +127,7 @@
   {
    "id": "401861077",
    "date": "2026-09-28T18:45Z",
+   "timeValid": true,
    "season": {
     "year": 2026,
     "displayName": "2026-27 UEFA Nations League"
@@ -181,6 +184,7 @@
   {
    "id": "401861052",
    "date": "2026-09-25T18:45Z",
+   "timeValid": true,
    "season": {
     "year": 2026,
     "displayName": "2026-27 UEFA Nations League"
@@ -237,6 +241,7 @@
   {
    "id": "401870630",
    "date": "2026-06-07T19:00Z",
+   "timeValid": true,
    "season": {
     "year": 2026,
     "displayName": "2026 International Friendly"
@@ -293,6 +298,7 @@
   {
    "id": "401869325",
    "date": "2026-06-03T18:45Z",
+   "timeValid": true,
    "season": {
     "year": 2026,
     "displayName": "2026 International Friendly"
@@ -349,6 +355,7 @@
   {
    "id": "761952",
    "date": "2026-03-31T18:45Z",
+   "timeValid": true,
    "season": {
     "year": 2025,
     "displayName": "2026 World Cup Qualifying - UEFA"
@@ -407,6 +414,7 @@
   {
    "id": "761380",
    "date": "2026-03-26T19:45Z",
+   "timeValid": true,
    "season": {
     "year": 2025,
     "displayName": "2026 World Cup Qualifying - UEFA"
@@ -463,6 +471,7 @@
   {
    "id": "724906",
    "date": "2025-11-16T19:45Z",
+   "timeValid": true,
    "season": {
     "year": 2025,
     "displayName": "2026 World Cup Qualifying - UEFA"
@@ -519,6 +528,7 @@
   {
    "id": "724878",
    "date": "2025-11-13T19:45Z",
+   "timeValid": true,
    "season": {
     "year": 2025,
     "displayName": "2026 World Cup Qualifying - UEFA"
@@ -575,6 +585,7 @@
   {
    "id": "724868",
    "date": "2025-10-14T18:45Z",
+   "timeValid": true,
    "season": {
     "year": 2025,
     "displayName": "2026 World Cup Qualifying - UEFA"
@@ -631,6 +642,7 @@
   {
    "id": "724846",
    "date": "2025-10-11T18:45Z",
+   "timeValid": true,
    "season": {
     "year": 2025,
     "displayName": "2026 World Cup Qualifying - UEFA"
@@ -687,6 +699,7 @@
   {
    "id": "725006",
    "date": "2025-09-08T18:45Z",
+   "timeValid": true,
    "season": {
     "year": 2025,
     "displayName": "2026 World Cup Qualifying - UEFA"
@@ -743,6 +756,7 @@
   {
    "id": "724982",
    "date": "2025-09-05T18:45Z",
+   "timeValid": true,
    "season": {
     "year": 2025,
     "displayName": "2026 World Cup Qualifying - UEFA"
@@ -799,6 +813,7 @@
   {
    "id": "724962",
    "date": "2025-06-09T18:45Z",
+   "timeValid": true,
    "season": {
     "year": 2025,
     "displayName": "2026 World Cup Qualifying - UEFA"
@@ -855,6 +870,7 @@
   {
    "id": "724951",
    "date": "2025-06-06T18:45Z",
+   "timeValid": true,
    "season": {
     "year": 2025,
     "displayName": "2026 World Cup Qualifying - UEFA"
@@ -911,6 +927,7 @@
   {
    "id": "723714",
    "date": "2025-03-23T19:45Z",
+   "timeValid": true,
    "season": {
     "year": 2024,
     "displayName": "2024-25 UEFA Nations League"
@@ -967,6 +984,7 @@
   {
    "id": "723713",
    "date": "2025-03-20T19:45Z",
+   "timeValid": true,
    "season": {
     "year": 2024,
     "displayName": "2024-25 UEFA Nations League"
@@ -1023,6 +1041,7 @@
   {
    "id": "699019",
    "date": "2024-11-17T19:45Z",
+   "timeValid": true,
    "season": {
     "year": 2024,
     "displayName": "2024-25 UEFA Nations League"
@@ -1079,6 +1098,7 @@
   {
    "id": "698988",
    "date": "2024-11-14T19:45Z",
+   "timeValid": true,
    "season": {
     "year": 2024,
     "displayName": "2024-25 UEFA Nations League"
@@ -1135,6 +1155,7 @@
   {
    "id": "698975",
    "date": "2024-10-14T18:45Z",
+   "timeValid": true,
    "season": {
     "year": 2024,
     "displayName": "2024-25 UEFA Nations League"
@@ -1191,6 +1212,7 @@
   {
    "id": "698939",
    "date": "2024-10-10T18:45Z",
+   "timeValid": true,
    "season": {
     "year": 2024,
     "displayName": "2024-25 UEFA Nations League"
@@ -1247,6 +1269,7 @@
   {
    "id": "698917",
    "date": "2024-09-09T18:45Z",
+   "timeValid": true,
    "season": {
     "year": 2024,
     "displayName": "2024-25 UEFA Nations League"
@@ -1303,6 +1326,7 @@
   {
    "id": "698898",
    "date": "2024-09-06T18:45Z",
+   "timeValid": true,
    "season": {
     "year": 2024,
     "displayName": "2024-25 UEFA Nations League"
@@ -1359,6 +1383,7 @@
   {
    "id": "703931",
    "date": "2024-06-29T16:00Z",
+   "timeValid": true,
    "season": {
     "year": 2024,
     "displayName": "2024 European Championship"

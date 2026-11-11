@@ -40,7 +40,11 @@ export const footballScheduleMatch = v.object({
   home: v.boolean(),
   score: v.optional(v.object({ home: v.number(), away: v.number() })),
   shootout: v.optional(v.object({ home: v.number(), away: v.number() })),
+  /** Il lato che ESPN dà vincente: dopo i rigori è chi li ha vinti. */
+  winner: v.optional(footballSideKey),
   state: v.union(v.literal("pre"), v.literal("in"), v.literal("post")),
+  /** false quando ESPN non ha ancora fissato il calcio d'inizio (il tab mostra solo la data). */
+  timeValid: v.optional(v.boolean()),
 });
 
 /** Una competizione della squadra in questa stagione, ricavata dal calendario. */

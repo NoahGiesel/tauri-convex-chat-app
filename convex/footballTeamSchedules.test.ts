@@ -5,6 +5,7 @@ import { api, internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { parseScoreboard, parseSchedule } from "./espn";
 import { espnFetchStub, loadFixture } from "./espnStub.test-helper";
+import { mergeCompetitions } from "./footballTeamSchedules";
 import schema from "./schema";
 
 const modules = import.meta.glob("./**/*.ts");
@@ -86,6 +87,7 @@ describe("lettura del calendario", () => {
       opponent: { teamId: COMO, name: "Como", shortName: "Como", abbreviation: "COMO", logo: "https://a.espncdn.com/i/teamlogos/soccer/500/2572.png" },
       home: true,
       score: { home: 2, away: 0 },
+      winner: "home",
       state: "post",
     });
 
@@ -107,19 +109,26 @@ describe("lettura del calendario", () => {
     expect(matches[0].score).toBeUndefined();
   });
 
-  it("il punteggio dei rigori si legge da score.shootoutScore", () => {
+  it("il punteggio dei rigori si legge da score.shootoutScore, col lato vincente di ESPN", () => {
     const { matches } = parseSchedule(loadFixture("schedule-110-results"), INTER);
     const shootout = matches.find((m) => m.eventId === "401871493")!;
-    expect(shootout).toMatchObject({ score: { home: 1, away: 1 }, shootout: { home: 1, away: 3 }, home: false });
+    expect(shootout).toMatchObject({ score: { home: 1, away: 1 }, shootout: { home: 1, away: 3 }, home: false, winner: "away" });
 
     const italy = parseSchedule(loadFixture("schedule-162-results"), ITALY).matches.find((m) => m.eventId === "761952")!;
-    expect(italy).toMatchObject({ score: { home: 1, away: 1 }, shootout: { home: 4, away: 1 }, home: false });
+    expect(italy).toMatchObject({ score: { home: 1, away: 1 }, shootout: { home: 4, away: 1 }, home: false, winner: "home" });
+  });
+
+  it("una partita in programma può non avere l'ora fissata", () => {
+    const { matches } = parseSchedule(loadFixture("schedule-110-fixtures"), INTER);
+    const tbd = matches.find((m) => m.eventId === "401875129")!;
+    expect(tbd).toMatchObject({ timeValid: false, state: "pre", kickoff: Date.parse("2027-01-17T20:00Z") });
+    expect(matches.find((m) => m.eventId === "401875001")?.timeValid).not.toBe(false);
   });
 
   it("le competizioni sono gli slug di risultati e partite, senza le amichevoli", () => {
     const results = parseSchedule(loadFixture("schedule-110-results"), INTER);
     const fixtures = parseSchedule(loadFixture("schedule-110-fixtures"), INTER);
-    const competitions = mergeCompetitions(results.competitions, fixtures.competitions);
+    const competitions = mergeCompetitions([results.competitions, fixtures.competitions]);
     expect(competitions.map((c) => c.league).sort()).toEqual(["ita.1", "ita.coppa_italia", "ita.super_cup", "uefa.champions"]);
     expect(competitions.find((c) => c.league === "ita.1")).toEqual({
       league: "ita.1",
@@ -141,13 +150,6 @@ describe("lettura del calendario", () => {
     expect(() => parseSchedule(raw, INTER)).toThrow(/ESPN/);
   });
 });
-
-/** Le competizioni di due liste, senza doppioni e nell'ordine in cui compaiono. */
-function mergeCompetitions(...lists: { league: string; name: string; shortName: string; season: string }[][]) {
-  const byLeague = new Map<string, { league: string; name: string; shortName: string; season: string }>();
-  for (const competition of lists.flat()) if (!byLeague.has(competition.league)) byLeague.set(competition.league, competition);
-  return [...byLeague.values()];
-}
 
 describe("aggiornamento del calendario", () => {
   it("pinnare una squadra ne scarica risultati, partite e competizioni", async () => {
@@ -250,7 +252,7 @@ describe("calendario nel drawer", () => {
         teamId: INTER,
         results: results.matches,
         fixtures: fixtures.matches,
-        competitions: mergeCompetitions(results.competitions, fixtures.competitions),
+        competitions: mergeCompetitions([results.competitions, fixtures.competitions]),
         fetchedAt: AT_HALFTIME,
       });
     });
@@ -260,7 +262,7 @@ describe("calendario nel drawer", () => {
     const f = await setup([[INTER], []]);
     await withRow(f);
     const view = await f.alice.query(api.footballTeamSchedules.forPin, { conversationId: f.conversations[0], teamId: INTER });
-    expect(view).toMatchObject({ teamId: INTER, fetchedAt: AT_HALFTIME });
+    expect(view).toMatchObject({ teamId: INTER, pending: false, fetchedAt: AT_HALFTIME });
     expect(view?.results).toHaveLength(21);
     expect(view?.fixtures).toHaveLength(33);
     expect(view?.competitions).toHaveLength(4);
@@ -268,7 +270,24 @@ describe("calendario nel drawer", () => {
     expect(await f.bob.query(api.footballTeamSchedules.forPin, { conversationId: f.conversations[0], teamId: INTER })).not.toBeNull();
   });
 
-  it("non lo restituisce a chi non è nella chat, a una chat che non pinna la squadra, o senza calendario", async () => {
+  it("appena pinnata, prima che il calendario arrivi, dice di aspettare", async () => {
+    const f = await setup([[]]);
+    await f.alice.mutation(api.teamPins.add, { conversationId: f.conversations[0], teamId: INTER });
+    expect(await f.alice.query(api.footballTeamSchedules.forPin, { conversationId: f.conversations[0], teamId: INTER })).toMatchObject({
+      pending: true,
+      results: [],
+      fixtures: [],
+      fetchedAt: null,
+    });
+
+    await f.t.finishAllScheduledFunctions(vi.runAllTimers);
+    expect(await f.alice.query(api.footballTeamSchedules.forPin, { conversationId: f.conversations[0], teamId: INTER })).toMatchObject({
+      pending: false,
+      fetchedAt: expect.any(Number),
+    });
+  });
+
+  it("non lo restituisce a chi non è nella chat o a una chat che non pinna la squadra", async () => {
     const f = await setup([[INTER], []]);
     await withRow(f);
     expect(await f.alice.query(api.footballTeamSchedules.forPin, { conversationId: f.emptyChat, teamId: INTER })).toBeNull();

@@ -13,6 +13,7 @@
   {
    "id": "401861151",
    "date": "2026-11-12T19:45Z",
+   "timeValid": true,
    "season": {
     "year": 2026,
     "displayName": "2026-27 UEFA Nations League"
@@ -63,6 +64,7 @@
   {
    "id": "401861176",
    "date": "2026-11-15T19:45Z",
+   "timeValid": true,
    "season": {
     "year": 2026,
     "displayName": "2026-27 UEFA Nations League"

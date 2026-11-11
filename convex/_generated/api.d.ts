@@ -14,6 +14,7 @@ import type * as auth from "../auth.js";
 import type * as conversations from "../conversations.js";
 import type * as crons from "../crons.js";
 import type * as espn from "../espn.js";
+import type * as footballLeagues from "../footballLeagues.js";
 import type * as footballMatches from "../footballMatches.js";
 import type * as footballSearch from "../footballSearch.js";
 import type * as footballTeamSchedules from "../footballTeamSchedules.js";
@@ -60,6 +61,7 @@ declare const fullApi: ApiFromModules<{
   conversations: typeof conversations;
   crons: typeof crons;
   espn: typeof espn;
+  footballLeagues: typeof footballLeagues;
   footballMatches: typeof footballMatches;
   footballSearch: typeof footballSearch;
   footballTeamSchedules: typeof footballTeamSchedules;

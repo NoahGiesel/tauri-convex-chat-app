@@ -13,6 +13,7 @@
   {
    "id": "401875001",
    "date": "2026-11-22T19:45Z",
+   "timeValid": true,
    "season": {
     "year": 2026,
     "displayName": "2026-27 Italian Serie A"
@@ -63,6 +64,7 @@
   {
    "id": "401915376",
    "date": "2026-11-25T20:00Z",
+   "timeValid": true,
    "season": {
     "year": 2026,
     "displayName": "2026-27 UEFA Champions League"
@@ -113,6 +115,7 @@
   {
    "id": "401874977",
    "date": "2026-11-28T19:45Z",
+   "timeValid": true,
    "season": {
     "year": 2026,
     "displayName": "2026-27 Italian Serie A"
@@ -163,6 +166,7 @@
   {
    "id": "401912257",
    "date": "2026-12-01T20:00Z",
+   "timeValid": true,
    "season": {
     "year": 2026,
     "displayName": "2026-27 Coppa Italia"
@@ -213,6 +217,7 @@
   {
    "id": "401875023",
    "date": "2026-12-05T17:00Z",
+   "timeValid": true,
    "season": {
     "year": 2026,
     "displayName": "2026-27 Italian Serie A"
@@ -263,6 +268,7 @@
   {
    "id": "401915368",
    "date": "2026-12-09T20:00Z",
+   "timeValid": true,
    "season": {
     "year": 2026,
     "displayName": "2026-27 UEFA Champions League"
@@ -313,6 +319,7 @@
   {
    "id": "401874766",
    "date": "2026-12-13T14:00Z",
+   "timeValid": true,
    "season": {
     "year": 2026,
     "displayName": "2026-27 Italian Serie A"
@@ -363,6 +370,7 @@
   {
    "id": "401874996",
    "date": "2026-12-18T19:45Z",
+   "timeValid": true,
    "season": {
     "year": 2026,
     "displayName": "2026-27 Italian Serie A"
@@ -413,6 +421,7 @@
   {
    "id": "401928184",
    "date": "2026-12-22T20:00Z",
+   "timeValid": true,
    "season": {
     "year": 2026,
     "displayName": "2026 Italian Supercoppa"
@@ -463,6 +472,7 @@
   {
    "id": "401874793",
    "date": "2027-01-03T11:30Z",
+   "timeValid": true,
    "season": {
     "year": 2026,
     "displayName": "2026-27 Italian Serie A"
@@ -513,6 +523,7 @@
   {
    "id": "401874778",
    "date": "2027-01-06T19:45Z",
+   "timeValid": true,
    "season": {
     "year": 2026,
     "displayName": "2026-27 Italian Serie A"
@@ -563,6 +574,7 @@
   {
    "id": "401875035",
    "date": "2027-01-10T19:45Z",
+   "timeValid": true,
    "season": {
     "year": 2026,
     "displayName": "2026-27 Italian Serie A"
@@ -613,6 +625,7 @@
   {
    "id": "401875129",
    "date": "2027-01-17T20:00Z",
+   "timeValid": false,
    "season": {
     "year": 2026,
     "displayName": "2026-27 Italian Serie A"
@@ -663,6 +676,7 @@
   {
    "id": "401915360",
    "date": "2027-01-19T20:00Z",
+   "timeValid": true,
    "season": {
     "year": 2026,
     "displayName": "2026-27 UEFA Champions League"
@@ -713,6 +727,7 @@
   {
    "id": "401874856",
    "date": "2027-01-24T20:00Z",
+   "timeValid": false,
    "season": {
     "year": 2026,
     "displayName": "2026-27 Italian Serie A"
@@ -763,6 +778,7 @@
   {
    "id": "401915269",
    "date": "2027-01-27T20:00Z",
+   "timeValid": true,
    "season": {
     "year": 2026,
     "displayName": "2026-27 UEFA Champions League"
@@ -813,6 +829,7 @@
   {
    "id": "401875074",
    "date": "2027-01-31T20:00Z",
+   "timeValid": false,
    "season": {
     "year": 2026,
     "displayName": "2026-27 Italian Serie A"
@@ -863,6 +880,7 @@
   {
    "id": "401874812",
    "date": "2027-02-07T20:00Z",
+   "timeValid": false,
    "season": {
     "year": 2026,
     "displayName": "2026-27 Italian Serie A"
@@ -913,6 +931,7 @@
   {
    "id": "401875105",
    "date": "2027-02-14T20:00Z",
+   "timeValid": false,
    "season": {
     "year": 2026,
     "displayName": "2026-27 Italian Serie A"
@@ -963,6 +982,7 @@
   {
    "id": "401874802",
    "date": "2027-02-21T20:00Z",
+   "timeValid": false,
    "season": {
     "year": 2026,
     "displayName": "2026-27 Italian Serie A"
@@ -1013,6 +1033,7 @@
   {
    "id": "401874839",
    "date": "2027-02-28T20:00Z",
+   "timeValid": false,
    "season": {
     "year": 2026,
     "displayName": "2026-27 Italian Serie A"
@@ -1063,6 +1084,7 @@
   {
    "id": "401875139",
    "date": "2027-03-07T20:00Z",
+   "timeValid": false,
    "season": {
     "year": 2026,
     "displayName": "2026-27 Italian Serie A"
@@ -1113,6 +1135,7 @@
   {
    "id": "401874851",
    "date": "2027-03-14T18:00Z",
+   "timeValid": false,
    "season": {
     "year": 2026,
     "displayName": "2026-27 Italian Serie A"
@@ -1163,6 +1186,7 @@
   {
    "id": "401875068",
    "date": "2027-03-21T18:00Z",
+   "timeValid": false,
    "season": {
     "year": 2026,
     "displayName": "2026-27 Italian Serie A"
@@ -1213,6 +1237,7 @@
   {
    "id": "401875150",
    "date": "2027-04-04T18:00Z",
+   "timeValid": false,
    "season": {
     "year": 2026,
     "displayName": "2026-27 Italian Serie A"
@@ -1263,6 +1288,7 @@
   {
    "id": "401874822",
    "date": "2027-04-11T18:00Z",
+   "timeValid": false,
    "season": {
     "year": 2026,
     "displayName": "2026-27 Italian Serie A"
@@ -1313,6 +1339,7 @@
   {
    "id": "401874874",
    "date": "2027-04-18T18:00Z",
+   "timeValid": false,
    "season": {
     "year": 2026,
     "displayName": "2026-27 Italian Serie A"
@@ -1363,6 +1390,7 @@
   {
    "id": "401874870",
    "date": "2027-04-25T18:00Z",
+   "timeValid": false,
    "season": {
     "year": 2026,
     "displayName": "2026-27 Italian Serie A"
@@ -1413,6 +1441,7 @@
   {
    "id": "401875128",
    "date": "2027-05-02T18:00Z",
+   "timeValid": false,
    "season": {
     "year": 2026,
     "displayName": "2026-27 Italian Serie A"
@@ -1463,6 +1492,7 @@
   {
    "id": "401875127",
    "date": "2027-05-09T18:00Z",
+   "timeValid": false,
    "season": {
     "year": 2026,
     "displayName": "2026-27 Italian Serie A"
@@ -1513,6 +1543,7 @@
   {
    "id": "401874849",
    "date": "2027-05-16T18:00Z",
+   "timeValid": false,
    "season": {
     "year": 2026,
     "displayName": "2026-27 Italian Serie A"
@@ -1563,6 +1594,7 @@
   {
    "id": "401874881",
    "date": "2027-05-23T18:00Z",
+   "timeValid": false,
    "season": {
     "year": 2026,
     "displayName": "2026-27 Italian Serie A"
@@ -1613,6 +1645,7 @@
   {
    "id": "401875154",
    "date": "2027-05-30T18:00Z",
+   "timeValid": false,
    "season": {
     "year": 2026,
     "displayName": "2026-27 Italian Serie A"

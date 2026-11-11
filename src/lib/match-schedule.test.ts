@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { isStale } from "./match-drawer";
-import { competitionTag, matchOutcome, matchesTab, scoreLine, type ScheduleMatch } from "./match-schedule";
+import { competitionTag, matchOutcome, matchesTab, rowTail, scoreLine, type ScheduleMatch } from "./match-schedule";
 
 const day = 24 * 60 * 60_000;
 const kickoff = Date.parse("2026-11-08T17:00Z");
@@ -71,6 +71,29 @@ describe("tab Partite: risultato e punteggio", () => {
     expect(matchOutcome(row({ eventId: "al", kickoff, home: false, score: { home: 2, away: 0 } }))).toBe("loss");
   });
 
+  it("una partita decisa ai rigori è una vittoria o una sconfitta, non un pareggio", () => {
+    // Italia fuori ai play-off: 1–1 dopo i supplementari, 1–4 ai rigori, in trasferta.
+    const away = row({
+      eventId: "pens-away",
+      kickoff,
+      home: false,
+      score: { home: 1, away: 1 },
+      shootout: { home: 4, away: 1 },
+      winner: "home",
+    });
+    expect(matchOutcome(away)).toBe("loss");
+    const home = row({
+      eventId: "pens-home",
+      kickoff,
+      home: true,
+      score: { home: 1, away: 1 },
+      shootout: { home: 3, away: 4 },
+      winner: "away",
+    });
+    expect(matchOutcome(home)).toBe("loss");
+    expect(matchOutcome({ ...home, home: false })).toBe("win");
+  });
+
   it("una partita non ancora giocata non ha risultato", () => {
     expect(matchOutcome(row({ eventId: "next", kickoff, state: "pre", score: undefined }))).toBeNull();
   });
@@ -84,6 +107,13 @@ describe("tab Partite: risultato e punteggio", () => {
       ),
     ).toBe("1–1 (4–2)");
     expect(scoreLine(row({ eventId: "next", kickoff, state: "pre", score: undefined }))).toBeNull();
+  });
+
+  it("una prossima partita senza orario fissato mostra solo la data, senza ora", () => {
+    expect(rowTail(row({ eventId: "fixed", kickoff, state: "pre", score: undefined, timeValid: true }), "20:45")).toBe("20:45");
+    expect(rowTail(row({ eventId: "unknown", kickoff, state: "pre", score: undefined, timeValid: undefined }), "20:45")).toBe("20:45");
+    expect(rowTail(row({ eventId: "tbd", kickoff, state: "pre", score: undefined, timeValid: false }), "20:45")).toBe("");
+    expect(rowTail(row({ eventId: "played", kickoff, score: { home: 2, away: 0 } }), "20:45")).toBe("2–0");
   });
 });
 

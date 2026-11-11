@@ -3,6 +3,7 @@ import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { internalAction, internalMutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import { espnDays, fetchNextMatch, fetchScoreboard, fetchSummary, type ProviderDetails, type ProviderMatch } from "./espn";
+import { deleteUnpinnedSchedules } from "./footballTeamSchedules";
 import { getProfile } from "./model";
 import { teamRow } from "./footballTeams";
 import { MAX_TEAM_PINS } from "./teamPins";
@@ -319,7 +320,7 @@ export const cleanup = internalMutation({
   args: {},
   handler: async (ctx) => {
     // Anche il calendario di una squadra che nessuna chat pinna più se ne va.
-    await ctx.runMutation(internal.footballTeamSchedules.cleanup, {});
+    await deleteUnpinnedSchedules(ctx);
     const before = Date.now() - KEEP_FINISHED_MS;
     let deleted = 0;
     let scanned = 0;

@@ -14,8 +14,9 @@ import {
   competitionTag,
   matchOutcome,
   matchesTab,
-  scoreLine,
+  rowTail,
   type MatchOutcome,
+  type MatchesTabView,
   type ScheduleMatch,
   type TeamSchedule,
 } from "@/lib/match-schedule";
@@ -57,6 +58,14 @@ const OUTCOME_LABELS: Record<MatchOutcome, MessageKey> = {
   loss: "teamPins.loss",
 };
 
+type DrawerTab = "match" | "matches";
+
+/** I tab del drawer, nell'ordine in cui compaiono. */
+const TABS: { kind: DrawerTab; testId: string; label: MessageKey }[] = [
+  { kind: "match", testId: "tab-match", label: "teamPins.tabMatch" },
+  { kind: "matches", testId: "tab-matches", label: "teamPins.tabMatches" },
+];
+
 /**
  * Il drawer di una partita: intestazione, tab, poi Lineups, Bench, Events e Stats. Una sezione senza dati non compare,
  * quindi prima delle formazioni c'è solo il tab vuoto. Sta di fianco alla chat, che si restringe, oppure la copre
@@ -86,7 +95,7 @@ export function MatchDrawer({
   const stale = isUnavailable(match, now);
   const { when, time, clock } = useMatchTimes(match);
   const panel = useRef<HTMLElement>(null);
-  const [tab, setTab] = useState<"match" | "matches">("match");
+  const [tab, setTab] = useState<DrawerTab>("match");
 
   const pitch = details ? pitchView(details.lineups) : null;
   const hasLineups = !!details && details.lineups.length > 0;
@@ -95,6 +104,7 @@ export function MatchDrawer({
   const staleDetails = !!details && isStale(details.fetchedAt, now);
   const matches = schedule ? matchesTab(schedule) : null;
   const hasMatches = !!matches && (matches.next.length > 0 || matches.recent.length > 0);
+  const matchesLoading = schedule === undefined || (schedule !== null && schedule.pending);
 
   // Esc chiude solo con il focus dentro il drawer: nel campo del messaggio, in una modifica o in un selettore no.
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -172,20 +182,20 @@ export function MatchDrawer({
       </header>
 
       <div role="tablist" aria-label={t("teamPins.details")} className="flex shrink-0 gap-5 border-b border-app-border px-5">
-        {(["match", "matches"] as const).map((kind) => (
+        {TABS.map(({ kind, testId, label }) => (
           <button
             key={kind}
             type="button"
             role="tab"
             aria-selected={tab === kind}
-            data-testid={kind === "match" ? "tab-match" : "tab-matches"}
+            data-testid={testId}
             onClick={() => setTab(kind)}
             className={cn(
               "border-b-2 px-0.5 py-2.5 text-[13px] font-semibold",
               tab === kind ? "border-app-accent text-app-text-strong" : "border-transparent text-app-text-muted hover:text-app-text",
             )}
           >
-            {t(kind === "match" ? "teamPins.tabMatch" : "teamPins.tabMatches")}
+            {t(label)}
           </button>
         ))}
       </div>
@@ -246,9 +256,9 @@ export function MatchDrawer({
         <div
           className="min-h-0 flex-1 overflow-y-auto px-5 py-4"
           data-testid="matches-tab"
-          data-state={schedule === undefined ? "loading" : hasMatches ? "ready" : "empty"}
+          data-state={matchesLoading ? "loading" : hasMatches ? "ready" : "empty"}
         >
-          <MatchesTab schedule={schedule} now={now} clock={clock} />
+          {matchesLoading ? <Loading /> : <MatchesTabBody schedule={schedule} matches={matches} now={now} clock={clock} />}
         </div>
       )}
     </aside>
@@ -256,35 +266,22 @@ export function MatchDrawer({
 }
 
 /** Il tab Partite: le prossime 3 partite e gli ultimi 10 risultati, senza amichevoli, con la sigla della competizione e il badge W/D/L. */
-function MatchesTab({
+function MatchesTabBody({
   schedule,
+  matches,
   now,
   clock,
 }: {
-  schedule: TeamSchedule | null | undefined;
+  schedule: TeamSchedule | null;
+  matches: MatchesTabView | null;
   now: number;
   clock: (ts: number) => string;
 }) {
   const { t, locale } = useI18n();
   const date = (ts: number) => new Date(ts).toLocaleDateString(locale, { day: "numeric", month: "short" });
-  if (schedule === undefined) return <Loading />;
-  if (schedule === null) {
-    return (
-      <p className="py-10 text-center text-[13px] text-app-text-muted" data-testid="matches-tab-empty">
-        {t("teamPins.noMatches")}
-      </p>
-    );
-  }
+  const staleAt = schedule?.fetchedAt != null && isStale(schedule.fetchedAt, now) ? schedule.fetchedAt : null;
+  const empty = !matches || (matches.next.length === 0 && matches.recent.length === 0);
 
-  const { next, recent } = matchesTab(schedule);
-  if (next.length === 0 && recent.length === 0) {
-    return (
-      <p className="py-10 text-center text-[13px] text-app-text-muted" data-testid="matches-tab-empty">
-        {t("teamPins.noMatches")}
-      </p>
-    );
-  }
-  const stale = isStale(schedule.fetchedAt, now);
   const row = (match: ScheduleMatch) => {
     const outcome = matchOutcome(match);
     return (
@@ -299,7 +296,7 @@ function MatchesTab({
         </span>
         <span className="w-3 shrink-0 text-[11px] font-semibold text-app-text-muted">{t(match.home ? "teamPins.home" : "teamPins.away")}</span>
         <span className="min-w-0 flex-1 truncate text-app-text">{match.opponent.shortName}</span>
-        <span className="shrink-0 font-bold text-app-text-strong tabular-nums">{scoreLine(match) ?? clock(match.kickoff)}</span>
+        <span className="shrink-0 font-bold text-app-text-strong tabular-nums">{rowTail(match, clock(match.kickoff))}</span>
         {outcome && (
           <span
             data-testid={`outcome-${match.eventId}`}
@@ -319,20 +316,28 @@ function MatchesTab({
 
   return (
     <div className="space-y-5">
-      {stale && (
+      {staleAt !== null && (
         <p className="flex items-center gap-1.5 text-xs text-app-text-muted" data-testid="matches-tab-stale">
-          <AlertTriangle className="size-3.5 text-amber-500" /> {t("teamPins.lastUpdated", { time: clock(schedule.fetchedAt) })}
+          <AlertTriangle className="size-3.5 text-amber-500" /> {t("teamPins.lastUpdated", { time: clock(staleAt) })}
         </p>
       )}
-      {next.length > 0 && (
-        <Section title={t("teamPins.next")}>
-          <ul data-testid="matches-next">{next.map(row)}</ul>
-        </Section>
-      )}
-      {recent.length > 0 && (
-        <Section title={t("teamPins.recent")}>
-          <ul data-testid="matches-recent">{recent.map(row)}</ul>
-        </Section>
+      {empty ? (
+        <p className="py-10 text-center text-[13px] text-app-text-muted" data-testid="matches-tab-empty">
+          {t("teamPins.noMatches")}
+        </p>
+      ) : (
+        <>
+          {matches.next.length > 0 && (
+            <Section title={t("teamPins.next")}>
+              <ul data-testid="matches-next">{matches.next.map(row)}</ul>
+            </Section>
+          )}
+          {matches.recent.length > 0 && (
+            <Section title={t("teamPins.recent")}>
+              <ul data-testid="matches-recent">{matches.recent.map(row)}</ul>
+            </Section>
+          )}
+        </>
       )}
     </div>
   );

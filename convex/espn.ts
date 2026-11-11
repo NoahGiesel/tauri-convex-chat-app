@@ -5,6 +5,7 @@
  * come una risposta non 200 (docs/adr/0001-espn-json-for-team-pins.md).
  */
 import type { Doc } from "./_generated/dataModel";
+import { FRIENDLY_LEAGUES } from "./footballLeagues";
 
 const DEFAULT_BASE_URL = "https://site.api.espn.com/apis";
 /** Una richiesta ESPN appesa non deve bloccare il cron che l'ha lanciata. */
@@ -192,11 +193,7 @@ export function competitionLeague(team: { competition?: string; national: boolea
   return team.national ? NATIONAL_TEAMS_LEAGUE : undefined;
 }
 
-/** Le competizioni che il tab Partite non mostra mai (docs/MATCH-DRAWER-SPEC.md). */
-export const FRIENDLY_LEAGUES = ["club.friendly", "fifa.friendly"];
-
-/** Una partita del calendario alleggerita: la riga di `footballTeamSchedules` senza `fetchedAt`. */
-export type ProviderScheduleMatch = Doc<"footballTeamSchedules">["results"][number];
+/** Una partita del calendario alleggerita: la riga di `footballTeamSchedules` senza `fetchedAt`. */export type ProviderScheduleMatch = Doc<"footballTeamSchedules">["results"][number];
 export type ProviderCompetition = Doc<"footballTeamSchedules">["competitions"][number];
 export type ProviderSchedule = { matches: ProviderScheduleMatch[]; competitions: ProviderCompetition[] };
 
@@ -227,6 +224,7 @@ export function parseSchedule(json: unknown, teamId: string): ProviderSchedule {
     const mine = [homeSide, awaySide].find((c) => idOf(c) === teamId);
     const other = mine === homeSide ? awaySide : homeSide;
     if (!mine) throw new EspnError(`ESPN: team ${teamId} missing from schedule event`);
+    const winner = homeSide.winner === true ? "home" : awaySide.winner === true ? "away" : undefined;
 
     const match: ProviderScheduleMatch = {
       eventId: str(event.id, "event.id"),
@@ -237,6 +235,8 @@ export function parseSchedule(json: unknown, teamId: string): ProviderSchedule {
       opponent: parseTeam(other.team),
       home: mine === homeSide,
       state,
+      ...(winner ? { winner } : {}),
+      ...(event.timeValid === false ? { timeValid: false } : {}),
     };
     if (state !== "pre") {
       match.score = { home: readNumber(homeSide.score, "home score"), away: readNumber(awaySide.score, "away score") };
@@ -269,8 +269,8 @@ export function parseSchedule(json: unknown, teamId: string): ProviderSchedule {
 }
 
 /** Il calendario di una squadra: i risultati della stagione in corso o le partite in programma. */
-export async function fetchSchedule(teamId: string, fixture: boolean): Promise<ProviderSchedule> {
-  const query = fixture ? "?fixture=true" : "";
+export async function fetchSchedule(teamId: string, kind: "results" | "fixtures"): Promise<ProviderSchedule> {
+  const query = kind === "fixtures" ? "?fixture=true" : "";
   return parseSchedule(
     await getJson(`/site/v2/sports/soccer/all/teams/${encodeURIComponent(teamId)}/schedule${query}`),
     teamId,

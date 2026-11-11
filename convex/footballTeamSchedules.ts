@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
-import { internalAction, internalMutation, query } from "./_generated/server";
+import { internalAction, internalMutation, query, type MutationCtx } from "./_generated/server";
 import { fetchSchedule, type ProviderCompetition, type ProviderSchedule } from "./espn";
 import { getProfile } from "./model";
 import { footballCompetition, footballScheduleMatch } from "./schema";
@@ -9,7 +9,7 @@ import { footballCompetition, footballScheduleMatch } from "./schema";
 const MAX_SCHEDULES_SCANNED = 2000;
 
 /** Le competizioni di due calendari, senza doppioni e nell'ordine in cui compaiono. */
-function mergeCompetitions(lists: ProviderCompetition[][]): ProviderCompetition[] {
+export function mergeCompetitions(lists: ProviderCompetition[][]): ProviderCompetition[] {
   const byLeague = new Map<string, ProviderCompetition>();
   for (const competition of lists.flat()) if (!byLeague.has(competition.league)) byLeague.set(competition.league, competition);
   return [...byLeague.values()];
@@ -26,8 +26,8 @@ export const refresh = internalAction({
     let results: ProviderSchedule;
     let fixtures: ProviderSchedule;
     try {
-      results = await fetchSchedule(args.teamId, false);
-      fixtures = await fetchSchedule(args.teamId, true);
+      results = await fetchSchedule(args.teamId, "results");
+      fixtures = await fetchSchedule(args.teamId, "fixtures");
     } catch (e) {
       console.error(`Calendario di ${args.teamId}:`, e instanceof Error ? e.message : e);
       return null;
@@ -63,26 +63,32 @@ export const save = internalMutation({
   },
 });
 
-/** Ogni giorno, insieme alla pulizia delle partite: toglie il calendario di una squadra che nessuna chat pinna. */
+/** Toglie il calendario di una squadra che nessuna chat pinna più. */
+export async function deleteUnpinnedSchedules(ctx: MutationCtx): Promise<void> {
+  let scanned = 0;
+  for await (const row of ctx.db.query("footballTeamSchedules")) {
+    if (++scanned > MAX_SCHEDULES_SCANNED) return;
+    const pin = await ctx.db
+      .query("teamPins")
+      .withIndex("by_teamId", (q) => q.eq("teamId", row.teamId))
+      .first();
+    if (!pin) await ctx.db.delete("footballTeamSchedules", row._id);
+  }
+}
+
+/** La stessa pulizia, richiamabile come funzione interna. */
 export const cleanup = internalMutation({
   args: {},
   handler: async (ctx) => {
-    let scanned = 0;
-    for await (const row of ctx.db.query("footballTeamSchedules")) {
-      if (++scanned > MAX_SCHEDULES_SCANNED) return null;
-      const pin = await ctx.db
-        .query("teamPins")
-        .withIndex("by_teamId", (q) => q.eq("teamId", row.teamId))
-        .first();
-      if (!pin) await ctx.db.delete("footballTeamSchedules", row._id);
-    }
+    await deleteUnpinnedSchedules(ctx);
     return null;
   },
 });
 
 /**
  * Il calendario di una squadra pinnata nel drawer: risultati, partite in programma e competizioni.
- * `null` se chi chiede non è nella chat, la chat non pinna la squadra, o il calendario non è ancora arrivato.
+ * `null` se chi chiede non è nella chat o la chat non pinna la squadra; `pending` finché la prima riga
+ * non è arrivata, così il tab sa di dover aspettare invece di dire che non ci sono partite.
  */
 export const forPin = query({
   args: { conversationId: v.id("conversations"), teamId: v.string() },
@@ -103,13 +109,13 @@ export const forPin = query({
       .query("footballTeamSchedules")
       .withIndex("by_teamId", (q) => q.eq("teamId", args.teamId))
       .unique();
-    if (!row) return null;
     return {
-      teamId: row.teamId,
-      results: row.results,
-      fixtures: row.fixtures,
-      competitions: row.competitions,
-      fetchedAt: row.fetchedAt,
+      teamId: args.teamId,
+      pending: row === null,
+      results: row?.results ?? [],
+      fixtures: row?.fixtures ?? [],
+      competitions: row?.competitions ?? [],
+      fetchedAt: row?.fetchedAt ?? null,
     };
   },
 });
