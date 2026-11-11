@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
-import { AlertTriangle, X } from "lucide-react";
+import { AlertTriangle, Pin, X } from "lucide-react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { Crest } from "@/components/team-pins/crest";
@@ -27,6 +27,14 @@ import {
   type TeamSchedule,
   type TeamView,
 } from "@/lib/match-schedule";
+import {
+  initialLeague,
+  standingsView,
+  type Competition,
+  type PathStep,
+  type StandingsView,
+  type TeamStandings,
+} from "@/lib/match-standings";
 import {
   pitchView,
   playerMarks,
@@ -68,12 +76,13 @@ const OUTCOME_LABELS: Record<MatchOutcome, MessageKey> = {
 /** La data breve del tab e dell'intestazione di una partita vecchia, nella lingua scelta. */
 const shortDate = (locale: string, ts: number) => new Date(ts).toLocaleDateString(locale, { day: "numeric", month: "short" });
 
-type DrawerTab = "match" | "matches";
+type DrawerTab = "match" | "matches" | "standings";
 
 /** I tab del drawer, nell'ordine in cui compaiono. */
 const TABS: { kind: DrawerTab; testId: string; label: MessageKey }[] = [
   { kind: "match", testId: "tab-match", label: "teamPins.tabMatch" },
   { kind: "matches", testId: "tab-matches", label: "teamPins.tabMatches" },
+  { kind: "standings", testId: "tab-standings", label: "teamPins.tabStandings" },
 ];
 
 /**
@@ -86,6 +95,7 @@ export function MatchDrawer({
   conversationId,
   team,
   match,
+  otherTeamIds,
   opened,
   onOpen,
   onBack,
@@ -97,6 +107,8 @@ export function MatchDrawer({
   /** La squadra pinnata del chip: il tab Partite mostra il suo calendario. */
   team: TeamView;
   match: PinMatch;
+  /** Le altre squadre pinnate nella chat: il tab Classifica segna la loro riga. */
+  otherTeamIds: string[];
   /** La partita vecchia aperta dal tab Partite, se c'è: vive solo finché il drawer è aperto. */
   opened: OpenedMatch | null;
   /** Apre una partita vecchia: la riga del tab Partite o il "Try again". */
@@ -113,6 +125,11 @@ export function MatchDrawer({
   const shown = opened ? openedMatchView(opened.match, team, opened.requestedAt) : match;
   const details = useQuery(api.footballMatches.details, { conversationId, eventId: shown.eventId });
   const schedule = useQuery(api.footballTeamSchedules.forPin, { conversationId, teamId: team.teamId });
+  const competitions = schedule?.competitions ?? [];
+  /** La competizione scelta coi chip: `null` finché vale quella del chip della partita. */
+  const [pickedLeague, setPickedLeague] = useState<string | null>(null);
+  const league = pickedLeague ?? initialLeague(competitions, match.league);
+  const standings = useQuery(api.footballStandings.forPin, { conversationId, teamId: team.teamId, league: league ?? "" });
   const state = chipState(shown);
   const stale = isUnavailable(shown, now);
   const { when, time, clock } = useMatchTimes(shown);
@@ -122,6 +139,13 @@ export function MatchDrawer({
   const [requestError, setRequestError] = useState<MessageKey | null>(null);
   /** L'ora locale per far scadere la richiesta dei dettagli dopo 20 secondi. */
   const [openedNow, setOpenedNow] = useState(() => Date.now());
+  const scheduleLoading = schedule === undefined || (schedule !== null && schedule.pending);
+  const standingsLoading = scheduleLoading || (!!league && (standings === undefined || (standings !== null && standings.pending)));
+
+  // Un altro chip riparte dalla competizione della sua partita.
+  useEffect(() => {
+    setPickedLeague(null);
+  }, [team.teamId, match.eventId]);
 
   const requestPast = (row: ScheduleMatch) => {
     setTab("match");
@@ -350,7 +374,7 @@ export function MatchDrawer({
             </div>
           )}
         </div>
-      ) : (
+      ) : tab === "matches" ? (
         <div
           className="min-h-0 flex-1 overflow-y-auto px-5 py-4"
           data-testid="matches-tab"
@@ -362,8 +386,230 @@ export function MatchDrawer({
             <MatchesTabBody schedule={schedule} matches={matches} now={now} clock={clock} onOpen={requestPast} />
           )}
         </div>
+      ) : (
+        <StandingsTabBody
+          competitions={competitions}
+          league={league}
+          onPick={setPickedLeague}
+          standings={standings}
+          schedule={schedule}
+          loading={standingsLoading}
+          teamId={team.teamId}
+          otherTeamIds={otherTeamIds}
+          now={now}
+          clock={clock}
+          onOpen={requestPast}
+        />
       )}
     </aside>
+  );
+}
+
+/** I chip delle competizioni, la tabella o il percorso, e la legenda delle zone. */
+function StandingsTabBody({
+  competitions,
+  league,
+  onPick,
+  standings,
+  schedule,
+  loading,
+  teamId,
+  otherTeamIds,
+  now,
+  clock,
+  onOpen,
+}: {
+  competitions: Competition[];
+  league: string | null;
+  onPick: (league: string) => void;
+  standings: TeamStandings | null | undefined;
+  schedule: TeamSchedule | null | undefined;
+  loading: boolean;
+  teamId: string;
+  otherTeamIds: string[];
+  now: number;
+  clock: (ts: number) => string;
+  onOpen: (match: ScheduleMatch) => void;
+}) {
+  const { t } = useI18n();
+  const view =
+    standings && schedule ? standingsView({ standings, schedule, teamId, otherTeamIds }) : null;
+  const staleAt = standings?.fetchedAt != null && isStale(standings.fetchedAt, now) ? standings.fetchedAt : null;
+  return (
+    <div
+      className="min-h-0 flex-1 overflow-y-auto px-5 py-4"
+      data-testid="standings-tab"
+      data-state={loading ? "loading" : view && view.kind !== "empty" ? "ready" : "empty"}
+    >
+      {competitions.length > 0 && (
+        <div role="tablist" aria-label={t("teamPins.tabStandings")} className="mb-4 flex gap-1.5 overflow-x-auto">
+          {competitions.map((competition) => (
+            <button
+              key={competition.league}
+              type="button"
+              role="tab"
+              aria-selected={competition.league === league}
+              data-testid={`standings-chip-${competition.league}`}
+              onClick={() => onPick(competition.league)}
+              className={cn(
+                "shrink-0 rounded-full border px-2.5 py-1 text-[12px] font-semibold",
+                competition.league === league
+                  ? "border-app-accent bg-app-accent-soft text-app-text-strong"
+                  : "border-app-border text-app-text-muted hover:bg-app-field",
+              )}
+            >
+              {competition.shortName}
+            </button>
+          ))}
+        </div>
+      )}
+      {loading ? (
+        <Loading />
+      ) : !view || view.kind === "empty" ? (
+        <p className="py-10 text-center text-[13px] text-app-text-muted" data-testid="standings-empty">
+          {t("teamPins.noStandings")}
+        </p>
+      ) : (
+        <div className="space-y-5">
+          {staleAt !== null && (
+            <p className="flex items-center gap-1.5 text-xs text-app-text-muted" data-testid="standings-stale">
+              <AlertTriangle className="size-3.5 text-amber-500" /> {t("teamPins.lastUpdated", { time: clock(staleAt) })}
+            </p>
+          )}
+          {view.kind === "table" && <StandingsTable view={view} teamId={teamId} />}
+          {view.kind === "path" && (
+            <Section title={t("teamPins.teamPath", { team: competitions.find((c) => c.league === league)?.name ?? "" })}>
+              <PathList steps={view.steps} onOpen={onOpen} />
+            </Section>
+          )}
+          {view.kind === "knockout" && (
+            <>
+              <Section title={t("teamPins.knockoutRounds")}>
+                <PathList steps={view.steps} onOpen={onOpen} />
+              </Section>
+              <Section title={t("teamPins.leaguePhaseFinal")}>
+                <StandingsTable view={view} teamId={teamId} />
+              </Section>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** La tabella: #, squadra, P, GD e Pts; la squadra pinnata è evidenziata e le altre pinnate hanno il pin. */
+function StandingsTable({ view, teamId }: { view: Extract<StandingsView, { kind: "table" | "knockout" }>; teamId: string }) {
+  const { t } = useI18n();
+  const selected = useRef<HTMLTableRowElement>(null);
+  // Scorre alla riga della squadra quando la tabella cambia, non a ogni render.
+  const signature = `${teamId}:${view.rows.length}:${view.rows[0]?.teamId ?? ""}`;
+  useEffect(() => {
+    selected.current?.scrollIntoView({ block: "nearest" });
+  }, [signature]);
+
+  return (
+    <div data-testid="standings-table">
+      <table className="w-full border-collapse text-[13px] tabular-nums">
+        <thead>
+          <tr className="text-[11px] text-app-text-muted">
+            <th className="w-6 pb-1.5 text-right font-semibold">#</th>
+            <th className="pb-1.5 pl-2 text-left font-semibold">{t("teamPins.columnTeam")}</th>
+            <th className="w-7 pb-1.5 text-right font-semibold">{t("teamPins.columnPlayed")}</th>
+            <th className="w-9 pb-1.5 text-right font-semibold">{t("teamPins.columnGoalDifference")}</th>
+            <th className="w-9 pb-1.5 pr-1 text-right font-semibold">{t("teamPins.columnPoints")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {view.rows.map((row) => (
+            <tr
+              key={row.teamId}
+              ref={row.teamId === teamId ? selected : undefined}
+              data-testid={`standings-row-${row.teamId}`}
+              data-selected={row.selected}
+              data-pinned={row.otherPin}
+              className={cn("border-t border-app-border/60", row.selected && "bg-app-accent-soft font-semibold")}
+            >
+              <td className="relative py-1 pr-1 text-right text-app-text-muted">
+                {row.zone && <span aria-hidden className="absolute inset-y-0 left-0 w-[3px] rounded-sm" style={{ backgroundColor: `#${row.zone.color}` }} />}
+                {row.rank}
+              </td>
+              <td className="min-w-0 py-1 pl-2">
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <Crest logo={row.logo ?? null} abbreviation={row.shortName.slice(0, 3).toUpperCase()} size={16} />
+                  <span className="truncate text-app-text-strong">{row.shortName}</span>
+                  {row.otherPin && <Pin className="size-3 shrink-0 text-app-accent" aria-label={t("teamPins.pinnedMark")} />}
+                </span>
+              </td>
+              <td className="py-1 text-right text-app-text-muted">{row.played}</td>
+              <td className="py-1 text-right text-app-text">{row.goalDifference > 0 ? `+${row.goalDifference}` : row.goalDifference}</td>
+              <td className="py-1 pr-1 text-right font-bold text-app-text-strong">{row.points}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {view.legend.length > 0 && (
+        <ul className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-app-text-muted" data-testid="standings-legend">
+          {view.legend.map((zone) => (
+            <li key={zone.label} className="flex items-center gap-1.5">
+              <span aria-hidden className="size-2 rounded-sm" style={{ backgroundColor: `#${zone.color}` }} />
+              {zone.label}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/** Il percorso di una coppa: una linea di turni, ognuno con l'avversario e il risultato o la data. */
+function PathList({ steps, onOpen }: { steps: PathStep[]; onOpen: (match: ScheduleMatch) => void }) {
+  const { t, locale } = useI18n();
+  const outcomeLabels: Record<MatchOutcome, MessageKey> = { win: "teamPins.win", draw: "teamPins.draw", loss: "teamPins.loss" };
+  return (
+    <ol className="relative ml-2 space-y-3 border-l-2 border-app-border pl-4" data-testid="standings-path">
+      {steps.map((step) => {
+        const content = (
+          <>
+            <p className="text-[11px] font-semibold text-app-text-muted uppercase">{step.round}</p>
+            <p className="flex items-center gap-2 text-[13px] text-app-text-strong">
+              <span className="text-xs text-app-text-muted">{t(step.match.home ? "teamPins.home" : "teamPins.away")}</span>
+              <span className="min-w-0 truncate">{step.match.opponent.shortName}</span>
+              <span className="ml-auto flex shrink-0 items-center gap-1.5 font-bold tabular-nums">
+                {step.score ?? (step.match.timeValid === false ? "" : shortDate(locale, step.match.kickoff))}
+                {step.outcome && (
+                  <span
+                    className={cn(
+                      "flex size-4 items-center justify-center rounded text-[10px] font-bold",
+                      step.outcome === "win" && "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+                      step.outcome === "loss" && "bg-red-500/15 text-red-600 dark:text-red-400",
+                      step.outcome === "draw" && "bg-app-field text-app-text-muted",
+                    )}
+                  >
+                    {t(outcomeLabels[step.outcome])}
+                  </span>
+                )}
+              </span>
+            </p>
+          </>
+        );
+        return (
+          <li key={step.match.eventId} className="relative" data-testid={`standings-step-${step.match.eventId}`} data-openable={step.opens}>
+            <span
+              aria-hidden
+              className={cn("absolute top-1 -left-[23px] size-3 rounded-full border-2 border-app-panel", step.opens ? "bg-app-accent" : "bg-app-text-dim")}
+            />
+            {step.opens ? (
+              <button type="button" onClick={() => onOpen(step.match)} className="w-full text-left hover:opacity-80">
+                {content}
+              </button>
+            ) : (
+              content
+            )}
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
