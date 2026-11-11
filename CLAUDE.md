@@ -12,6 +12,10 @@ Convex agent skills for common tasks can be installed by running
 
 <!-- convex-ai-end -->
 
+## Subagents under herdr
+
+When `$HC_TERMINAL_ID` is set, run each subagent a skill asks for (implementer, merger, explorer, reviewer, researcher) as a Claude Code worker in hc, following `docs/agents/herdr-subagents.md`. A session whose task file has a "Worker rules" section is itself a worker: it does its task alone.
+
 ## Deploying / releasing
 
 Read `docs/DEPLOY.md` before any deploy or release. Never push tags, run `npx convex deploy` or change secrets unless the user explicitly asks.

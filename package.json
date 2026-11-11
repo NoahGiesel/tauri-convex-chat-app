@@ -11,6 +11,7 @@
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
     "test": "vitest run",
+    "herdr": "node scripts/herdr-dev.mjs",
     "e2e": "node e2e/run.mjs",
     "e2e:guards": "node --test e2e/guards.test.mjs e2e/release-guard.test.mjs e2e/report.test.mjs e2e/stub.test.mjs"
   },
