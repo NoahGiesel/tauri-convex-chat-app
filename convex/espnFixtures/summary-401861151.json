@@ -1,0 +1,97 @@
+{
+ "header": {
+  "league": {
+   "name": "UEFA Nations League"
+  },
+  "competitions": [
+   {
+    "competitors": [
+     {
+      "id": "162",
+      "homeAway": "home",
+      "team": {
+       "color": "103cd6"
+      }
+     },
+     {
+      "id": "478",
+      "homeAway": "away",
+      "team": {
+       "color": "000080"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "gameInfo": {
+  "venue": {
+   "fullName": "San Siro"
+  }
+ },
+ "keyEvents": [],
+ "rosters": [
+  {
+   "homeAway": "home",
+   "team": {
+    "id": "162"
+   }
+  },
+  {
+   "homeAway": "away",
+   "team": {
+    "id": "478"
+   }
+  }
+ ],
+ "boxscore": {
+  "teams": [
+   {
+    "team": {
+     "id": "162"
+    },
+    "statistics": [
+     {
+      "name": "goalDifference",
+      "displayValue": "3"
+     },
+     {
+      "name": "totalGoals",
+      "displayValue": "8"
+     },
+     {
+      "name": "goalAssists",
+      "displayValue": "3"
+     },
+     {
+      "name": "goalsConceded",
+      "displayValue": "5"
+     }
+    ]
+   },
+   {
+    "team": {
+     "id": "478"
+    },
+    "statistics": [
+     {
+      "name": "goalDifference",
+      "displayValue": "5"
+     },
+     {
+      "name": "totalGoals",
+      "displayValue": "7"
+     },
+     {
+      "name": "goalAssists",
+      "displayValue": "7"
+     },
+     {
+      "name": "goalsConceded",
+      "displayValue": "2"
+     }
+    ]
+   }
+  ]
+ }
+}

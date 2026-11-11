@@ -4,6 +4,7 @@ import {
   createDrawerMemory,
   drawerChip,
   drawerLayout,
+  isStale,
   resolveTarget,
   targetOf,
   targetStillPinned,
@@ -157,5 +158,16 @@ describe("drawer della partita: memoria per chat", () => {
 
     expect(memory.get(chat("carol"))).toBeNull();
     expect(memory.get(chat("dave"))).toEqual({ teams: ["napoli"] });
+  });
+});
+
+describe("dati vecchi", () => {
+  const fetchedAt = Date.parse("2026-11-08T17:50Z");
+  const day = 24 * 60 * 60_000;
+
+  it("un tab è vecchio solo dopo 24 ore, non a 24 ore esatte", () => {
+    expect(isStale(fetchedAt, fetchedAt + day)).toBe(false);
+    expect(isStale(fetchedAt, fetchedAt + day + 1)).toBe(true);
+    expect(isStale(fetchedAt, fetchedAt + day - 1)).toBe(false);
   });
 });

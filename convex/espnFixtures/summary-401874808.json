@@ -1,0 +1,1485 @@
+{
+ "header": {
+  "league": {
+   "name": "Italian Serie A"
+  },
+  "competitions": [
+   {
+    "competitors": [
+     {
+      "id": "110",
+      "homeAway": "home",
+      "team": {
+       "color": "00239c"
+      }
+     },
+     {
+      "id": "2572",
+      "homeAway": "away",
+      "team": {
+       "color": "4169E1"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "gameInfo": {
+  "venue": {
+   "fullName": "San Siro"
+  }
+ },
+ "keyEvents": [
+  {
+   "type": {
+    "type": "kickoff"
+   },
+   "clock": {
+    "displayValue": ""
+   },
+   "participants": []
+  },
+  {
+   "type": {
+    "type": "goal"
+   },
+   "clock": {
+    "displayValue": "12'"
+   },
+   "team": {
+    "id": "110"
+   },
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Pio Esposito",
+      "id": "362674"
+     }
+    },
+    {
+     "athlete": {
+      "displayName": "Djed Spence",
+      "id": "267711"
+     }
+    }
+   ]
+  },
+  {
+   "type": {
+    "type": "goal"
+   },
+   "clock": {
+    "displayValue": "19'"
+   },
+   "team": {
+    "id": "110"
+   },
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Marcus Thuram",
+      "id": "217331"
+     }
+    }
+   ]
+  },
+  {
+   "type": {
+    "type": "halftime"
+   },
+   "clock": {
+    "displayValue": "45'+1'"
+   },
+   "participants": []
+  },
+  {
+   "type": {
+    "type": "substitution"
+   },
+   "clock": {
+    "displayValue": "45'"
+   },
+   "team": {
+    "id": "2572"
+   },
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Samuele Ricci",
+      "id": "276822"
+     }
+    },
+    {
+     "athlete": {
+      "displayName": "Máximo Perrone",
+      "id": "309241"
+     }
+    }
+   ]
+  },
+  {
+   "type": {
+    "type": "substitution"
+   },
+   "clock": {
+    "displayValue": "45'"
+   },
+   "team": {
+    "id": "2572"
+   },
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Ivan Smolcic",
+      "id": "323273"
+     }
+    },
+    {
+     "athlete": {
+      "displayName": "Martin Baturina",
+      "id": "311475"
+     }
+    }
+   ]
+  },
+  {
+   "type": {
+    "type": "start-2nd-half"
+   },
+   "clock": {
+    "displayValue": "45'"
+   },
+   "participants": []
+  },
+  {
+   "type": {
+    "type": "yellow-card"
+   },
+   "clock": {
+    "displayValue": "72'"
+   },
+   "team": {
+    "id": "110"
+   },
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Pio Esposito",
+      "id": "362674"
+     }
+    }
+   ]
+  },
+  {
+   "type": {
+    "type": "substitution"
+   },
+   "clock": {
+    "displayValue": "72'"
+   },
+   "team": {
+    "id": "110"
+   },
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Henrikh Mkhitaryan",
+      "id": "147625"
+     }
+    },
+    {
+     "athlete": {
+      "displayName": "Piotr Zielinski",
+      "id": "177782"
+     }
+    }
+   ]
+  },
+  {
+   "type": {
+    "type": "substitution"
+   },
+   "clock": {
+    "displayValue": "73'"
+   },
+   "team": {
+    "id": "110"
+   },
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Ange-Yoan Bonny",
+      "id": "309185"
+     }
+    },
+    {
+     "athlete": {
+      "displayName": "Pio Esposito",
+      "id": "362674"
+     }
+    }
+   ]
+  },
+  {
+   "type": {
+    "type": "substitution"
+   },
+   "clock": {
+    "displayValue": "74'"
+   },
+   "team": {
+    "id": "2572"
+   },
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Maxence Caqueret",
+      "id": "265912"
+     }
+    },
+    {
+     "athlete": {
+      "displayName": "Lucas Da Cunha",
+      "id": "291285"
+     }
+    }
+   ]
+  },
+  {
+   "type": {
+    "type": "substitution"
+   },
+   "clock": {
+    "displayValue": "74'"
+   },
+   "team": {
+    "id": "2572"
+   },
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Mattia Liberali",
+      "id": "387723"
+     }
+    },
+    {
+     "athlete": {
+      "displayName": "Yan Couto",
+      "id": "297084"
+     }
+    }
+   ]
+  },
+  {
+   "type": {
+    "type": "substitution"
+   },
+   "clock": {
+    "displayValue": "74'"
+   },
+   "team": {
+    "id": "2572"
+   },
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Kaiki",
+      "id": "317233"
+     }
+    },
+    {
+     "athlete": {
+      "displayName": "Álex Valle",
+      "id": "192146"
+     }
+    }
+   ]
+  },
+  {
+   "type": {
+    "type": "substitution"
+   },
+   "clock": {
+    "displayValue": "81'"
+   },
+   "team": {
+    "id": "110"
+   },
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Petar Sucic",
+      "id": "341494"
+     }
+    },
+    {
+     "athlete": {
+      "displayName": "Hakan Çalhanoglu",
+      "id": "170785"
+     }
+    }
+   ]
+  },
+  {
+   "type": {
+    "type": "substitution"
+   },
+   "clock": {
+    "displayValue": "87'"
+   },
+   "team": {
+    "id": "110"
+   },
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Andy Diouf",
+      "id": "319167"
+     }
+    },
+    {
+     "athlete": {
+      "displayName": "Federico Dimarco",
+      "id": "194748"
+     }
+    }
+   ]
+  },
+  {
+   "type": {
+    "type": "substitution"
+   },
+   "clock": {
+    "displayValue": "88'"
+   },
+   "team": {
+    "id": "110"
+   },
+   "participants": [
+    {
+     "athlete": {
+      "displayName": "Benjamin Pavard",
+      "id": "215378"
+     }
+    },
+    {
+     "athlete": {
+      "displayName": "Marcus Thuram",
+      "id": "217331"
+     }
+    }
+   ]
+  },
+  {
+   "type": {
+    "type": "end-regular-time"
+   },
+   "clock": {
+    "displayValue": "90'+3'"
+   },
+   "participants": []
+  }
+ ],
+ "rosters": [
+  {
+   "homeAway": "home",
+   "team": {
+    "id": "110"
+   },
+   "formation": "3-5-2",
+   "roster": [
+    {
+     "starter": true,
+     "jersey": "1",
+     "athlete": {
+      "id": "240533",
+      "displayName": "Josep Martínez",
+      "shortName": "J. Martínez"
+     },
+     "position": {
+      "abbreviation": "G"
+     },
+     "formationPlace": "1",
+     "subbedIn": false,
+     "subbedOut": false
+    },
+    {
+     "starter": true,
+     "jersey": "95",
+     "athlete": {
+      "id": "249280",
+      "displayName": "Alessandro Bastoni",
+      "shortName": "A. Bastoni"
+     },
+     "position": {
+      "abbreviation": "CD"
+     },
+     "formationPlace": "5",
+     "subbedIn": false,
+     "subbedOut": false
+    },
+    {
+     "starter": true,
+     "jersey": "30",
+     "athlete": {
+      "id": "271769",
+      "displayName": "Carlos Augusto",
+      "shortName": "C. Augusto"
+     },
+     "position": {
+      "abbreviation": "CD-L"
+     },
+     "formationPlace": "4",
+     "subbedIn": false,
+     "subbedOut": false
+    },
+    {
+     "starter": true,
+     "jersey": "25",
+     "athlete": {
+      "id": "214562",
+      "displayName": "Manuel Akanji",
+      "shortName": "M. Akanji"
+     },
+     "position": {
+      "abbreviation": "CD-R"
+     },
+     "formationPlace": "6",
+     "subbedIn": false,
+     "subbedOut": false
+    },
+    {
+     "starter": true,
+     "jersey": "7",
+     "athlete": {
+      "id": "177782",
+      "displayName": "Piotr Zielinski",
+      "shortName": "P. Zielinski"
+     },
+     "position": {
+      "abbreviation": "CM-L"
+     },
+     "formationPlace": "8",
+     "subbedIn": false,
+     "subbedOut": true,
+     "subbedOutFor": {
+      "athlete": {
+       "id": "147625",
+       "displayName": "Henrikh Mkhitaryan"
+      }
+     }
+    },
+    {
+     "starter": true,
+     "jersey": "23",
+     "athlete": {
+      "id": "204441",
+      "displayName": "Nicolò Barella",
+      "shortName": "N. Barella"
+     },
+     "position": {
+      "abbreviation": "CM-R"
+     },
+     "formationPlace": "7",
+     "subbedIn": false,
+     "subbedOut": false
+    },
+    {
+     "starter": true,
+     "jersey": "20",
+     "athlete": {
+      "id": "170785",
+      "displayName": "Hakan Çalhanoglu",
+      "shortName": "H. Çalhanoglu"
+     },
+     "position": {
+      "abbreviation": "AM"
+     },
+     "formationPlace": "11",
+     "subbedIn": false,
+     "subbedOut": true,
+     "subbedOutFor": {
+      "athlete": {
+       "id": "341494",
+       "displayName": "Petar Sucic"
+      }
+     }
+    },
+    {
+     "starter": true,
+     "jersey": "32",
+     "athlete": {
+      "id": "194748",
+      "displayName": "Federico Dimarco",
+      "shortName": "F. Dimarco"
+     },
+     "position": {
+      "abbreviation": "LM"
+     },
+     "formationPlace": "3",
+     "subbedIn": false,
+     "subbedOut": true,
+     "subbedOutFor": {
+      "athlete": {
+       "id": "319167",
+       "displayName": "Andy Diouf"
+      }
+     }
+    },
+    {
+     "starter": true,
+     "jersey": "99",
+     "athlete": {
+      "id": "267711",
+      "displayName": "Djed Spence",
+      "shortName": "D. Spence"
+     },
+     "position": {
+      "abbreviation": "RM"
+     },
+     "formationPlace": "2",
+     "subbedIn": false,
+     "subbedOut": false
+    },
+    {
+     "starter": true,
+     "jersey": "9",
+     "athlete": {
+      "id": "217331",
+      "displayName": "Marcus Thuram",
+      "shortName": "M. Thuram"
+     },
+     "position": {
+      "abbreviation": "CF-L"
+     },
+     "formationPlace": "9",
+     "subbedIn": false,
+     "subbedOut": true,
+     "subbedOutFor": {
+      "athlete": {
+       "id": "215378",
+       "displayName": "Benjamin Pavard"
+      }
+     }
+    },
+    {
+     "starter": true,
+     "jersey": "94",
+     "athlete": {
+      "id": "362674",
+      "displayName": "Pio Esposito",
+      "shortName": "P. Esposito"
+     },
+     "position": {
+      "abbreviation": "CF-R"
+     },
+     "formationPlace": "10",
+     "subbedIn": false,
+     "subbedOut": true,
+     "subbedOutFor": {
+      "athlete": {
+       "id": "309185",
+       "displayName": "Ange-Yoan Bonny"
+      }
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "22",
+     "athlete": {
+      "id": "147625",
+      "displayName": "Henrikh Mkhitaryan",
+      "shortName": "H. Mkhitaryan"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     },
+     "formationPlace": "0",
+     "subbedIn": true,
+     "subbedOut": false,
+     "subbedInFor": {
+      "athlete": {
+       "id": "177782",
+       "displayName": "Piotr Zielinski"
+      }
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "46",
+     "athlete": {
+      "id": "403808",
+      "displayName": "Leonardo Bovio",
+      "shortName": "L. Bovio"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     },
+     "formationPlace": "0",
+     "subbedIn": false,
+     "subbedOut": false
+    },
+    {
+     "starter": false,
+     "jersey": "8",
+     "athlete": {
+      "id": "341494",
+      "displayName": "Petar Sucic",
+      "shortName": "P. Sucic"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     },
+     "formationPlace": "0",
+     "subbedIn": true,
+     "subbedOut": false,
+     "subbedInFor": {
+      "athlete": {
+       "id": "170785",
+       "displayName": "Hakan Çalhanoglu"
+      }
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "21",
+     "athlete": {
+      "id": "190257",
+      "displayName": "Curtis Jones",
+      "shortName": "C. Jones"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     },
+     "formationPlace": "0",
+     "subbedIn": false,
+     "subbedOut": false
+    },
+    {
+     "starter": false,
+     "jersey": "28",
+     "athlete": {
+      "id": "215378",
+      "displayName": "Benjamin Pavard",
+      "shortName": "B. Pavard"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     },
+     "formationPlace": "0",
+     "subbedIn": true,
+     "subbedOut": false,
+     "subbedInFor": {
+      "athlete": {
+       "id": "217331",
+       "displayName": "Marcus Thuram"
+      }
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "12",
+     "athlete": {
+      "id": "181322",
+      "displayName": "Raffaele Di Gennaro",
+      "shortName": "R. Di Gennaro"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     },
+     "formationPlace": "0",
+     "subbedIn": false,
+     "subbedOut": false
+    },
+    {
+     "starter": false,
+     "jersey": "17",
+     "athlete": {
+      "id": "319167",
+      "displayName": "Andy Diouf",
+      "shortName": "A. Diouf"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     },
+     "formationPlace": "0",
+     "subbedIn": true,
+     "subbedOut": false,
+     "subbedInFor": {
+      "athlete": {
+       "id": "194748",
+       "displayName": "Federico Dimarco"
+      }
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "5",
+     "athlete": {
+      "id": "240109",
+      "displayName": "Aleksandar Stankovic",
+      "shortName": "A. Stankovic"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     },
+     "formationPlace": "0",
+     "subbedIn": false,
+     "subbedOut": false
+    },
+    {
+     "starter": false,
+     "jersey": "14",
+     "athlete": {
+      "id": "309185",
+      "displayName": "Ange-Yoan Bonny",
+      "shortName": "A. Bonny"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     },
+     "formationPlace": "0",
+     "subbedIn": true,
+     "subbedOut": false,
+     "subbedInFor": {
+      "athlete": {
+       "id": "362674",
+       "displayName": "Pio Esposito"
+      }
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "49",
+     "athlete": {
+      "id": "181836",
+      "displayName": "Ivan Provedel",
+      "shortName": "I. Provedel"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     },
+     "formationPlace": "0",
+     "subbedIn": false,
+     "subbedOut": false
+    },
+    {
+     "starter": false,
+     "jersey": "6",
+     "athlete": {
+      "id": "157974",
+      "displayName": "John Stones",
+      "shortName": "J. Stones"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     },
+     "formationPlace": "0",
+     "subbedIn": false,
+     "subbedOut": false
+    },
+    {
+     "starter": false,
+     "jersey": "53",
+     "athlete": {
+      "id": "402778",
+      "displayName": "Matteo Lavelli",
+      "shortName": "M. Lavelli"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     },
+     "formationPlace": "0",
+     "subbedIn": false,
+     "subbedOut": false
+    },
+    {
+     "starter": false,
+     "jersey": "31",
+     "athlete": {
+      "id": "266660",
+      "displayName": "Yann Bisseck",
+      "shortName": "Y. Bisseck"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     },
+     "formationPlace": "0",
+     "subbedIn": false,
+     "subbedOut": false
+    }
+   ]
+  },
+  {
+   "homeAway": "away",
+   "team": {
+    "id": "2572"
+   },
+   "formation": "4-2-3-1",
+   "roster": [
+    {
+     "starter": true,
+     "jersey": "97",
+     "athlete": {
+      "id": "108662",
+      "displayName": "Robert Sánchez",
+      "shortName": "R. Sánchez"
+     },
+     "position": {
+      "abbreviation": "G"
+     },
+     "formationPlace": "1",
+     "subbedIn": false,
+     "subbedOut": false
+    },
+    {
+     "starter": true,
+     "jersey": "2",
+     "athlete": {
+      "id": "175887",
+      "displayName": "Marc-Oliver Kempf",
+      "shortName": "M. Kempf"
+     },
+     "position": {
+      "abbreviation": "CD-L"
+     },
+     "formationPlace": "6",
+     "subbedIn": false,
+     "subbedOut": false
+    },
+    {
+     "starter": true,
+     "jersey": "4",
+     "athlete": {
+      "id": "380318",
+      "displayName": "Jacobo Ramón",
+      "shortName": "J. Ramón"
+     },
+     "position": {
+      "abbreviation": "CD-R"
+     },
+     "formationPlace": "5",
+     "subbedIn": false,
+     "subbedOut": false
+    },
+    {
+     "starter": true,
+     "jersey": "3",
+     "athlete": {
+      "id": "192146",
+      "displayName": "Álex Valle",
+      "shortName": "Á. Valle"
+     },
+     "position": {
+      "abbreviation": "LB"
+     },
+     "formationPlace": "3",
+     "subbedIn": false,
+     "subbedOut": true,
+     "subbedOutFor": {
+      "athlete": {
+       "id": "317233",
+       "displayName": "Kaiki"
+      }
+     }
+    },
+    {
+     "starter": true,
+     "jersey": "27",
+     "athlete": {
+      "id": "297084",
+      "displayName": "Yan Couto",
+      "shortName": "Y. Couto"
+     },
+     "position": {
+      "abbreviation": "RB"
+     },
+     "formationPlace": "2",
+     "subbedIn": false,
+     "subbedOut": true,
+     "subbedOutFor": {
+      "athlete": {
+       "id": "387723",
+       "displayName": "Mattia Liberali"
+      }
+     }
+    },
+    {
+     "starter": true,
+     "jersey": "10",
+     "athlete": {
+      "id": "337970",
+      "displayName": "Nico Paz",
+      "shortName": "N. Paz"
+     },
+     "position": {
+      "abbreviation": "AM"
+     },
+     "formationPlace": "10",
+     "subbedIn": false,
+     "subbedOut": false
+    },
+    {
+     "starter": true,
+     "jersey": "6",
+     "athlete": {
+      "id": "264211",
+      "displayName": "Luis Milla",
+      "shortName": "L. Milla"
+     },
+     "position": {
+      "abbreviation": "LM"
+     },
+     "formationPlace": "4",
+     "subbedIn": false,
+     "subbedOut": false
+    },
+    {
+     "starter": true,
+     "jersey": "5",
+     "athlete": {
+      "id": "309241",
+      "displayName": "Máximo Perrone",
+      "shortName": "M. Perrone"
+     },
+     "position": {
+      "abbreviation": "RM"
+     },
+     "formationPlace": "8",
+     "subbedIn": false,
+     "subbedOut": true,
+     "subbedOutFor": {
+      "athlete": {
+       "id": "276822",
+       "displayName": "Samuele Ricci"
+      }
+     }
+    },
+    {
+     "starter": true,
+     "jersey": "9",
+     "athlete": {
+      "id": "262071",
+      "displayName": "Tasos Douvikas",
+      "shortName": "T. Douvikas"
+     },
+     "position": {
+      "abbreviation": "F"
+     },
+     "formationPlace": "9",
+     "subbedIn": false,
+     "subbedOut": false
+    },
+    {
+     "starter": true,
+     "jersey": "20",
+     "athlete": {
+      "id": "311475",
+      "displayName": "Martin Baturina",
+      "shortName": "M. Baturina"
+     },
+     "position": {
+      "abbreviation": "AM-L"
+     },
+     "formationPlace": "11",
+     "subbedIn": false,
+     "subbedOut": true,
+     "subbedOutFor": {
+      "athlete": {
+       "id": "323273",
+       "displayName": "Ivan Smolcic"
+      }
+     }
+    },
+    {
+     "starter": true,
+     "jersey": "7",
+     "athlete": {
+      "id": "291285",
+      "displayName": "Lucas Da Cunha",
+      "shortName": "L. Da Cunha"
+     },
+     "position": {
+      "abbreviation": "AM-R"
+     },
+     "formationPlace": "7",
+     "subbedIn": false,
+     "subbedOut": true,
+     "subbedOutFor": {
+      "athlete": {
+       "id": "265912",
+       "displayName": "Maxence Caqueret"
+      }
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "55",
+     "athlete": {
+      "id": "404030",
+      "displayName": "Cristiano De Paoli",
+      "shortName": "C. De Paoli"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     },
+     "formationPlace": "0",
+     "subbedIn": false,
+     "subbedOut": false
+    },
+    {
+     "starter": false,
+     "jersey": "53",
+     "athlete": {
+      "id": "325553",
+      "displayName": "Willy Kambwala",
+      "shortName": "W. Kambwala"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     },
+     "formationPlace": "0",
+     "subbedIn": false,
+     "subbedOut": false
+    },
+    {
+     "starter": false,
+     "jersey": "28",
+     "athlete": {
+      "id": "323273",
+      "displayName": "Ivan Smolcic",
+      "shortName": "I. Smolcic"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     },
+     "formationPlace": "0",
+     "subbedIn": true,
+     "subbedOut": false,
+     "subbedInFor": {
+      "athlete": {
+       "id": "311475",
+       "displayName": "Martin Baturina"
+      }
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "16",
+     "athlete": {
+      "id": "317233",
+      "displayName": "Kaiki",
+      "shortName": "Kaiki"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     },
+     "formationPlace": "0",
+     "subbedIn": true,
+     "subbedOut": false,
+     "subbedInFor": {
+      "athlete": {
+       "id": "192146",
+       "displayName": "Álex Valle"
+      }
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "8",
+     "athlete": {
+      "id": "265912",
+      "displayName": "Maxence Caqueret",
+      "shortName": "M. Caqueret"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     },
+     "formationPlace": "0",
+     "subbedIn": true,
+     "subbedOut": false,
+     "subbedInFor": {
+      "athlete": {
+       "id": "291285",
+       "displayName": "Lucas Da Cunha"
+      }
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "21",
+     "athlete": {
+      "id": "276822",
+      "displayName": "Samuele Ricci",
+      "shortName": "S. Ricci"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     },
+     "formationPlace": "0",
+     "subbedIn": true,
+     "subbedOut": false,
+     "subbedInFor": {
+      "athlete": {
+       "id": "309241",
+       "displayName": "Máximo Perrone"
+      }
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "13",
+     "athlete": {
+      "id": "252372",
+      "displayName": "Alberto Dossena",
+      "shortName": "A. Dossena"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     },
+     "formationPlace": "0",
+     "subbedIn": false,
+     "subbedOut": false
+    },
+    {
+     "starter": false,
+     "jersey": "54",
+     "athlete": {
+      "id": "411276",
+      "displayName": "Matteo Papaccioli",
+      "shortName": "M. Papaccioli"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     },
+     "formationPlace": "0",
+     "subbedIn": false,
+     "subbedOut": false
+    },
+    {
+     "starter": false,
+     "jersey": "30",
+     "athlete": {
+      "id": "387723",
+      "displayName": "Mattia Liberali",
+      "shortName": "M. Liberali"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     },
+     "formationPlace": "0",
+     "subbedIn": true,
+     "subbedOut": false,
+     "subbedInFor": {
+      "athlete": {
+       "id": "297084",
+       "displayName": "Yan Couto"
+      }
+     }
+    },
+    {
+     "starter": false,
+     "jersey": "1",
+     "athlete": {
+      "id": "214740",
+      "displayName": "Jean Butez",
+      "shortName": "J. Butez"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     },
+     "formationPlace": "0",
+     "subbedIn": false,
+     "subbedOut": false
+    },
+    {
+     "starter": false,
+     "jersey": "18",
+     "athlete": {
+      "id": "181060",
+      "displayName": "Edoardo Goldaniga",
+      "shortName": "E. Goldaniga"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     },
+     "formationPlace": "0",
+     "subbedIn": false,
+     "subbedOut": false
+    },
+    {
+     "starter": false,
+     "jersey": "22",
+     "athlete": {
+      "id": "115025",
+      "displayName": "Mauro Vigorito",
+      "shortName": "M. Vigorito"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     },
+     "formationPlace": "0",
+     "subbedIn": false,
+     "subbedOut": false
+    },
+    {
+     "starter": false,
+     "jersey": "15",
+     "athlete": {
+      "id": "380970",
+      "displayName": "Adrian Lahdo",
+      "shortName": "A. Lahdo"
+     },
+     "position": {
+      "abbreviation": "SUB"
+     },
+     "formationPlace": "0",
+     "subbedIn": false,
+     "subbedOut": false
+    }
+   ]
+  }
+ ],
+ "boxscore": {
+  "teams": [
+   {
+    "team": {
+     "id": "110"
+    },
+    "statistics": [
+     {
+      "name": "foulsCommitted",
+      "displayValue": "13"
+     },
+     {
+      "name": "yellowCards",
+      "displayValue": "1"
+     },
+     {
+      "name": "redCards",
+      "displayValue": "0"
+     },
+     {
+      "name": "offsides",
+      "displayValue": "8"
+     },
+     {
+      "name": "wonCorners",
+      "displayValue": "4"
+     },
+     {
+      "name": "saves",
+      "displayValue": "1"
+     },
+     {
+      "name": "possessionPct",
+      "displayValue": "43"
+     },
+     {
+      "name": "totalShots",
+      "displayValue": "14"
+     },
+     {
+      "name": "shotsOnTarget",
+      "displayValue": "4"
+     },
+     {
+      "name": "shotPct",
+      "displayValue": "0.3"
+     },
+     {
+      "name": "penaltyKickGoals",
+      "displayValue": "0"
+     },
+     {
+      "name": "penaltyKickShots",
+      "displayValue": "0"
+     },
+     {
+      "name": "accuratePasses",
+      "displayValue": "439"
+     },
+     {
+      "name": "totalPasses",
+      "displayValue": "499"
+     },
+     {
+      "name": "passPct",
+      "displayValue": "0.9"
+     },
+     {
+      "name": "accurateCrosses",
+      "displayValue": "2"
+     },
+     {
+      "name": "totalCrosses",
+      "displayValue": "11"
+     },
+     {
+      "name": "crossPct",
+      "displayValue": "0.2"
+     },
+     {
+      "name": "totalLongBalls",
+      "displayValue": "47"
+     },
+     {
+      "name": "accurateLongBalls",
+      "displayValue": "31"
+     },
+     {
+      "name": "longballPct",
+      "displayValue": "0.7"
+     },
+     {
+      "name": "blockedShots",
+      "displayValue": "2"
+     },
+     {
+      "name": "effectiveTackles",
+      "displayValue": "9"
+     },
+     {
+      "name": "totalTackles",
+      "displayValue": "14"
+     },
+     {
+      "name": "tacklePct",
+      "displayValue": "0.6"
+     },
+     {
+      "name": "interceptions",
+      "displayValue": "12"
+     },
+     {
+      "name": "effectiveClearance",
+      "displayValue": "20"
+     },
+     {
+      "name": "totalClearance",
+      "displayValue": "20"
+     }
+    ]
+   },
+   {
+    "team": {
+     "id": "2572"
+    },
+    "statistics": [
+     {
+      "name": "foulsCommitted",
+      "displayValue": "6"
+     },
+     {
+      "name": "yellowCards",
+      "displayValue": "0"
+     },
+     {
+      "name": "redCards",
+      "displayValue": "0"
+     },
+     {
+      "name": "offsides",
+      "displayValue": "3"
+     },
+     {
+      "name": "wonCorners",
+      "displayValue": "2"
+     },
+     {
+      "name": "saves",
+      "displayValue": "2"
+     },
+     {
+      "name": "possessionPct",
+      "displayValue": "57"
+     },
+     {
+      "name": "totalShots",
+      "displayValue": "5"
+     },
+     {
+      "name": "shotsOnTarget",
+      "displayValue": "1"
+     },
+     {
+      "name": "shotPct",
+      "displayValue": "0.2"
+     },
+     {
+      "name": "penaltyKickGoals",
+      "displayValue": "0"
+     },
+     {
+      "name": "penaltyKickShots",
+      "displayValue": "0"
+     },
+     {
+      "name": "accuratePasses",
+      "displayValue": "595"
+     },
+     {
+      "name": "totalPasses",
+      "displayValue": "651"
+     },
+     {
+      "name": "passPct",
+      "displayValue": "0.9"
+     },
+     {
+      "name": "accurateCrosses",
+      "displayValue": "7"
+     },
+     {
+      "name": "totalCrosses",
+      "displayValue": "23"
+     },
+     {
+      "name": "crossPct",
+      "displayValue": "0.3"
+     },
+     {
+      "name": "totalLongBalls",
+      "displayValue": "29"
+     },
+     {
+      "name": "accurateLongBalls",
+      "displayValue": "16"
+     },
+     {
+      "name": "longballPct",
+      "displayValue": "0.6"
+     },
+     {
+      "name": "blockedShots",
+      "displayValue": "1"
+     },
+     {
+      "name": "effectiveTackles",
+      "displayValue": "5"
+     },
+     {
+      "name": "totalTackles",
+      "displayValue": "14"
+     },
+     {
+      "name": "tacklePct",
+      "displayValue": "0.4"
+     },
+     {
+      "name": "interceptions",
+      "displayValue": "8"
+     },
+     {
+      "name": "effectiveClearance",
+      "displayValue": "23"
+     },
+     {
+      "name": "totalClearance",
+      "displayValue": "23"
+     }
+    ]
+   }
+  ]
+ }
+}
