@@ -43,6 +43,8 @@ export const footballScheduleMatch = v.object({
   /** Il lato che ESPN dà vincente: dopo i rigori è chi li ha vinti. */
   winner: v.optional(footballSideKey),
   state: v.union(v.literal("pre"), v.literal("in"), v.literal("post")),
+  /** Nome ESPN dello stato (es. "STATUS_FINAL_AET"): l'intestazione di una partita vecchia lo usa. */
+  statusName: v.optional(v.string()),
   /** false quando ESPN non ha ancora fissato il calcio d'inizio (il tab mostra solo la data). */
   timeValid: v.optional(v.boolean()),
 });
@@ -432,6 +434,8 @@ export default defineSchema({
     shootout: v.optional(v.object({ home: v.number(), away: v.number() })),
     /** Minuto mostrato da ESPN (es. "67'"). */
     clock: v.optional(v.string()),
+    /** Una partita vecchia aperta dal drawer: quando ne è stato chiesto il riassunto (docs/MATCH-DRAWER-SPEC.md, Older matches). */
+    detailsRequestedAt: v.optional(v.number()),
     fetchedAt: v.number(),
   })
     .index("by_eventId", ["eventId"])

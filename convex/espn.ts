@@ -215,7 +215,9 @@ export function parseSchedule(json: unknown, teamId: string): ProviderSchedule {
     const event = obj(raw, "events[]");
     const competition = obj(arr(event.competitions, "competitions")[0], "competitions[0]");
     const status = obj(competition.status ?? event.status, "status");
-    const state = readState(obj(status.type, "status.type").state);
+    const statusType = obj(status.type, "status.type");
+    const state = readState(statusType.state);
+    const statusName = optStr(statusType.name);
     const competitors = arr(competition.competitors, "competitors").map((c) => obj(c, "competitors[]"));
     const homeSide = competitors.find((c) => c.homeAway === "home");
     const awaySide = competitors.find((c) => c.homeAway === "away");
@@ -238,6 +240,7 @@ export function parseSchedule(json: unknown, teamId: string): ProviderSchedule {
       opponent: parseTeam(other.team),
       home: mine === homeSide,
       state,
+      ...(statusName ? { statusName } : {}),
       ...(winner ? { winner } : {}),
       ...(event.timeValid === false ? { timeValid: false } : {}),
     };

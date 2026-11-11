@@ -1,6 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { isStale } from "./match-drawer";
-import { competitionTag, matchOutcome, matchesTab, rowTail, scoreLine, type ScheduleMatch } from "./match-schedule";
+import {
+  competitionTag,
+  detailsTimedOut,
+  matchOutcome,
+  matchTitle,
+  matchesTab,
+  opensMatch,
+  openedMatchView,
+  rowTail,
+  scoreLine,
+  type ScheduleMatch,
+  type TeamView,
+} from "./match-schedule";
 
 const day = 24 * 60 * 60_000;
 const kickoff = Date.parse("2026-11-08T17:00Z");
@@ -140,5 +152,54 @@ describe("tab Partite: dati vecchi", () => {
   it("mostra l'ultimo aggiornamento solo dopo 24 ore", () => {
     expect(isStale(kickoff, kickoff + day)).toBe(false);
     expect(isStale(kickoff, kickoff + day + 1)).toBe(true);
+  });
+});
+
+describe("aprire una partita dal tab Partite", () => {
+  const inter: TeamView = { teamId: "110", name: "Internazionale", shortName: "Inter", abbreviation: "INT", logo: null };
+
+  it("solo una partita finita si apre, una in programma no", () => {
+    expect(opensMatch(row({ eventId: "played", kickoff }))).toBe(true);
+    expect(opensMatch(row({ eventId: "next", kickoff, state: "pre", score: undefined }))).toBe(false);
+    expect(opensMatch(row({ eventId: "live", kickoff, state: "in", score: { home: 1, away: 0 } }))).toBe(false);
+  });
+
+  it("la partita aperta mette la squadra pinnata dal suo lato, col punteggio e lo stato finale", () => {
+    const away = openedMatchView(
+      row({ eventId: "away", kickoff, home: false, league: "uefa.champions", score: { home: 0, away: 3 } }),
+      inter,
+      42,
+    );
+    expect(away).toMatchObject({
+      eventId: "away",
+      kickoff,
+      state: "post",
+      statusName: "STATUS_FULL_TIME",
+      score: { home: 0, away: 3 },
+      fetchedAt: 42,
+    });
+    expect(away.home).toMatchObject({ teamId: "103" });
+    expect(away.away).toMatchObject({ teamId: "110", shortName: "Inter" });
+
+    const home = openedMatchView(row({ eventId: "home", kickoff, home: true, score: { home: 2, away: 0 } }), inter, 42);
+    expect(home.home).toMatchObject({ teamId: "110" });
+    expect(home.away).toMatchObject({ teamId: "103" });
+  });
+
+  it("tiene lo stato del calendario, così i supplementari si leggono, e senza stato è finale", () => {
+    expect(openedMatchView(row({ eventId: "aet", kickoff, statusName: "STATUS_FINAL_AET" }), inter, 42).statusName).toBe(
+      "STATUS_FINAL_AET",
+    );
+    expect(openedMatchView(row({ eventId: "plain", kickoff }), inter, 42).statusName).toBe("STATUS_FULL_TIME");
+  });
+
+  it("il titolo di una partita è quello delle due squadre", () => {
+    const match = openedMatchView(row({ eventId: "home", kickoff, home: true }), inter, 42);
+    expect(matchTitle(match)).toBe("Inter–Milan");
+  });
+
+  it("i dettagli mancano solo dopo 20 secondi, non a 20 esatti", () => {
+    expect(detailsTimedOut(0, 19_999)).toBe(false);
+    expect(detailsTimedOut(0, 20_000)).toBe(true);
   });
 });

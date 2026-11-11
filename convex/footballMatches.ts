@@ -1,10 +1,19 @@
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
-import { internalAction, internalMutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
-import { espnDays, fetchNextMatch, fetchScoreboard, fetchSummary, type ProviderDetails, type ProviderMatch } from "./espn";
+import { internalAction, internalMutation, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
+import {
+  espnDays,
+  fetchNextMatch,
+  fetchScoreboard,
+  fetchSummary,
+  type ProviderDetails,
+  type ProviderMatch,
+  type ProviderScheduleMatch,
+} from "./espn";
 import { deleteUnpinnedSchedules } from "./footballTeamSchedules";
-import { getProfile } from "./model";
+import { fail, getProfile, requireMember, requireProfile } from "./model";
+import { rateLimiter } from "./rateLimits";
 import { teamRow } from "./footballTeams";
 import { MAX_TEAM_PINS } from "./teamPins";
 import schema from "./schema";
@@ -34,6 +43,8 @@ const FINAL_DETAILS_ATTEMPTS = 3;
 const FINAL_DETAILS_RETRY_MS = 2 * MINUTE;
 /** Il calendario di una squadra si rifà dieci minuti dopo il fischio finale, quando ESPN dà il risultato. */
 const FULL_TIME_REFRESH_MS = 10 * MINUTE;
+/** Una partita vecchia chiesta da poco non si richiede: clic ripetuti e più chat condividono un riassunto. */
+const PAST_DETAILS_DEDUPE_MS = 60_000;
 
 /** Una partita come la manda il fornitore: la riga di `footballMatches` senza `fetchedAt`. */
 export const matchValidator = schema.tables.footballMatches.validator.omit("fetchedAt");
@@ -337,6 +348,112 @@ export const cleanup = internalMutation({
         deleted++;
       }
     }
+    return null;
+  },
+});
+
+/** La riga di una squadra pinnata, come lato di una partita. */
+function sideOf(team: Doc<"footballTeams">): Doc<"footballMatches">["home"] {
+  return {
+    teamId: team.teamId,
+    name: team.name,
+    shortName: team.shortName,
+    abbreviation: team.abbreviation,
+    ...(team.logo ? { logo: team.logo } : {}),
+  };
+}
+
+/** La riga `footballMatches` di una partita vecchia, presa dal calendario di una squadra pinnata. */
+function matchFromSchedule(
+  entry: ProviderScheduleMatch,
+  team: Doc<"footballTeams">,
+  requestedAt: number,
+): Omit<Doc<"footballMatches">, "_id" | "_creationTime"> {
+  const pinned = sideOf(team);
+  return {
+    eventId: entry.eventId,
+    league: entry.league,
+    home: entry.home ? pinned : entry.opponent,
+    away: entry.home ? entry.opponent : pinned,
+    kickoff: entry.kickoff,
+    state: "post",
+    statusName: entry.statusName ?? "STATUS_FULL_TIME",
+    ...(entry.score ? { score: entry.score } : {}),
+    ...(entry.shootout ? { shootout: entry.shootout } : {}),
+    detailsRequestedAt: requestedAt,
+    fetchedAt: requestedAt,
+  };
+}
+
+/** La partita vecchia nel calendario di una squadra che la chat pinna, con la riga della squadra. */
+async function scheduledPastMatch(
+  ctx: QueryCtx,
+  conversationId: Id<"conversations">,
+  eventId: string,
+): Promise<{ entry: ProviderScheduleMatch; team: Doc<"footballTeams"> } | null> {
+  const pins = await ctx.db
+    .query("teamPins")
+    .withIndex("by_conversation", (q) => q.eq("conversationId", conversationId))
+    .take(MAX_TEAM_PINS);
+  for (const pin of pins) {
+    const schedule = await ctx.db
+      .query("footballTeamSchedules")
+      .withIndex("by_teamId", (q) => q.eq("teamId", pin.teamId))
+      .unique();
+    const entry = schedule ? [...schedule.results, ...schedule.fixtures].find((m) => m.eventId === eventId) : undefined;
+    if (!entry || entry.state !== "post") continue;
+    const team = await teamRow(ctx, pin.teamId);
+    if (team) return { entry, team };
+  }
+  return null;
+}
+
+/**
+ * Apre una partita vecchia dal tab Partite (docs/MATCH-DRAWER-SPEC.md, Older matches): scrive la riga `post` dal
+ * calendario, una sola volta, e chiede il riassunto a ESPN. Non tocca la partita del chip, la diretta, `lastMatchId`
+ * o `nextMatchId`; la pulizia giornaliera se la porta via come le altre partite vecchie.
+ */
+export const openPast = mutation({
+  args: { conversationId: v.id("conversations"), eventId: v.string() },
+  handler: async (ctx, args) => {
+    const me = await requireProfile(ctx);
+    await requireMember(ctx, args.conversationId, me._id);
+    const found = await scheduledPastMatch(ctx, args.conversationId, args.eventId);
+    if (!found) throw fail("match_not_in_schedule");
+    if (!(await rateLimiter.limit(ctx, "openPast", { key: me._id })).ok) throw fail("too_many_match_opens");
+
+    const now = Date.now();
+    const existing = await matchByEvent(ctx, args.eventId);
+    if (existing) {
+      if (await detailsOf(ctx, existing._id)) return null;
+      if (existing.detailsRequestedAt !== undefined && now - existing.detailsRequestedAt < PAST_DETAILS_DEDUPE_MS) return null;
+      await ctx.db.patch("footballMatches", existing._id, { detailsRequestedAt: now });
+    } else {
+      await ctx.db.insert("footballMatches", matchFromSchedule(found.entry, found.team, now));
+    }
+    await ctx.scheduler.runAfter(0, internal.footballMatches.fetchPastDetails, { eventId: args.eventId });
+    return null;
+  },
+});
+
+/** Il riassunto di una partita vecchia aperta dal drawer. Se non arriva, i dettagli restano assenti. */
+export const fetchPastDetails = internalAction({
+  args: { eventId: v.string() },
+  handler: async (ctx, args) => {
+    const fetchedAt = Date.now();
+    let details: ProviderDetails;
+    try {
+      details = await fetchSummary("all", args.eventId);
+    } catch (e) {
+      console.error(`Riassunto ${args.eventId}:`, e instanceof Error ? e.message : e);
+      return null;
+    }
+    await ctx.runMutation(internal.footballMatches.applyPoll, {
+      matches: [],
+      details: [{ eventId: args.eventId, details }],
+      missing: [],
+      fetchedAt,
+    });
     return null;
   },
 });

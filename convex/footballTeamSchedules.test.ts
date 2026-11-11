@@ -89,6 +89,7 @@ describe("lettura del calendario", () => {
       score: { home: 2, away: 0 },
       winner: "home",
       state: "post",
+      statusName: "STATUS_FULL_TIME",
     });
 
     const away = matches.find((m) => m.eventId === "401915307")!;
@@ -116,6 +117,12 @@ describe("lettura del calendario", () => {
 
     const italy = parseSchedule(loadFixture("schedule-162-results"), ITALY).matches.find((m) => m.eventId === "761952")!;
     expect(italy).toMatchObject({ score: { home: 1, away: 1 }, shootout: { home: 4, away: 1 }, home: false, winner: "home" });
+  });
+
+  it("lo stato ESPN resta nella riga leggera, anche dopo i supplementari o i rigori", () => {
+    const { matches } = parseSchedule(loadFixture("schedule-110-results"), INTER);
+    expect(matches.find((m) => m.eventId === COMO_INTER)?.statusName).toBe("STATUS_FULL_TIME");
+    expect(matches.find((m) => m.eventId === "401871493")?.statusName).toBe("STATUS_FINAL_PEN");
   });
 
   it("una partita in programma può non avere l'ora fissata", () => {
