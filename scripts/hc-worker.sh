@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Starts a Claude Code worker for the lead terminal ($HC_TERMINAL_ID) and shows it in the lead's herdr tab:
-# the first worker splits right of the lead's pane, later ones stack below the last pane of that column.
+# Starts a Claude Code (or OpenCode) worker for the lead terminal ($HC_TERMINAL_ID) and shows it in the lead's
+# herdr tab: the first worker splits right of the lead's pane, later ones stack below the last pane of that column.
 # The task is read from <repo>/.hc/tasks/<worker>.md (see docs/agents/herdr-subagents.md).
 # Usage: scripts/hc-worker.sh <worker> <folder> [extra claude options, e.g. --model haiku]
+#        scripts/hc-worker.sh <worker> <folder> --opencode [<provider/model>, e.g. opencode/claude-sonnet-5-5]
 set -euo pipefail
 
 worker=$1 folder=$2
@@ -17,9 +18,22 @@ tabpanes() {
     '.spaces[].tabs[] | select(any(.terminals[]; .terminal == $t)) | .terminals[] | "\(.terminal) \(.pane)"' | tr -d '\r'
 }
 
+if [ "${1:-}" = --opencode ]; then
+  # The OpenCode TUI has no --model flag and hc passes no environment, so PowerShell sets OPENCODE_CONFIG to a
+  # per-worker config naming the model. --standalone makes OpenCode read it: the shared service ignores it.
+  setcfg=
+  if [ -n "${2:-}" ]; then
+    cfg="$root/.hc/tasks/$worker.opencode.json"
+    printf '{"model":"%s"}\n' "$2" > "$cfg"
+    setcfg="\$env:OPENCODE_CONFIG='$cfg'; "
+  fi
+  cmd=(powershell -NoProfile -Command "${setcfg}opencode --standalone --auto --prompt 'Read $task and do it.'")
+else
+  cmd=(claude --permission-mode auto -n "$worker" "$@" "Read $task and do it.")
+fi
+
 # No herdr labels: the worker starts as a pane-less sub-agent of the lead, then gets its pane below.
-addr=$(hc run --bg --json --name "$worker" --cwd "$folder" -- \
-  claude --permission-mode auto -n "$worker" "$@" "Read $task and do it." | jq -r .address | tr -d '\r')
+addr=$(hc run --bg --json --name "$worker" --cwd "$folder" -- "${cmd[@]}" | jq -r .address | tr -d '\r')
 
 main=$(tabpanes | awk -v t="$HC_TERMINAL_ID" '$1 == t { print $2 }')
 last=$(tabpanes | awk -v t="$HC_TERMINAL_ID" '$1 != t { p = $2 } END { print p }')
