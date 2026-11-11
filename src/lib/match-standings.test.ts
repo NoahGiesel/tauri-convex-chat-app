@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  fallbackLeague,
   initialLeague,
-  knockoutSteps,
   pathSteps,
   standingsView,
   tableRows,
+  teamLeague,
+  waitingTooLong,
   zoneLegend,
   type Competition,
   type StandingsGroup,
@@ -12,7 +14,8 @@ import {
 } from "./match-standings";
 import type { ScheduleMatch, TeamSchedule } from "./match-schedule";
 
-const day = 24 * 60 * 60_000;
+const minute = 60_000;
+const day = 24 * 60 * minute;
 const kickoff = Date.parse("2026-11-08T17:00Z");
 const INTER = "110";
 
@@ -81,7 +84,7 @@ describe("tab Classifica: righe della tabella", () => {
 });
 
 describe("tab Classifica: percorso di una coppa", () => {
-  it("una coppa senza tabella mostra le partite in ordine, col turno e il risultato", () => {
+  it("una coppa senza tabella mostra tutte le partite in ordine, qualunque sia il nome del turno", () => {
     const coppa = standings([], { league: "ita.coppa_italia", season: "2026-27 Coppa Italia" });
     const scheduleRows = schedule([
       match({ eventId: "r16", kickoff, league: "ita.coppa_italia", round: "Round of 16" }),
@@ -98,6 +101,18 @@ describe("tab Classifica: percorso di una coppa", () => {
     ]);
     expect(view.steps[0]).toMatchObject({ outcome: "win", score: "2–1", opens: true });
     expect(view.steps[1]).toMatchObject({ outcome: null, score: null, opens: false });
+  });
+
+  it("il percorso di una coppa tiene anche un turno che non sembra a eliminazione", () => {
+    const superCup = standings([], { league: "ita.super_cup", season: "2026 Italian Supercoppa" });
+    const scheduleRows = schedule([
+      match({ eventId: "super", kickoff, league: "ita.super_cup", round: "2026 Italian Supercoppa" }),
+    ]);
+
+    const view = standingsView({ standings: superCup, schedule: scheduleRows, teamId: INTER, otherTeamIds: [] });
+    expect(view.kind).toBe("path");
+    if (view.kind !== "path") return;
+    expect(view.steps.map((s) => s.round)).toEqual(["2026 Italian Supercoppa"]);
   });
 
   it("senza tabella e senza partite non mostra niente", () => {
@@ -122,33 +137,61 @@ describe("tab Classifica: coppa oltre la fase campionato", () => {
     if (view.kind !== "knockout") return;
     expect(view.steps.map((s) => s.round)).toEqual(["Round of 16"]);
     expect(view.rows.map((r) => r.teamId)).toEqual([INTER]);
-    expect(knockoutSteps([match({ eventId: "final", kickoff, league: "uefa.champions", round: "Final" })]).map((s) => s.round)).toEqual(["Final"]);
-    expect(pathSteps([match({ eventId: "league", kickoff, league: "uefa.champions", round: "League Phase" })])).toHaveLength(0);
   });
 
   it("una tabella di campionato non tratta il turno come un'eliminazione", () => {
     const scheduleRows = schedule([match({ eventId: "sa", kickoff, league: "ita.1" })]);
     expect(standingsView({ standings: SERIE_A, schedule: scheduleRows, teamId: INTER, otherTeamIds: [] }).kind).toBe("table");
   });
+
+  it("il percorso senza tabella non filtra per nome del turno", () => {
+    expect(pathSteps([match({ eventId: "league", kickoff, league: "uefa.champions", round: "League Phase" })])).toHaveLength(1);
+  });
 });
 
 describe("tab Classifica: quali competizioni", () => {
   const competitions: Competition[] = [
-    { league: "ita.1", name: "Italian Serie A", shortName: "Serie A", season: "2026-27 Italian Serie A" },
-    { league: "uefa.champions", name: "UEFA Champions League", shortName: "UCL", season: "2026-27 UEFA Champions League" },
     { league: "ita.coppa_italia", name: "Coppa Italia", shortName: "Coppa Italia", season: "2026-27 Coppa Italia" },
+    { league: "uefa.champions", name: "UEFA Champions League", shortName: "UCL", season: "2026-27 UEFA Champions League" },
+    { league: "ita.1", name: "Italian Serie A", shortName: "Serie A", season: "2026-27 Italian Serie A" },
   ];
+  const scheduleRows = schedule([
+    ...Array.from({ length: 11 }, (_, i) => match({ eventId: `sa-${i}`, kickoff: kickoff - i * day, league: "ita.1" })),
+    match({ eventId: "cup", kickoff, league: "ita.coppa_italia", round: "Round of 16" }),
+  ]);
 
   it("si apre sulla competizione della partita del chip", () => {
-    expect(initialLeague(competitions, "uefa.champions")).toBe("uefa.champions");
+    expect(initialLeague(competitions, "uefa.champions", "ita.1")).toBe("uefa.champions");
+  });
+
+  it("la squadra ha il campionato nelle partite, non nell'ordine dei chip", () => {
+    expect(teamLeague(scheduleRows, competitions)).toBe("ita.1");
   });
 
   it("se la partita del chip è un'amichevole si apre sul campionato della squadra", () => {
-    expect(initialLeague(competitions, "club.friendly")).toBe("ita.1");
-    expect(initialLeague(competitions, undefined)).toBe("ita.1");
+    expect(initialLeague(competitions, "club.friendly", "ita.1")).toBe("ita.1");
+    expect(initialLeague(competitions, undefined, "ita.1")).toBe("ita.1");
+  });
+
+  it("se la competizione del chip non ha niente da mostrare si apre sul campionato", () => {
+    expect(fallbackLeague("uefa.champions", true, "ita.1")).toBe("ita.1");
+    expect(fallbackLeague("uefa.champions", false, "ita.1")).toBe("uefa.champions");
+    expect(fallbackLeague("ita.1", true, "ita.1")).toBe("ita.1");
   });
 
   it("senza competizioni non c'è una scelta", () => {
-    expect(initialLeague([], "ita.1")).toBeNull();
+    expect(initialLeague([], "ita.1", null)).toBeNull();
+    expect(teamLeague(schedule([]), [])).toBeNull();
+  });
+});
+
+describe("tab Classifica: prima richiesta fallita", () => {
+  it("smette di caricare quando la classifica non è mai arrivata e il calendario è vecchio", () => {
+    const pending = { pending: true };
+    const fresh = { fetchedAt: kickoff };
+    expect(waitingTooLong(pending, fresh, kickoff + 3 * minute)).toBe(true);
+    expect(waitingTooLong(pending, fresh, kickoff + 1 * minute)).toBe(false);
+    expect(waitingTooLong({ pending: false }, fresh, kickoff + 3 * minute)).toBe(false);
+    expect(waitingTooLong(pending, null, kickoff + 3 * minute)).toBe(false);
   });
 });

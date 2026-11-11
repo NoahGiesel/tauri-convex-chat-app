@@ -47,9 +47,8 @@ export const add = mutation({
     // La competizione serve a trovare la partita in corso, se il pin arriva a partita iniziata.
     await ctx.scheduler.runAfter(0, internal.footballMatches.refreshNextMatch, { teamId: args.teamId, league: competitionLeague(team) });
     // I risultati e le partite in programma alimentano il tab Partite del drawer, con le classifiche.
-    // Durante una partita la classifica non cambia: la si chiede a fine partita o al cron.
-    const next = team.nextMatchId ? await ctx.db.get("footballMatches", team.nextMatchId) : null;
-    await ctx.scheduler.runAfter(0, internal.footballTeamSchedules.refresh, { teamId: args.teamId, standings: next?.state !== "in" });
+    // Il refresco salta i campionati con una partita in corso.
+    await ctx.scheduler.runAfter(0, internal.footballTeamSchedules.refresh, { teamId: args.teamId, standings: true });
     return pinId;
   },
 });

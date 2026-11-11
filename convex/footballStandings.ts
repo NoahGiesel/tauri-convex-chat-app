@@ -2,11 +2,11 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { internalAction, internalMutation, query } from "./_generated/server";
 import { fetchStandings, type ProviderStandings } from "./espn";
-import { getProfile } from "./model";
-import { footballStandingsGroup } from "./schema";
+import { canSeePinnedTeam } from "./model";
+import schema from "./schema";
 
-/** Quante stagioni salvate si possono trovare per una competizione: una per stagione toccata. */
-const MAX_SEASONS_SCANNED = 50;
+/** Gli argomenti di `save`: i campi della riga, così il validatore della tabella resta la verità. */
+const standingsFields = schema.tables.footballStandings.validator.fields;
 
 /**
  * La classifica di una competizione da ESPN. Se la richiesta fallisce la riga resta com'era e l'errore
@@ -30,13 +30,7 @@ export const refreshLeague = internalAction({
 
 /** Scrive la classifica di una competizione e stagione, o sostituisce quella che c'era. */
 export const save = internalMutation({
-  args: {
-    league: v.string(),
-    season: v.string(),
-    endDate: v.number(),
-    groups: v.array(footballStandingsGroup),
-    fetchedAt: v.number(),
-  },
+  args: standingsFields,
   handler: async (ctx, args) => {
     const existing = await ctx.db
       .query("footballStandings")
@@ -57,37 +51,26 @@ export const save = internalMutation({
 export const forPin = query({
   args: { conversationId: v.id("conversations"), teamId: v.string(), league: v.string() },
   handler: async (ctx, args) => {
-    const me = await getProfile(ctx);
-    if (!me) return null;
-    const member = await ctx.db
-      .query("members")
-      .withIndex("by_conversation_and_profile", (q) => q.eq("conversationId", args.conversationId).eq("profileId", me._id))
-      .unique();
-    if (!member) return null;
-    const pin = await ctx.db
-      .query("teamPins")
-      .withIndex("by_conversation_and_teamId", (q) => q.eq("conversationId", args.conversationId).eq("teamId", args.teamId))
-      .first();
-    if (!pin) return null;
-
+    if (!(await canSeePinnedTeam(ctx, args.conversationId, args.teamId))) return null;
     const schedule = await ctx.db
       .query("footballTeamSchedules")
       .withIndex("by_teamId", (q) => q.eq("teamId", args.teamId))
       .unique();
     const competition = schedule?.competitions.find((c) => c.league === args.league);
-    const rows = await ctx.db
-      .query("footballStandings")
-      .withIndex("by_league", (q) => q.eq("league", args.league))
-      .take(MAX_SEASONS_SCANNED);
-    const current = competition ? rows.find((row) => row.season === competition.season) : undefined;
-    const group = current?.groups.find((g) => g.rows.some((r) => r.teamId === args.teamId));
+    const row = competition
+      ? await ctx.db
+          .query("footballStandings")
+          .withIndex("by_league_and_season", (q) => q.eq("league", args.league).eq("season", competition.season))
+          .unique()
+      : null;
+    const group = row?.groups.find((g) => g.rows.some((r) => r.teamId === args.teamId));
     return {
       league: args.league,
-      pending: rows.length === 0,
+      pending: row === null,
       season: competition?.season ?? null,
-      endDate: current?.endDate ?? null,
+      endDate: row?.endDate ?? null,
       groups: group ? [group] : [],
-      fetchedAt: current?.fetchedAt ?? null,
+      fetchedAt: row?.fetchedAt ?? null,
     };
   },
 });

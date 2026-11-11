@@ -28,8 +28,11 @@ import {
   type TeamView,
 } from "@/lib/match-schedule";
 import {
+  fallbackLeague,
   initialLeague,
   standingsView,
+  teamLeague,
+  waitingTooLong,
   type Competition,
   type PathStep,
   type StandingsView,
@@ -128,8 +131,26 @@ export function MatchDrawer({
   const competitions = schedule?.competitions ?? [];
   /** La competizione scelta coi chip: `null` finché vale quella del chip della partita. */
   const [pickedLeague, setPickedLeague] = useState<string | null>(null);
-  const league = pickedLeague ?? initialLeague(competitions, match.league);
-  const standings = useQuery(api.footballStandings.forPin, { conversationId, teamId: team.teamId, league: league ?? "" });
+  const teamLeagueId = schedule ? teamLeague(schedule, competitions) : null;
+  const requestedLeague = pickedLeague ?? initialLeague(competitions, match.league, teamLeagueId);
+  const primary = useQuery(
+    api.footballStandings.forPin,
+    requestedLeague ? { conversationId, teamId: team.teamId, league: requestedLeague } : "skip",
+  );
+  const fallback = useQuery(
+    api.footballStandings.forPin,
+    teamLeagueId && teamLeagueId !== requestedLeague ? { conversationId, teamId: team.teamId, league: teamLeagueId } : "skip",
+  );
+  const viewFor = (standings: TeamStandings | null | undefined) =>
+    standings && !standings.pending && schedule ? standingsView({ standings, schedule, teamId: team.teamId, otherTeamIds }) : null;
+  const primaryView = viewFor(primary);
+  const fallbackView = viewFor(fallback);
+  // Niente tabella e niente percorso, o una prima richiesta fallita: si passa al campionato della squadra.
+  const primaryMissing = primaryView?.kind === "empty" || (!!primary?.pending && waitingTooLong(primary, schedule, now));
+  const league = pickedLeague ?? fallbackLeague(requestedLeague, primaryMissing, teamLeagueId);
+  const usingFallback = !!teamLeagueId && league === teamLeagueId && requestedLeague !== teamLeagueId;
+  const standings = usingFallback ? fallback : primary;
+  const view = usingFallback ? fallbackView : primaryView;
   const state = chipState(shown);
   const stale = isUnavailable(shown, now);
   const { when, time, clock } = useMatchTimes(shown);
@@ -140,7 +161,8 @@ export function MatchDrawer({
   /** L'ora locale per far scadere la richiesta dei dettagli dopo 20 secondi. */
   const [openedNow, setOpenedNow] = useState(() => Date.now());
   const scheduleLoading = schedule === undefined || (schedule !== null && schedule.pending);
-  const standingsLoading = scheduleLoading || (!!league && (standings === undefined || (standings !== null && standings.pending)));
+  const standingsLoading =
+    scheduleLoading || (!!requestedLeague && (primary === undefined || (primary !== null && primary.pending && !waitingTooLong(primary, schedule, now))));
 
   // Un altro chip riparte dalla competizione della sua partita.
   useEffect(() => {
@@ -391,11 +413,11 @@ export function MatchDrawer({
           competitions={competitions}
           league={league}
           onPick={setPickedLeague}
+          view={view}
           standings={standings}
-          schedule={schedule}
           loading={standingsLoading}
           teamId={team.teamId}
-          otherTeamIds={otherTeamIds}
+          teamName={team.name}
           now={now}
           clock={clock}
           onOpen={requestPast}
@@ -410,11 +432,11 @@ function StandingsTabBody({
   competitions,
   league,
   onPick,
+  view,
   standings,
-  schedule,
   loading,
   teamId,
-  otherTeamIds,
+  teamName,
   now,
   clock,
   onOpen,
@@ -422,18 +444,16 @@ function StandingsTabBody({
   competitions: Competition[];
   league: string | null;
   onPick: (league: string) => void;
+  view: StandingsView | null;
   standings: TeamStandings | null | undefined;
-  schedule: TeamSchedule | null | undefined;
   loading: boolean;
   teamId: string;
-  otherTeamIds: string[];
+  teamName: string;
   now: number;
   clock: (ts: number) => string;
   onOpen: (match: ScheduleMatch) => void;
 }) {
   const { t } = useI18n();
-  const view =
-    standings && schedule ? standingsView({ standings, schedule, teamId, otherTeamIds }) : null;
   const staleAt = standings?.fetchedAt != null && isStale(standings.fetchedAt, now) ? standings.fetchedAt : null;
   return (
     <div
@@ -478,7 +498,7 @@ function StandingsTabBody({
           )}
           {view.kind === "table" && <StandingsTable view={view} teamId={teamId} />}
           {view.kind === "path" && (
-            <Section title={t("teamPins.teamPath", { team: competitions.find((c) => c.league === league)?.name ?? "" })}>
+            <Section title={t("teamPins.teamPath", { team: teamName })}>
               <PathList steps={view.steps} onOpen={onOpen} />
             </Section>
           )}
@@ -503,10 +523,10 @@ function StandingsTable({ view, teamId }: { view: Extract<StandingsView, { kind:
   const { t } = useI18n();
   const selected = useRef<HTMLTableRowElement>(null);
   // Scorre alla riga della squadra quando la tabella cambia, non a ogni render.
-  const signature = `${teamId}:${view.rows.length}:${view.rows[0]?.teamId ?? ""}`;
+  const scrollKey = `${teamId}:${view.rows.length}:${view.rows[0]?.teamId ?? ""}`;
   useEffect(() => {
     selected.current?.scrollIntoView({ block: "nearest" });
-  }, [signature]);
+  }, [scrollKey]);
 
   return (
     <div data-testid="standings-table">
@@ -565,7 +585,6 @@ function StandingsTable({ view, teamId }: { view: Extract<StandingsView, { kind:
 /** Il percorso di una coppa: una linea di turni, ognuno con l'avversario e il risultato o la data. */
 function PathList({ steps, onOpen }: { steps: PathStep[]; onOpen: (match: ScheduleMatch) => void }) {
   const { t, locale } = useI18n();
-  const outcomeLabels: Record<MatchOutcome, MessageKey> = { win: "teamPins.win", draw: "teamPins.draw", loss: "teamPins.loss" };
   return (
     <ol className="relative ml-2 space-y-3 border-l-2 border-app-border pl-4" data-testid="standings-path">
       {steps.map((step) => {
@@ -577,18 +596,7 @@ function PathList({ steps, onOpen }: { steps: PathStep[]; onOpen: (match: Schedu
               <span className="min-w-0 truncate">{step.match.opponent.shortName}</span>
               <span className="ml-auto flex shrink-0 items-center gap-1.5 font-bold tabular-nums">
                 {step.score ?? (step.match.timeValid === false ? "" : shortDate(locale, step.match.kickoff))}
-                {step.outcome && (
-                  <span
-                    className={cn(
-                      "flex size-4 items-center justify-center rounded text-[10px] font-bold",
-                      step.outcome === "win" && "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
-                      step.outcome === "loss" && "bg-red-500/15 text-red-600 dark:text-red-400",
-                      step.outcome === "draw" && "bg-app-field text-app-text-muted",
-                    )}
-                  >
-                    {t(outcomeLabels[step.outcome])}
-                  </span>
-                )}
+                {step.outcome && <OutcomeBadge outcome={step.outcome} />}
               </span>
             </p>
           </>
@@ -643,19 +651,7 @@ function MatchesTabBody({
         <span className="w-3 shrink-0 text-[11px] font-semibold text-app-text-muted">{t(match.home ? "teamPins.home" : "teamPins.away")}</span>
         <span className="min-w-0 flex-1 truncate text-app-text">{match.opponent.shortName}</span>
         <span className="shrink-0 font-bold text-app-text-strong tabular-nums">{rowTail(match, clock(match.kickoff))}</span>
-        {outcome && (
-          <span
-            data-testid={`outcome-${match.eventId}`}
-            className={cn(
-              "flex size-4 shrink-0 items-center justify-center rounded text-[10px] font-bold",
-              outcome === "win" && "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
-              outcome === "loss" && "bg-red-500/15 text-red-600 dark:text-red-400",
-              outcome === "draw" && "bg-app-field text-app-text-muted",
-            )}
-          >
-            {t(OUTCOME_LABELS[outcome])}
-          </span>
-        )}
+        {outcome && <OutcomeBadge outcome={outcome} testId={`outcome-${match.eventId}`} />}
       </>
     );
     const classes = "flex items-center gap-2 py-1.5 text-[13px]";
@@ -716,6 +712,24 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <h3 className="mb-2 text-xs font-bold tracking-wide text-app-text-dim uppercase">{title}</h3>
       {children}
     </section>
+  );
+}
+
+/** Il badge V/N/P, uguale nel tab Partite e nel percorso di una coppa. */
+function OutcomeBadge({ outcome, testId }: { outcome: MatchOutcome; testId?: string }) {
+  const { t } = useI18n();
+  return (
+    <span
+      data-testid={testId}
+      className={cn(
+        "flex size-4 shrink-0 items-center justify-center rounded text-[10px] font-bold",
+        outcome === "win" && "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+        outcome === "loss" && "bg-red-500/15 text-red-600 dark:text-red-400",
+        outcome === "draw" && "bg-app-field text-app-text-muted",
+      )}
+    >
+      {t(OUTCOME_LABELS[outcome])}
+    </span>
   );
 }
 

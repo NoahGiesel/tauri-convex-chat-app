@@ -9,11 +9,11 @@ export type StandingsRow = StandingsGroup["rows"][number];
 export type Competition = TeamSchedule["competitions"][number];
 export type Zone = NonNullable<StandingsRow["zone"]>;
 
-/** I campionati nazionali: la competizione su cui si apre il tab quando quella del chip non c'è. */
-const DOMESTIC_LEAGUES = ["ita.1", "eng.1", "esp.1", "ger.1", "fra.1"];
-
 /** Una riga della tabella con quanto serve al disegno: la squadra pinnata e le altre squadre della chat. */
 export type TableRow = StandingsRow & { selected: boolean; otherPin: boolean };
+
+/** Dopo quanto senza classifica si smette di aspettare: la prima richiesta è fallita. */
+export const STANDINGS_WAIT_MS = 2 * 60_000;
 
 /** Un turno del percorso di una coppa: la partita, il turno e, se giocata, il risultato dall'angolo della squadra. */
 export type PathStep = {
@@ -66,24 +66,48 @@ function step(match: ScheduleMatch): PathStep {
   };
 }
 
-/** Il percorso di una coppa senza tabella: i suoi turni a eliminazione, dal primo. */
+/** Il percorso di una coppa senza tabella: tutte le sue partite, dal primo turno. */
 export function pathSteps(matches: ScheduleMatch[]): PathStep[] {
-  return matches
-    .filter((match) => isKnockoutRound(match.round))
-    .sort((a, b) => a.kickoff - b.kickoff)
-    .map(step);
+  return [...matches].sort((a, b) => a.kickoff - b.kickoff).map(step);
 }
 
-/** I turni a eliminazione di una coppa che ha già una tabella: si giocano dopo la fase campionato. */
-export function knockoutSteps(matches: ScheduleMatch[]): PathStep[] {
-  return pathSteps(matches);
+/**
+ * La competizione della squadra con più partite: il campionato è ricavato dai dati, non da un elenco.
+ * A parità di partite vince la prima nell'ordine dei chip.
+ */
+export function teamLeague(schedule: Pick<TeamSchedule, "results" | "fixtures">, competitions: Competition[]): string | null {
+  const counts = new Map<string, number>();
+  for (const match of [...schedule.results, ...schedule.fixtures]) counts.set(match.league, (counts.get(match.league) ?? 0) + 1);
+  let league: string | null = null;
+  let most = -1;
+  for (const competition of competitions) {
+    const count = counts.get(competition.league) ?? 0;
+    if (count > most) {
+      league = competition.league;
+      most = count;
+    }
+  }
+  return league;
 }
 
 /** La competizione su cui si apre il tab: quella del chip, altrimenti il campionato della squadra. */
-export function initialLeague(competitions: Competition[], chipLeague: string | undefined): string | null {
+export function initialLeague(competitions: Competition[], chipLeague: string | undefined, teamLeagueId: string | null): string | null {
   if (chipLeague && competitions.some((competition) => competition.league === chipLeague)) return chipLeague;
-  const league = competitions.find((competition) => DOMESTIC_LEAGUES.includes(competition.league));
-  return league?.league ?? competitions[0]?.league ?? null;
+  return teamLeagueId ?? competitions[0]?.league ?? null;
+}
+
+/** Quando la competizione scelta non ha niente da mostrare, il tab passa al campionato della squadra. */
+export function fallbackLeague(league: string | null, nothingToShow: boolean, teamLeagueId: string | null): string | null {
+  return nothingToShow && teamLeagueId && league !== teamLeagueId ? teamLeagueId : league;
+}
+
+/** La classifica non è ancora arrivata e il calendario è vecchio: la prima richiesta è fallita. */
+export function waitingTooLong(
+  standings: Pick<TeamStandings, "pending"> | null | undefined,
+  schedule: Pick<TeamSchedule, "fetchedAt"> | null | undefined,
+  now: number,
+): boolean {
+  return !!standings?.pending && !!schedule && schedule.fetchedAt != null && now - schedule.fetchedAt > STANDINGS_WAIT_MS;
 }
 
 /**
@@ -116,6 +140,6 @@ export function standingsView({
   }
   const rows = tableRows(group, teamId, otherTeamIds);
   const legend = zoneLegend(group.rows);
-  const steps = knockoutSteps(matches);
+  const steps = pathSteps(matches.filter((match) => isKnockoutRound(match.round)));
   return steps.length > 0 ? { kind: "knockout", steps, rows, legend } : { kind: "table", rows, legend };
 }

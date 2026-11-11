@@ -540,6 +540,5 @@ export default defineSchema({
     groups: v.array(footballStandingsGroup),
     fetchedAt: v.number(),
   })
-    .index("by_league", ["league"])
     .index("by_league_and_season", ["league", "season"]),
 });

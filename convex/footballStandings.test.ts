@@ -10,6 +10,7 @@ import schema from "./schema";
 const modules = import.meta.glob("./**/*.ts");
 
 const INTER = "110";
+const MILAN = "103";
 const JUVENTUS = "111";
 const ITALY = "162";
 /** Como-Inter (ita.1), all'intervallo nel tabellone registrato. */
@@ -54,8 +55,8 @@ async function setup(chats: string[][]) {
 
 type T = Awaited<ReturnType<typeof setup>>["t"];
 
-const standingsRow = (t: T, league: string) =>
-  t.run((ctx) => ctx.db.query("footballStandings").withIndex("by_league", (q) => q.eq("league", league)).collect());
+const standingsRow = async (t: T, league: string) =>
+  (await t.run((ctx) => ctx.db.query("footballStandings").collect())).filter((row) => row.league === league);
 
 let stub: ReturnType<typeof espnFetchStub>;
 beforeEach(() => {
@@ -68,6 +69,62 @@ afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+});
+
+describe("lettura della classifica", () => {
+  it("legge la stagione, la fine stagione, il girone e la riga di ogni squadra", () => {
+    const standings = parseStandings(loadFixture("standings-ita.1"));
+
+    expect(standings.season).toBe("2026-27 Italian Serie A");
+    expect(standings.endDate).toBe(Date.parse("2027-07-01T03:59Z"));
+    expect(standings.groups).toHaveLength(1);
+    expect(standings.groups[0].name).toBe("2026-2027 Italian Serie A");
+    expect(standings.groups[0].rows).toHaveLength(20);
+
+    expect(standings.groups[0].rows[1]).toEqual({
+      rank: 2,
+      teamId: "110",
+      name: "Internazionale",
+      shortName: "Inter Milan",
+      logo: "https://a.espncdn.com/i/teamlogos/soccer/500/110.png",
+      played: 11,
+      goalDifference: 15,
+      points: 28,
+      zone: { color: "81D6AC", label: "Champions League" },
+    });
+  });
+
+  it("ordina le righe di un girone per posizione: ESPN le manda per id", () => {
+    const standings = parseStandings(loadFixture("standings-uefa.nations"));
+    const group = standings.groups.find((g) => g.name === "Group A1")!;
+
+    expect(group.rows.map((row) => row.rank)).toEqual([1, 2, 3, 4]);
+    expect(group.rows.map((row) => row.teamId)).toEqual(["478", "162", "459", "465"]);
+  });
+
+  it("pulisce la zona: toglie i cancelletti di troppo e gli spazi attorno", () => {
+    const raw = loadFixture("standings-ita.1");
+    raw.children[0].standings.entries[0].note = { color: " ##81D6AC\t", description: " Champions League\t" };
+
+    const row = parseStandings(raw).groups[0].rows[0];
+    expect(row.zone).toEqual({ color: "81D6AC", label: "Champions League" });
+  });
+
+  it("una coppa senza tabella è una risposta senza gironi, non un errore", () => {
+    const standings = parseStandings(loadFixture("standings-ita.coppa_italia"));
+
+    expect(standings.groups).toEqual([]);
+    expect(standings.season).toBe("2026-27 Coppa Italia");
+    expect(standings.endDate).toBe(Date.parse("2027-07-01T03:59Z"));
+  });
+
+  it("una competizione a gironi tiene tutti i gironi, ognuno ordinato", () => {
+    const standings = parseStandings(loadFixture("standings-uefa.euro"));
+
+    expect(standings.season).toBe("2024 European Championship");
+    expect(standings.groups.map((g) => g.name)).toEqual(["Group A", "Group B", "Group C", "Group D", "Group E", "Group F"]);
+    expect(standings.groups.every((g) => g.rows.map((r) => r.rank).join() === "1,2,3,4")).toBe(true);
+  });
 });
 
 describe("aggiornamento delle classifiche", () => {
@@ -142,27 +199,52 @@ describe("aggiornamento delle classifiche", () => {
     expect(stub.calls.filter((c) => c === standingsPath("uefa.champions"))).toHaveLength(1);
   });
 
-  it("il cron delle 6 ore non chiede la classifica mentre una squadra sta giocando", async () => {
-    const f = await setup([[INTER]]);
+  it("il cron salta tutto il campionato in diretta, anche per un'altra squadra pinnata", async () => {
+    // Inter sta giocando in serie A, il Milan è appena stato pinnato: la classifica di serie A aspetta,
+    // quella della Champions League no.
+    const f = await setup([[INTER, MILAN]]);
     await f.t.run(async (ctx) => {
       const live = parseScoreboard(loadFixture("scoreboard-ita.1-today"), "ita.1").find((m) => m.eventId === COMO_INTER)!;
       const matchId = await ctx.db.insert("footballMatches", { ...live, fetchedAt: AT_HALFTIME });
       const inter = await ctx.db.query("footballTeams").withIndex("by_teamId", (q) => q.eq("teamId", INTER)).unique();
       await ctx.db.patch("footballTeams", inter!._id, { nextMatchId: matchId });
-      await ctx.db.insert("footballTeamSchedules", {
-        teamId: INTER,
-        results: [],
-        fixtures: [],
-        competitions: [{ league: "ita.1", name: "Italian Serie A", shortName: "Serie A", season: "2026-27 Italian Serie A" }],
-        fetchedAt: AT_HALFTIME,
-      });
+      for (const teamId of [INTER, MILAN]) {
+        await ctx.db.insert("footballTeamSchedules", {
+          teamId,
+          results: [],
+          fixtures: [],
+          competitions: [
+            { league: "ita.1", name: "Italian Serie A", shortName: "Serie A", season: "2026-27 Italian Serie A" },
+            { league: "uefa.champions", name: "UEFA Champions League", shortName: "UCL", season: "2026-27 UEFA Champions League" },
+          ],
+          fetchedAt: AT_HALFTIME,
+        });
+      }
     });
     stub.calls.length = 0;
 
     await f.t.mutation(internal.footballMatches.refreshPinnedTeams, {});
     await f.t.finishAllScheduledFunctions(vi.runAllTimers);
 
-    expect(stub.calls.filter((c) => c.includes("/standings"))).toEqual([]);
+    expect(stub.calls.filter((c) => c === standingsPath("ita.1"))).toEqual([]);
+    expect(stub.calls.filter((c) => c === standingsPath("uefa.champions"))).toHaveLength(1);
+  });
+
+  it("il refresco del pin salta solo il campionato in diretta", async () => {
+    const f = await setup([[INTER, MILAN]]);
+    await f.t.run(async (ctx) => {
+      const live = parseScoreboard(loadFixture("scoreboard-ita.1-today"), "ita.1").find((m) => m.eventId === COMO_INTER)!;
+      const matchId = await ctx.db.insert("footballMatches", { ...live, fetchedAt: AT_HALFTIME });
+      const inter = await ctx.db.query("footballTeams").withIndex("by_teamId", (q) => q.eq("teamId", INTER)).unique();
+      await ctx.db.patch("footballTeams", inter!._id, { nextMatchId: matchId });
+    });
+    stub.calls.length = 0;
+
+    await f.t.action(internal.footballTeamSchedules.refresh, { teamId: INTER, standings: true });
+    await f.t.finishAllScheduledFunctions(vi.runAllTimers);
+
+    expect(stub.calls.filter((c) => c === standingsPath("ita.1"))).toEqual([]);
+    expect(stub.calls.filter((c) => c === standingsPath("uefa.champions"))).toHaveLength(1);
   });
 
   it("una richiesta fallita non tocca la riga e finisce nei log", async () => {
@@ -225,7 +307,8 @@ describe("classifica nel drawer", () => {
     await withData(f, ITALY, [{ league: "uefa.euro", season: "2028 European Championship" }], ["uefa.euro"]);
 
     const view = await f.alice.query(api.footballStandings.forPin, { conversationId: f.conversations[0], teamId: ITALY, league: "uefa.euro" });
-    expect(view).toMatchObject({ pending: false, season: "2028 European Championship", groups: [] });
+    // La tabella del 2024 non è quella della stagione 2028 della squadra: non si mostra, e non è una risposta arrivata.
+    expect(view).toMatchObject({ pending: true, season: "2028 European Championship", groups: [] });
   });
 
   it("appena pinnata, prima che la classifica arrivi, dice di aspettare", async () => {
