@@ -235,6 +235,117 @@ const STAT_NAMES: Record<string, StatKey> = {
 const STAT_ORDER: StatKey[] = ["possession", "shots", "shotsOnTarget", "corners", "fouls", "offsides"];
 
 /**
+ * Le dodici formazioni viste nei dati, con il numero di posto ESPN (`formationPlace`) di ogni riga,
+ * dal portiere all'attacco e da sinistra a destra. Il numero di posto cambia significato da una
+ * formazione all'altra, quindi la tabella è la verità; la regola delle etichette sotto vale solo
+ * per una formazione che non c'è (docs/research/espn-pitch-positions.md).
+ */
+const FORMATION_ROWS: Record<string, string[][]> = {
+  "4-2-3-1": [["1"], ["3", "6", "5", "2"], ["4", "8"], ["11", "10", "7"], ["9"]],
+  "4-3-3": [["1"], ["3", "6", "5", "2"], ["8", "4", "7"], ["11", "9", "10"]],
+  "3-4-2-1": [["1"], ["4", "5", "6"], ["3", "8", "7", "2"], ["11", "10"], ["9"]],
+  "3-5-2": [["1"], ["4", "5", "6"], ["3", "8", "11", "7", "2"], ["9", "10"]],
+  "4-4-2": [["1"], ["3", "6", "5", "2"], ["11", "8", "4", "7"], ["9", "10"]],
+  "3-4-3": [["1"], ["4", "5", "6"], ["3", "8", "7", "2"], ["11", "9", "10"]],
+  "4-1-4-1": [["1"], ["3", "6", "5", "2"], ["4"], ["11", "10", "8", "7"], ["9"]],
+  "4-3-2-1": [["1"], ["3", "6", "5", "2"], ["7", "4", "8"], ["11", "10"], ["9"]],
+  "4-4-1-1": [["1"], ["3", "6", "5", "2"], ["11", "8", "4", "7"], ["10"], ["9"]],
+  "4-1-3-2": [["1"], ["3", "6", "5", "2"], ["4"], ["11", "8", "7"], ["10", "9"]],
+  "3-1-4-2": [["1"], ["6", "4", "5"], ["8"], ["3", "11", "7", "2"], ["10", "9"]],
+  "3-4-1-2": [["1"], ["4", "5", "6"], ["3", "8", "7", "2"], ["9"], ["11", "10"]],
+};
+
+/** La profondità di un'etichetta, per la regola di riserva: 1 è la linea difensiva, 6 l'attacco. */
+const LABEL_DEPTH: Record<string, number> = {
+  CD: 1,
+  "CD-L": 1,
+  "CD-R": 1,
+  LB: 1,
+  RB: 1,
+  DM: 2,
+  SW: 2,
+  CM: 3,
+  "CM-L": 3,
+  "CM-R": 3,
+  LM: 3,
+  RM: 3,
+  M: 3,
+  AM: 4,
+  "AM-L": 4,
+  "AM-R": 4,
+  "CF-L": 5,
+  "CF-R": 5,
+  RCF: 5,
+  F: 6,
+  LF: 6,
+  RF: 6,
+};
+
+/** Il lato dell'etichetta: 0 la fascia sinistra, 4 la destra, 2 il centro. */
+function labelSide(label: string): number {
+  if (label === "LB" || label === "LM" || label === "LF") return 0;
+  if (label.endsWith("-L")) return 1;
+  if (label === "RB" || label === "RM" || label === "RF") return 4;
+  if (label.endsWith("-R") || label === "RCF") return 3;
+  return 2;
+}
+
+/**
+ * La regola delle etichette, per una formazione fuori tabella: si ordinano i dieci di movimento per
+ * profondità, si tagliano nelle righe della formazione e si ordina ogni riga da sinistra a destra.
+ * `null` quando le etichette non bastano (per esempio prima del calcio d'inizio, quando sono `SUB`).
+ */
+function placesByLabel(formation: string, players: { place: string; label?: string }[]): Map<string, { row: number; order: number }> | null {
+  const sizes = formation.split("-").map((size) => Number.parseInt(size, 10));
+  if (sizes.some((size) => !Number.isInteger(size) || size <= 0)) return null;
+  const outfield = players.filter((p) => p.place !== "1");
+  if (outfield.length !== sizes.reduce((sum, size) => sum + size, 0)) return null;
+
+  const lines: { place: string; depth: number; side: number }[] = [];
+  for (const p of outfield) {
+    const depth = p.label ? LABEL_DEPTH[p.label] : undefined;
+    if (depth === undefined || !p.label) return null;
+    lines.push({ place: p.place, depth, side: labelSide(p.label) });
+  }
+  lines.sort((a, b) => a.depth - b.depth);
+
+  const places = new Map<string, { row: number; order: number }>();
+  if (players.some((p) => p.place === "1")) places.set("1", { row: 0, order: 0 });
+  // Le righe non devono spezzare una classe di profondità (una linea difensiva divisa a metà).
+  let boundary = 0;
+  for (const size of sizes) {
+    boundary += size;
+    if (boundary < lines.length && lines[boundary - 1].depth === lines[boundary].depth) return null;
+  }
+  let from = 0;
+  for (const [row, size] of sizes.entries()) {
+    const line = lines.slice(from, from + size);
+    from += size;
+    // Due giocatori della stessa riga non stanno sullo stesso lato.
+    line.sort((a, b) => a.side - b.side);
+    if (new Set(line.map((p) => p.side)).size !== line.length) return null;
+    line.forEach((p, order) => places.set(p.place, { row: row + 1, order }));
+  }
+  return places;
+}
+
+/** Il posto di ogni titolare: la tabella per formazione, poi la regola delle etichette. */
+function placesOf(formation: string | undefined, starters: Obj[]): Map<string, { row: number; order: number }> {
+  if (!formation) return new Map();
+  const rows = FORMATION_ROWS[formation];
+  if (rows) {
+    const places = new Map<string, { row: number; order: number }>();
+    rows.forEach((line, row) => line.forEach((place, order) => places.set(place, { row, order })));
+    return places;
+  }
+  const labelled = starters.flatMap((p) => {
+    const place = optStr(p.formationPlace);
+    return place ? [{ place, label: optStr(optObj(p.position)?.abbreviation) }] : [];
+  });
+  return placesByLabel(formation, labelled) ?? new Map();
+}
+
+/**
  * Il riassunto ESPN di una partita. L'intestazione deve esserci; eventi, formazioni e statistiche possono mancare
  * (prima della partita non ci sono), ma se ci sono vanno letti per intero: un campo mancante è un errore.
  * L'autogol ESPN lo mette dalla parte della squadra che ne beneficia, come il tabellone.
@@ -262,32 +373,50 @@ export function parseSummary(json: unknown): ProviderDetails {
     if (e.shootout === true) continue;
     const kind = eventKind(str(obj(e.type, "keyEvents[].type").type, "keyEvents[].type.type"));
     if (!kind) continue;
-    const names = (Array.isArray(e.participants) ? e.participants : []).map((p) =>
-      str(obj(obj(p, "participants[]").athlete, "athlete").displayName, "athlete.displayName"),
-    );
+    const participants = (Array.isArray(e.participants) ? e.participants : []).map((p) => {
+      const athlete = obj(obj(p, "participants[]").athlete, "athlete");
+      return { name: str(athlete.displayName, "athlete.displayName"), id: optStr(athlete.id) };
+    });
     events.push({
       kind,
       minute: str(obj(e.clock, "keyEvents[].clock").displayValue, "keyEvents[].clock.displayValue"),
       side: side(obj(e.team, "keyEvents[].team").id, "keyEvents[].team.id"),
-      ...(names[0] ? { player: names[0] } : {}),
-      ...(names[1] ? { other: names[1] } : {}),
+      ...(participants[0] ? { player: participants[0].name } : {}),
+      ...(participants[1] ? { other: participants[1].name } : {}),
+      ...(participants[0]?.id ? { playerId: participants[0].id } : {}),
+      ...(participants[1]?.id ? { otherId: participants[1].id } : {}),
     });
   }
 
   const lineups: ProviderDetails["lineups"] = [];
   for (const raw of Array.isArray(root.rosters) ? root.rosters : []) {
     const r = obj(raw, "rosters[]");
+    // Prima che le formazioni escano ESPN non manda la chiave `roster`: è una formazione vuota, non un errore.
+    if (r.roster === undefined) continue;
     const players = arr(r.roster, "rosters[].roster").map((p) => obj(p, "roster[]"));
     if (players.length === 0) continue;
+    const formation = optStr(r.formation);
+    const starters = players.filter((p) => p.starter === true);
+    const places = placesOf(formation, starters);
     const toPlayer = (p: Obj): LineupPlayer => {
       const jersey = optStr(p.jersey);
-      return { name: str(obj(p.athlete, "roster[].athlete").displayName, "roster[].athlete.displayName"), ...(jersey ? { jersey } : {}) };
+      const athlete = obj(p.athlete, "roster[].athlete");
+      const athleteId = optStr(athlete.id);
+      const shortName = optStr(athlete.shortName);
+      const place = optStr(p.formationPlace);
+      const spot = p.starter === true && place ? places.get(place) : undefined;
+      return {
+        name: str(athlete.displayName, "roster[].athlete.displayName"),
+        ...(jersey ? { jersey } : {}),
+        ...(athleteId ? { athleteId } : {}),
+        ...(shortName ? { shortName } : {}),
+        ...(spot ? { row: spot.row, order: spot.order } : {}),
+      };
     };
-    const formation = optStr(r.formation);
     lineups.push({
       side: side(obj(r.team, "rosters[].team").id, "rosters[].team.id"),
       ...(formation ? { formation } : {}),
-      starters: players.filter((p) => p.starter === true).map(toPlayer),
+      starters: starters.map(toPlayer),
       bench: players.filter((p) => p.starter !== true).map(toPlayer),
     });
   }

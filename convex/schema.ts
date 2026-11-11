@@ -25,7 +25,17 @@ const footballSide = v.object({
 });
 
 const footballSideKey = v.union(v.literal("home"), v.literal("away"));
-const lineupPlayer = v.object({ name: v.string(), jersey: v.optional(v.string()) });
+/** Un giocatore in formazione: `row` e `order` solo per i titolari, quando il riassunto dà i posti in campo. */
+const lineupPlayer = v.object({
+  name: v.string(),
+  jersey: v.optional(v.string()),
+  /** Id ESPN dell'atleta: aggancia gli eventi al giocatore. */
+  athleteId: v.optional(v.string()),
+  shortName: v.optional(v.string()),
+  /** La fila dal fondo (0 è il portiere) e la posizione nella fila da sinistra. */
+  row: v.optional(v.number()),
+  order: v.optional(v.number()),
+});
 
 // Gli utenti veri (email, password, sessioni) vivono nel componente Better Auth.
 // Qui teniamo il profilo dell'app, collegato all'identità tramite `tokenIdentifier`.
@@ -418,6 +428,9 @@ export default defineSchema({
         side: footballSideKey,
         player: v.optional(v.string()),
         other: v.optional(v.string()),
+        /** Id ESPN dei due giocatori: `player` chi segna, è ammonito o entra; `other` chi fa l'assist o esce. */
+        playerId: v.optional(v.string()),
+        otherId: v.optional(v.string()),
       }),
     ),
     lineups: v.array(

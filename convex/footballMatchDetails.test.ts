@@ -109,6 +109,15 @@ describe("riassunto della partita", () => {
     expect(JSON.stringify(details).length).toBeLessThan(8_000);
   });
 
+  it("gli eventi portano l'id dei giocatori, per agganciarli alla formazione", () => {
+    const details = parseSummary(loadFixture("summary-401874808"));
+    const goal = details.events.find((e) => e.kind === "goal" && e.player === "Pio Esposito")!;
+    expect(goal).toMatchObject({ playerId: "362674" });
+
+    const substitution = details.events.find((e) => e.kind === "substitution" && e.player === "Henrikh Mkhitaryan")!;
+    expect(substitution).toMatchObject({ playerId: "147625", other: "Piotr Zielinski", otherId: "177782" });
+  });
+
   it("una sezione che manca resta vuota; senza intestazione il riassunto non vale", () => {
     const raw = loadFixture("summary-401874810");
     delete raw.rosters;
@@ -123,6 +132,79 @@ describe("riassunto della partita", () => {
     const broken = loadFixture("summary-401874810");
     delete broken.header;
     expect(() => parseSummary(broken)).toThrow(/header missing/);
+  });
+
+  it("un roster che manca è una formazione vuota: eventi e statistiche si salvano lo stesso", () => {
+    // Il riassunto prima che le formazioni escano: le voci di `rosters` non hanno la chiave `roster`.
+    expect(parseSummary(loadFixture("summary-401861151")).lineups).toEqual([]);
+
+    const raw = loadFixture("summary-401874808");
+    for (const r of raw.rosters) delete r.roster;
+    const details = parseSummary(raw);
+    expect(details.lineups).toEqual([]);
+    expect(details.events.length).toBeGreaterThan(0);
+    expect(details.stats).toHaveLength(6);
+  });
+});
+
+describe("posto in campo", () => {
+  /** Un titolare per id, come lo salva il parser. */
+  const starter = (side: "home" | "away", athleteId: string) => {
+    const details = parseSummary(loadFixture("summary-401874808"));
+    return details.lineups.find((l) => l.side === side)!.starters.find((p) => p.athleteId === athleteId)!;
+  };
+
+  it("i posti diventano riga e ordine su entrambi i lati, con nome corto e id", () => {
+    expect(starter("home", "240533")).toMatchObject({ name: "Josep Martínez", shortName: "J. Martínez", jersey: "1", row: 0, order: 0 });
+    // 3-5-2: terzini ai lati, centrali in mezzo.
+    expect(starter("home", "194748")).toMatchObject({ row: 2, order: 0 }); // Dimarco, LM
+    expect(starter("home", "267711")).toMatchObject({ row: 2, order: 4 }); // Spence, RM
+    expect(starter("home", "271769")).toMatchObject({ row: 1, order: 0 }); // Augusto, CD-L
+    expect(starter("home", "214562")).toMatchObject({ row: 1, order: 2 }); // Akanji, CD-R
+    // 4-2-3-1 della trasferta.
+    expect(starter("away", "192146")).toMatchObject({ row: 1, order: 0 }); // Valle, LB
+    expect(starter("away", "297084")).toMatchObject({ row: 1, order: 3 }); // Couto, RB
+    expect(starter("away", "291285")).toMatchObject({ row: 3, order: 2 }); // Da Cunha, AM-R
+    expect(starter("away", "262071")).toMatchObject({ row: 4, order: 0 }); // Douvikas, F
+  });
+
+  it("una formazione fuori tabella passa dalla regola delle etichette", () => {
+    const raw = loadFixture("summary-401874808");
+    const away = raw.rosters.find((r: { homeAway: string }) => r.homeAway === "away");
+    away.formation = "5-3-2";
+    const labels: Record<string, string> = {
+      "1": "G",
+      "2": "LB",
+      "3": "CD-L",
+      "4": "CD",
+      "5": "CD-R",
+      "6": "RB",
+      "7": "DM",
+      "8": "CM-L",
+      "9": "CM-R",
+      "10": "CF-L",
+      "11": "CF-R",
+    };
+    for (const p of away.roster) p.position.abbreviation = labels[p.formationPlace] ?? "SUB";
+
+    const lineup = parseSummary(raw).lineups.find((l) => l.side === "away")!;
+    const rows = [0, 1, 2, 3].map((row) =>
+      lineup.starters
+        .filter((p) => p.row === row)
+        .sort((a, b) => a.order! - b.order!)
+        .map((p) => p.jersey),
+    );
+    expect(rows).toEqual([["97"], ["27", "3", "6", "4", "2"], ["5", "7", "9"], ["10", "20"]]);
+  });
+
+  it("il riassunto 2015 non ha posti: nessuna riga, la formazione resta", () => {
+    const details = parseSummary(loadFixture("summary-432260"));
+    for (const lineup of details.lineups) {
+      expect(lineup.starters).toHaveLength(11);
+      expect(lineup.formation).toBeTruthy();
+      expect(lineup.starters.every((p) => p.row === undefined && p.order === undefined)).toBe(true);
+    }
+    expect(details.lineups.find((l) => l.side === "home")!.starters[0]).toMatchObject({ name: "Samir Handanovic", athleteId: "44323" });
   });
 });
 
@@ -188,5 +270,27 @@ describe("dettagli nel drawer", () => {
 
     expect(await ask()).toEqual(before);
     expect(logged).toHaveBeenCalledWith(`Riassunto ${COMO_INTER}:`, expect.stringContaining("503"));
+  });
+
+  it("una riga salvata prima di questo cambio, senza posti né id, si carica lo stesso", async () => {
+    const { t, ask } = await setup();
+    await t.run(async (ctx) => {
+      const match = await ctx.db.query("footballMatches").first();
+      await ctx.db.insert("footballMatchDetails", {
+        matchId: match!._id,
+        competition: "Italian Serie A",
+        venue: "San Siro",
+        events: [{ kind: "goal", minute: "28'", side: "away", player: "Davide Frattesi", other: "Tijjani Noslin" }],
+        lineups: [{ side: "home", formation: "3-4-2-1", starters: [{ name: "Vanja Milinkovic-Savic", jersey: "32" }], bench: [] }],
+        stats: [],
+        fetchedAt: AT_HALFTIME,
+      });
+    });
+
+    const details = await ask();
+    expect(details?.lineups).toEqual([
+      { side: "home", formation: "3-4-2-1", starters: [{ name: "Vanja Milinkovic-Savic", jersey: "32" }], bench: [] },
+    ]);
+    expect(details?.events).toEqual([{ kind: "goal", minute: "28'", side: "away", player: "Davide Frattesi", other: "Tijjani Noslin" }]);
   });
 });
