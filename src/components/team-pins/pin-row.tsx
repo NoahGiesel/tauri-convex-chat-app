@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useMutation, useQuery } from "convex/react";
 import { AlertTriangle, X } from "lucide-react";
 import { api } from "../../../convex/_generated/api";
@@ -8,6 +9,7 @@ import { MatchDrawer } from "@/components/team-pins/match-drawer";
 import { StateLabel, StatusDot, useMatchTimes } from "@/components/team-pins/match-label";
 import { useI18n } from "@/i18n/i18n-provider";
 import { chipState, isUnavailable, type ChipState } from "@/lib/match-chip";
+import { useMatchDrawer, type DrawerLayout } from "@/lib/match-drawer";
 import { teamChips, type TeamChip, type TeamPin } from "@/lib/team-pins";
 import { cn } from "@/lib/utils";
 
@@ -23,27 +25,52 @@ function useNow(everyMs: number): number {
   return now;
 }
 
-/** La fila dei chip delle squadre pinnate, sotto l'intestazione della chat: alta 44px, scorre di lato se non ci sta. */
-export function TeamPinRow({ conversationId }: { conversationId: Id<"conversations"> }) {
+/**
+ * La fila dei chip delle squadre pinnate, sotto l'intestazione della chat: alta 44px, scorre di lato se non ci sta.
+ * Il drawer del chip aperto vive fuori dalla colonna della chat, nello spazio che le sta di fianco: così la chat
+ * si restringe invece di finirci sotto, e nella finestra stretta lo copre.
+ */
+export function TeamPinRow({
+  conversationId,
+  drawerSlot,
+  layout,
+}: {
+  conversationId: Id<"conversations">;
+  /** L'elemento, accanto alla colonna della chat, in cui compare il drawer. */
+  drawerSlot: HTMLElement | null;
+  layout: DrawerLayout;
+}) {
   const { t } = useI18n();
   const pins = useQuery(api.teamPins.list, { conversationId });
   const now = useNow(CLOCK_TICK_MS);
-  /** Il chip il cui drawer è aperto (la partita si rilegge a ogni aggiornamento, così il drawer segue la diretta). */
-  const [openKey, setOpenKey] = useState<string | null>(null);
-  const close = useCallback(() => setOpenKey(null), []);
+  const chips = useMemo(() => teamChips(pins ?? [], now), [pins, now]);
+  const pinnedTeamIds = useMemo(() => (pins ?? []).map((pin) => pin.team.teamId), [pins]);
+  const drawer = useMatchDrawer(conversationId, chips, pins ? pinnedTeamIds : null);
   if (!pins || pins.length === 0) return null;
-  const chips = teamChips(pins, now);
-  const open = chips.find((c) => c.key === openKey)?.match;
+  const open = drawer.chip;
 
   return (
-    <div data-team-pin-row className="shrink-0 border-b border-app-border">
-      <div role="list" aria-label={t("teamPins.row")} className="flex h-11 items-center gap-2 overflow-x-auto px-5">
-        {chips.map((chip) => (
-          <Chip key={chip.key} chip={chip} now={now} open={chip.key === openKey} onOpen={() => setOpenKey(chip.key === openKey ? null : chip.key)} />
-        ))}
+    <>
+      <div data-team-pin-row className="shrink-0 border-b border-app-border">
+        <div role="list" aria-label={t("teamPins.row")} className="flex h-11 items-center gap-2 overflow-x-auto px-5">
+          {chips.map((chip) => (
+            <Chip key={chip.key} chip={chip} now={now} open={drawer.isOpen(chip)} onOpen={() => drawer.toggle(chip)} />
+          ))}
+        </div>
       </div>
-      {open && <MatchDrawer conversationId={conversationId} match={open} now={now} onClose={close} />}
-    </div>
+      {open?.match &&
+        drawerSlot &&
+        createPortal(
+          <MatchDrawer
+            conversationId={conversationId}
+            match={open.match}
+            now={now}
+            layout={layout}
+            onClose={drawer.close}
+          />,
+          drawerSlot,
+        )}
+    </>
   );
 }
 

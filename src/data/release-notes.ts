@@ -9,8 +9,12 @@ export const RELEASE_NOTES: ReleaseNote[] = [
   {
     version: "next",
     items: {
-      en: [],
-      it: [],
+      en: [
+        "The match drawer opens beside the chat, which narrows so messages and the message box stay visible; it stays open until you close it, follows the team to its next match, and each chat remembers its own drawer",
+      ],
+      it: [
+        "Il drawer della partita si apre accanto alla chat, che si restringe per lasciare visibili i messaggi e il campo di scrittura; resta aperto finché non lo chiudi, segue la squadra alla partita successiva e ogni chat ricorda il proprio drawer",
+      ],
     },
   },
   {

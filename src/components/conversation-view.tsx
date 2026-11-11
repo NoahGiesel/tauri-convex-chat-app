@@ -34,6 +34,8 @@ import { fetchGifs } from "@/lib/giphy";
 import { compressImage } from "@/lib/image-compress";
 import { dayLabel } from "@/lib/day-label";
 import { splitLinks } from "@/lib/links";
+import { drawerLayout } from "@/lib/match-drawer";
+import { popoutChatId } from "@/lib/popout";
 import { uploadFile } from "@/lib/media-upload";
 import { classifyMedia, MEDIA_ACCEPT } from "../../convex/mediaRules";
 import { cn } from "@/lib/utils";
@@ -172,6 +174,20 @@ export function ConversationView({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [lightbox, setLightbox] = useState<LightboxItem | null>(null);
   const [libraryOpen, setLibraryOpen] = useState(false);
+  // Il drawer della partita sta fuori dalla colonna della chat, in questo spazio accanto: la chat si restringe.
+  const chatRowRef = useRef<HTMLDivElement>(null);
+  const [chatRowWidth, setChatRowWidth] = useState(0);
+  const [drawerSlot, setDrawerSlot] = useState<HTMLDivElement | null>(null);
+  const attachDrawerSlot = useCallback((node: HTMLDivElement | null) => setDrawerSlot(node), []);
+  useEffect(() => {
+    const row = chatRowRef.current;
+    if (!row) return;
+    const observer = new ResizeObserver(([entry]) => setChatRowWidth(entry.contentRect.width));
+    observer.observe(row);
+    setChatRowWidth(row.getBoundingClientRect().width);
+    return () => observer.disconnect();
+  }, []);
+  const drawerPlacement = drawerLayout(chatRowWidth, popoutChatId() !== null);
   // Un'anteprima che compare cambia l'altezza: se eri in fondo alla chat, resti in fondo.
   const keepBottom = useCallback(() => {
     if (stickToBottom.current && scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -772,8 +788,11 @@ export function ConversationView({
       {libraryOpen && <MediaLibrary conversationId={conversationId} onOpenMedia={setLightbox} onClose={() => setLibraryOpen(false)} />}
 
       {/* Messaggi e campo di scrittura restano montati (così non si perde la posizione) ma nascosti mentre si guarda l'elenco. */}
-      <div className={cn("flex min-h-0 flex-1 flex-col", libraryOpen && "hidden")}>
-      {info && !isGroup && <TeamPinRow conversationId={conversationId} />}
+      <div ref={chatRowRef} className={cn("relative flex min-h-0 flex-1", libraryOpen && "hidden")}>
+      <div className="flex min-w-0 flex-1 flex-col">
+      {info && !isGroup && (
+        <TeamPinRow conversationId={conversationId} drawerSlot={drawerSlot} layout={drawerPlacement} />
+      )}
       <div ref={scrollRef} onScroll={onScroll} className={cn("min-h-0 flex-1 overflow-y-auto px-6 pt-5 pb-3", !revealed && "opacity-0")}>
         {!showHeader && (
           <div className="pointer-events-none sticky top-0 z-10 h-0">
@@ -1231,6 +1250,9 @@ export function ConversationView({
           </button>
         </div>
       </footer>
+      </div>
+      {/* Lo spazio del drawer: `contents` fa sì che il drawer, portato qui, sia un fratello della colonna della chat. */}
+      <div ref={attachDrawerSlot} className="contents" />
       </div>
     </>
   );
