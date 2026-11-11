@@ -90,10 +90,12 @@ export function MatchDrawer({
       tabIndex={-1}
       onKeyDown={onKeyDown}
       onPointerDown={onPointerDown}
-      style={{ width: DRAWER_WIDTH }}
+      style={layout === "beside" ? { width: DRAWER_WIDTH } : undefined}
       className={cn(
-        "z-40 flex min-h-0 flex-col border-l border-app-border-strong bg-app-panel outline-none",
-        layout === "beside" ? "h-full shrink-0" : "absolute inset-y-0 right-0 max-w-full shadow-2xl",
+        "z-40 flex min-h-0 flex-col bg-app-panel outline-none",
+        layout === "beside"
+          ? "h-full shrink-0 border-l border-app-border-strong"
+          : "absolute inset-0",
       )}
     >
       <header className="relative shrink-0 border-b border-app-border px-5 pt-4 pb-4">

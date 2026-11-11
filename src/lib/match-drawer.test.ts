@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
+import type { Id } from "../../convex/_generated/dataModel";
 import {
   createDrawerMemory,
   drawerChip,
   drawerLayout,
-  remainingPins,
+  resolveTarget,
   targetOf,
+  targetStillPinned,
+  teamIdsOf,
   toggleChip,
   type DrawerTarget,
 } from "./match-drawer";
@@ -18,6 +21,7 @@ function chip(key: string, ...teamIds: string[]): TeamChip {
   };
 }
 
+const chat = (id: string) => id as Id<"conversations">;
 const target = (...teamIds: string[]): DrawerTarget => ({ teams: teamIds });
 
 describe("drawer della partita: disposizione", () => {
@@ -61,25 +65,54 @@ describe("drawer della partita: segue la squadra", () => {
     const juventus = chip("juventus-next", "juventus");
     expect(drawerChip([juventus, milan], opened)).toBe(milan);
   });
+
+  it("le squadre di un chip sono quelle dei suoi pin, nell'ordine", () => {
+    expect(teamIdsOf(chip("derby", "milan", "juventus"))).toEqual(["milan", "juventus"]);
+  });
 });
 
 describe("drawer della partita: pin rimossi", () => {
   it("si chiude quando non resta nessuna delle sue squadre pinnate", () => {
     const opened = target("inter", "napoli");
-    expect(remainingPins(opened, ["arsenal"])).toBeNull();
+    expect(targetStillPinned(opened, ["arsenal"])).toBeNull();
     expect(drawerChip([chip("arsenal-next", "arsenal")], null)).toBeNull();
   });
 
   it("in un derby, togliere un pin lo lascia aperto sull'altra squadra", () => {
     const opened = target("milan", "juventus");
-    const left = remainingPins(opened, ["juventus"]);
+    const left = targetStillPinned(opened, ["juventus"]);
     expect(left).toEqual({ teams: ["juventus"] });
     expect(drawerChip([chip("juventus-next", "juventus")], left)?.key).toBe("juventus-next");
   });
 
   it("senza pin tolti non cambia nulla", () => {
     const opened = target("inter");
-    expect(remainingPins(opened, ["inter", "napoli"])).toBe(opened);
+    expect(targetStillPinned(opened, ["inter", "napoli"])).toBe(opened);
+  });
+});
+
+describe("drawer della partita: chiusura automatica", () => {
+  it("con i pin non ancora arrivati non tocca niente", () => {
+    const opened = target("inter");
+    expect(resolveTarget(opened, null)).toEqual({ target: opened, writeBack: false });
+  });
+
+  it("con tutte le squadre ancora pinnate non riscrive la memoria", () => {
+    const opened = target("inter");
+    expect(resolveTarget(opened, ["inter", "napoli"])).toEqual({ target: opened, writeBack: false });
+  });
+
+  it("stringe il bersaglio alla squadra rimasta e lo riscrive", () => {
+    const opened = target("milan", "juventus");
+    expect(resolveTarget(opened, ["juventus"])).toEqual({ target: { teams: ["juventus"] }, writeBack: true });
+  });
+
+  it("a zero squadre pinnate chiude il drawer e lo riscrive", () => {
+    expect(resolveTarget(target("inter"), ["napoli"])).toEqual({ target: null, writeBack: true });
+  });
+
+  it("un drawer già chiuso resta chiuso senza riscritture", () => {
+    expect(resolveTarget(null, ["napoli"])).toEqual({ target: null, writeBack: false });
   });
 });
 
@@ -102,27 +135,27 @@ describe("drawer della partita: memoria per chat", () => {
   it("ogni chat ricorda il proprio drawer mentre l'app gira", () => {
     const memory = createDrawerMemory();
     const opened = target("inter");
-    memory.set("carol", opened);
+    memory.set(chat("carol"), opened);
 
-    expect(memory.get("carol")).toBe(opened);
-    expect(memory.get("dave")).toBeNull();
+    expect(memory.get(chat("carol"))).toBe(opened);
+    expect(memory.get(chat("dave"))).toBeNull();
   });
 
   it("due memorie non si vedono tra loro, come due finestre", () => {
     const main = createDrawerMemory();
     const popout = createDrawerMemory();
-    main.set("carol", target("inter"));
+    main.set(chat("carol"), target("inter"));
 
-    expect(popout.get("carol")).toBeNull();
+    expect(popout.get(chat("carol"))).toBeNull();
   });
 
   it("chiudere una chat non toglie il drawer alle altre", () => {
     const memory = createDrawerMemory();
-    memory.set("carol", target("inter"));
-    memory.set("dave", target("napoli"));
-    memory.set("carol", null);
+    memory.set(chat("carol"), target("inter"));
+    memory.set(chat("dave"), target("napoli"));
+    memory.set(chat("carol"), null);
 
-    expect(memory.get("carol")).toBeNull();
-    expect(memory.get("dave")).toEqual({ teams: ["napoli"] });
+    expect(memory.get(chat("carol"))).toBeNull();
+    expect(memory.get(chat("dave"))).toEqual({ teams: ["napoli"] });
   });
 });
