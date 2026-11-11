@@ -46,8 +46,9 @@ export const add = mutation({
     await insertSystemLine(ctx, args.conversationId, { action: "pinned", profileId: me._id, teamName: team.name });
     // La competizione serve a trovare la partita in corso, se il pin arriva a partita iniziata.
     await ctx.scheduler.runAfter(0, internal.footballMatches.refreshNextMatch, { teamId: args.teamId, league: competitionLeague(team) });
-    // I risultati e le partite in programma alimentano il tab Partite del drawer.
-    await ctx.scheduler.runAfter(0, internal.footballTeamSchedules.refresh, { teamId: args.teamId });
+    // I risultati e le partite in programma alimentano il tab Partite del drawer, con le classifiche.
+    // Il refresco salta i campionati con una partita in corso.
+    await ctx.scheduler.runAfter(0, internal.footballTeamSchedules.refresh, { teamId: args.teamId, standings: true });
     return pinId;
   },
 });
@@ -79,6 +80,7 @@ const teamView = (s: Doc<"footballMatches">["home"]) => ({
 /** Quanto il client mostra di una partita: squadre, stato, punteggio e quando è stata letta l'ultima volta. */
 const matchView = (m: Doc<"footballMatches">) => ({
   eventId: m.eventId,
+  league: m.league,
   kickoff: m.kickoff,
   state: m.state,
   statusName: m.statusName,

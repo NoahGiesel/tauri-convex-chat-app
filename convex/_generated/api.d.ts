@@ -17,6 +17,7 @@ import type * as espn from "../espn.js";
 import type * as footballLeagues from "../footballLeagues.js";
 import type * as footballMatches from "../footballMatches.js";
 import type * as footballSearch from "../footballSearch.js";
+import type * as footballStandings from "../footballStandings.js";
 import type * as footballTeamSchedules from "../footballTeamSchedules.js";
 import type * as footballTeams from "../footballTeams.js";
 import type * as friends from "../friends.js";
@@ -65,6 +66,7 @@ declare const fullApi: ApiFromModules<{
   footballLeagues: typeof footballLeagues;
   footballMatches: typeof footballMatches;
   footballSearch: typeof footballSearch;
+  footballStandings: typeof footballStandings;
   footballTeamSchedules: typeof footballTeamSchedules;
   footballTeams: typeof footballTeams;
   friends: typeof friends;

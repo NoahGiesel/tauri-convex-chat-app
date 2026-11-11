@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { internalAction, internalMutation, query, type MutationCtx } from "./_generated/server";
 import { fetchSchedule, type ProviderCompetition, type ProviderSchedule } from "./espn";
-import { getProfile } from "./model";
+import { canSeePinnedTeam } from "./model";
 import { footballCompetition, footballScheduleMatch } from "./schema";
 
 /** Più righe di quante l'app ne avrà mai: una per squadra pinnata. */
@@ -20,7 +20,7 @@ export function mergeCompetitions(lists: ProviderCompetition[][]): ProviderCompe
  * due richieste in tutto. Se una delle due fallisce la riga resta com'era e l'errore finisce nei log.
  */
 export const refresh = internalAction({
-  args: { teamId: v.string() },
+  args: { teamId: v.string(), standings: v.optional(v.boolean()), standingsLeague: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const fetchedAt = Date.now();
     let results: ProviderSchedule;
@@ -32,13 +32,26 @@ export const refresh = internalAction({
       console.error(`Calendario di ${args.teamId}:`, e instanceof Error ? e.message : e);
       return null;
     }
+    const competitions = mergeCompetitions([results.competitions, fixtures.competitions]);
     await ctx.runMutation(internal.footballTeamSchedules.save, {
       teamId: args.teamId,
       results: results.matches,
       fixtures: fixtures.matches,
-      competitions: mergeCompetitions([results.competitions, fixtures.competitions]),
+      competitions,
       fetchedAt,
     });
+    // Al pin servono le classifiche di tutte le competizioni appena lette; dopo una partita solo quella
+    // del suo campionato (3 richieste in tutto, come da spec). Il cron delle 6 ore le chiede da sé.
+    // Un campionato con una partita in corso aspetta: la classifica non cambia durante la partita.
+    const wanted = new Set<string>();
+    if (args.standings) for (const competition of competitions) wanted.add(competition.league);
+    if (args.standingsLeague) wanted.add(args.standingsLeague);
+    if (wanted.size > 0) {
+      const live = new Set(await ctx.runQuery(internal.footballMatches.liveLeagueNames, {}));
+      for (const league of wanted) {
+        if (!live.has(league)) await ctx.scheduler.runAfter(0, internal.footballStandings.refreshLeague, { league });
+      }
+    }
     return null;
   },
 });
@@ -84,18 +97,7 @@ export async function deleteUnpinnedSchedules(ctx: MutationCtx): Promise<void> {
 export const forPin = query({
   args: { conversationId: v.id("conversations"), teamId: v.string() },
   handler: async (ctx, args) => {
-    const me = await getProfile(ctx);
-    if (!me) return null;
-    const member = await ctx.db
-      .query("members")
-      .withIndex("by_conversation_and_profile", (q) => q.eq("conversationId", args.conversationId).eq("profileId", me._id))
-      .unique();
-    if (!member) return null;
-    const pin = await ctx.db
-      .query("teamPins")
-      .withIndex("by_conversation_and_teamId", (q) => q.eq("conversationId", args.conversationId).eq("teamId", args.teamId))
-      .first();
-    if (!pin) return null;
+    if (!(await canSeePinnedTeam(ctx, args.conversationId, args.teamId))) return null;
     const row = await ctx.db
       .query("footballTeamSchedules")
       .withIndex("by_teamId", (q) => q.eq("teamId", args.teamId))

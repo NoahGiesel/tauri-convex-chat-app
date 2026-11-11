@@ -104,6 +104,7 @@ export function TeamPinRow({
             conversationId={conversationId}
             team={open.pins[0].team}
             match={open.match}
+            otherTeamIds={[...new Set(pinnedTeamIds)].filter((id) => id !== open.pins[0].team.teamId)}
             opened={opened}
             onOpen={(match) => setOpened({ match, requestedAt: Date.now() })}
             onBack={() => setOpened(null)}

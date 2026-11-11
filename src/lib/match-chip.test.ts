@@ -9,6 +9,7 @@ const at = (day: number, hour: number, minute = 0) => new Date(2026, 10, day, ho
 function match(patch: Partial<PinMatch> = {}): PinMatch {
   return {
     eventId: "1",
+    league: "ita.1",
     kickoff: at(8, 20, 45),
     state: "pre",
     statusName: "STATUS_SCHEDULED",

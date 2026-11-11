@@ -1,0 +1,1277 @@
+{
+ "season": {
+  "year": 2026,
+  "startDate": "2026-07-01T04:00Z",
+  "endDate": "2027-07-01T03:59Z",
+  "displayName": "2026-27 UEFA Champions League"
+ },
+ "children": [
+  {
+   "name": "League Phase",
+   "standings": {
+    "entries": [
+     {
+      "team": {
+       "id": "160",
+       "abbreviation": "PSG",
+       "displayName": "Paris Saint-Germain",
+       "shortDisplayName": "PSG",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/160.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#81D6AC",
+       "description": "Qualifies for round of 16"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 15
+       },
+       {
+        "name": "points",
+        "value": 12
+       },
+       {
+        "name": "rank",
+        "value": 1
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "86",
+       "abbreviation": "RMA",
+       "displayName": "Real Madrid",
+       "shortDisplayName": "Real Madrid",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/86.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#81D6AC",
+       "description": "Qualifies for round of 16"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 6
+       },
+       {
+        "name": "points",
+        "value": 12
+       },
+       {
+        "name": "rank",
+        "value": 2
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "359",
+       "abbreviation": "ARS",
+       "displayName": "Arsenal",
+       "shortDisplayName": "Arsenal",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/359.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#81D6AC",
+       "description": "Qualifies for round of 16"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 5
+       },
+       {
+        "name": "points",
+        "value": 10
+       },
+       {
+        "name": "rank",
+        "value": 3
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "2572",
+       "abbreviation": "COMO",
+       "displayName": "Como",
+       "shortDisplayName": "Como",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/2572.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#81D6AC",
+       "description": "Qualifies for round of 16"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 13
+       },
+       {
+        "name": "points",
+        "value": 9
+       },
+       {
+        "name": "rank",
+        "value": 4
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "83",
+       "abbreviation": "BAR",
+       "displayName": "Barcelona",
+       "shortDisplayName": "Barcelona",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/83.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#81D6AC",
+       "description": "Qualifies for round of 16"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 8
+       },
+       {
+        "name": "points",
+        "value": 9
+       },
+       {
+        "name": "rank",
+        "value": 5
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "362",
+       "abbreviation": "AVL",
+       "displayName": "Aston Villa",
+       "shortDisplayName": "Aston Villa",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/362.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#81D6AC",
+       "description": "Qualifies for round of 16"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 6
+       },
+       {
+        "name": "points",
+        "value": 9
+       },
+       {
+        "name": "rank",
+        "value": 6
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "382",
+       "abbreviation": "MNC",
+       "displayName": "Manchester City",
+       "shortDisplayName": "Man City",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/382.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#81D6AC",
+       "description": "Qualifies for round of 16"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 5
+       },
+       {
+        "name": "points",
+        "value": 9
+       },
+       {
+        "name": "rank",
+        "value": 7
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "364",
+       "abbreviation": "LIV",
+       "displayName": "Liverpool",
+       "shortDisplayName": "Liverpool",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/364.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#81D6AC",
+       "description": "Qualifies for round of 16"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 4
+       },
+       {
+        "name": "points",
+        "value": 9
+       },
+       {
+        "name": "rank",
+        "value": 8
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "570",
+       "abbreviation": "BRU",
+       "displayName": "Club Brugge",
+       "shortDisplayName": "Club Brugge",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/570.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#B5E7CE",
+       "description": "Knockout phase playoffs - seeded"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 4
+       },
+       {
+        "name": "points",
+        "value": 9
+       },
+       {
+        "name": "rank",
+        "value": 9
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "2250",
+       "abbreviation": "SCP",
+       "displayName": "Sporting CP",
+       "shortDisplayName": "Sporting",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/2250.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#B5E7CE",
+       "description": "Knockout phase playoffs - seeded"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 4
+       },
+       {
+        "name": "points",
+        "value": 9
+       },
+       {
+        "name": "rank",
+        "value": 10
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "244",
+       "abbreviation": "BET",
+       "displayName": "Real Betis",
+       "shortDisplayName": "Betis",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/244.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#B5E7CE",
+       "description": "Knockout phase playoffs - seeded"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 2
+       },
+       {
+        "name": "points",
+        "value": 9
+       },
+       {
+        "name": "rank",
+        "value": 11
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "124",
+       "abbreviation": "DOR",
+       "displayName": "Borussia Dortmund",
+       "shortDisplayName": "Dortmund",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/124.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#B5E7CE",
+       "description": "Knockout phase playoffs - seeded"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 2
+       },
+       {
+        "name": "points",
+        "value": 9
+       },
+       {
+        "name": "rank",
+        "value": 12
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "132",
+       "abbreviation": "MUN",
+       "displayName": "Bayern Munich",
+       "shortDisplayName": "Bayern",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/132.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#B5E7CE",
+       "description": "Knockout phase playoffs - seeded"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 7
+       },
+       {
+        "name": "points",
+        "value": 8
+       },
+       {
+        "name": "rank",
+        "value": 13
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "134",
+       "abbreviation": "VFB",
+       "displayName": "VfB Stuttgart",
+       "shortDisplayName": "Stuttgart",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/134.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#B5E7CE",
+       "description": "Knockout phase playoffs - seeded"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 3
+       },
+       {
+        "name": "points",
+        "value": 7
+       },
+       {
+        "name": "rank",
+        "value": 14
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "110",
+       "abbreviation": "INT",
+       "displayName": "Internazionale",
+       "shortDisplayName": "Inter Milan",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/110.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#B5E7CE",
+       "description": "Knockout phase playoffs - seeded"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 2
+       },
+       {
+        "name": "points",
+        "value": 6
+       },
+       {
+        "name": "rank",
+        "value": 15
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "4411",
+       "abbreviation": "LAS",
+       "displayName": "LASK Linz",
+       "shortDisplayName": "LASK Linz",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/4411.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#B5E7CE",
+       "description": "Knockout phase playoffs - seeded"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 1
+       },
+       {
+        "name": "points",
+        "value": 6
+       },
+       {
+        "name": "rank",
+        "value": 16
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "360",
+       "abbreviation": "MAN",
+       "displayName": "Manchester United",
+       "shortDisplayName": "Man Utd",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/360.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#B2BFD0",
+       "description": "Knockout phase playoffs - unseeded"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 0
+       },
+       {
+        "name": "points",
+        "value": 6
+       },
+       {
+        "name": "rank",
+        "value": 17
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "432",
+       "abbreviation": "GAL",
+       "displayName": "Galatasaray",
+       "shortDisplayName": "Galatasaray",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/432.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#B2BFD0",
+       "description": "Knockout phase playoffs - unseeded"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -1
+       },
+       {
+        "name": "points",
+        "value": 6
+       },
+       {
+        "name": "rank",
+        "value": 18
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "436",
+       "abbreviation": "FEN",
+       "displayName": "Fenerbahce",
+       "shortDisplayName": "Fenerbahce",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/436.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#B2BFD0",
+       "description": "Knockout phase playoffs - unseeded"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -5
+       },
+       {
+        "name": "points",
+        "value": 5
+       },
+       {
+        "name": "rank",
+        "value": 19
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "104",
+       "abbreviation": "ROMA",
+       "displayName": "AS Roma",
+       "shortDisplayName": "AS Roma",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/104.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#B2BFD0",
+       "description": "Knockout phase playoffs - unseeded"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 2
+       },
+       {
+        "name": "points",
+        "value": 4
+       },
+       {
+        "name": "rank",
+        "value": 20
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "493",
+       "abbreviation": "SHK",
+       "displayName": "Shakhtar Donetsk",
+       "shortDisplayName": "Shakhtar",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/493.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#B2BFD0",
+       "description": "Knockout phase playoffs - unseeded"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 0
+       },
+       {
+        "name": "points",
+        "value": 4
+       },
+       {
+        "name": "rank",
+        "value": 21
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "510",
+       "abbreviation": "VFK",
+       "displayName": "Viking FK",
+       "shortDisplayName": "Viking FK",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/510.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#B2BFD0",
+       "description": "Knockout phase playoffs - unseeded"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -1
+       },
+       {
+        "name": "points",
+        "value": 4
+       },
+       {
+        "name": "rank",
+        "value": 22
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "1068",
+       "abbreviation": "ATM",
+       "displayName": "Atlético Madrid",
+       "shortDisplayName": "Atlético",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/1068.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#B2BFD0",
+       "description": "Knockout phase playoffs - unseeded"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -1
+       },
+       {
+        "name": "points",
+        "value": 4
+       },
+       {
+        "name": "rank",
+        "value": 23
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "148",
+       "abbreviation": "PSV",
+       "displayName": "PSV Eindhoven",
+       "shortDisplayName": "PSV",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/148.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#B2BFD0",
+       "description": "Knockout phase playoffs - unseeded"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -1
+       },
+       {
+        "name": "points",
+        "value": 4
+       },
+       {
+        "name": "rank",
+        "value": 24
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "2980",
+       "abbreviation": "BODO",
+       "displayName": "Bodo/Glimt",
+       "shortDisplayName": "Bodo/Glimt",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/2980.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#FF7F84",
+       "description": "Eliminated"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -5
+       },
+       {
+        "name": "points",
+        "value": 4
+       },
+       {
+        "name": "rank",
+        "value": 25
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "437",
+       "abbreviation": "FCP",
+       "displayName": "FC Porto",
+       "shortDisplayName": "FC Porto",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/437.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#FF7F84",
+       "description": "Eliminated"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -1
+       },
+       {
+        "name": "points",
+        "value": 3
+       },
+       {
+        "name": "rank",
+        "value": 26
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "114",
+       "abbreviation": "NAP",
+       "displayName": "Napoli",
+       "shortDisplayName": "Napoli",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/114.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#FF7F84",
+       "description": "Eliminated"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -5
+       },
+       {
+        "name": "points",
+        "value": 3
+       },
+       {
+        "name": "rank",
+        "value": 27
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "102",
+       "abbreviation": "VIL",
+       "displayName": "Villarreal",
+       "shortDisplayName": "Villarreal",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/102.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#FF7F84",
+       "description": "Eliminated"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -6
+       },
+       {
+        "name": "points",
+        "value": 3
+       },
+       {
+        "name": "rank",
+        "value": 28
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "887",
+       "abbreviation": "AEK",
+       "displayName": "AEK Athens",
+       "shortDisplayName": "AEK Athens",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/887.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#FF7F84",
+       "description": "Eliminated"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -6
+       },
+       {
+        "name": "points",
+        "value": 3
+       },
+       {
+        "name": "rank",
+        "value": 29
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "11420",
+       "abbreviation": "RBL",
+       "displayName": "RB Leipzig",
+       "shortDisplayName": "RB Leipzig",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/11420.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#FF7F84",
+       "description": "Eliminated"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -6
+       },
+       {
+        "name": "points",
+        "value": 3
+       },
+       {
+        "name": "rank",
+        "value": 30
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "21922",
+       "abbreviation": "SAB",
+       "displayName": "Sabah FK",
+       "shortDisplayName": "Sabah",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/21922.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#FF7F84",
+       "description": "Eliminated"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -6
+       },
+       {
+        "name": "points",
+        "value": 3
+       },
+       {
+        "name": "rank",
+        "value": 31
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "142",
+       "abbreviation": "FEY",
+       "displayName": "Feyenoord Rotterdam",
+       "shortDisplayName": "Feyenoord",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/142.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#FF7F84",
+       "description": "Eliminated"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -7
+       },
+       {
+        "name": "points",
+        "value": 3
+       },
+       {
+        "name": "rank",
+        "value": 32
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "175",
+       "abbreviation": "RCL",
+       "displayName": "Lens",
+       "shortDisplayName": "Lens",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/175.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#FF7F84",
+       "description": "Eliminated"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -12
+       },
+       {
+        "name": "points",
+        "value": 3
+       },
+       {
+        "name": "rank",
+        "value": 33
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "494",
+       "abbreviation": "SLP",
+       "displayName": "Slavia Prague",
+       "shortDisplayName": "Slavia Prague",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/494.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#FF7F84",
+       "description": "Eliminated"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -4
+       },
+       {
+        "name": "points",
+        "value": 1
+       },
+       {
+        "name": "rank",
+        "value": 34
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "166",
+       "abbreviation": "LILL",
+       "displayName": "Lille",
+       "shortDisplayName": "Lille",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/166.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#FF7F84",
+       "description": "Eliminated"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -6
+       },
+       {
+        "name": "points",
+        "value": 1
+       },
+       {
+        "name": "rank",
+        "value": 35
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "521",
+       "abbreviation": "SLB",
+       "displayName": "Slovan Bratislava",
+       "shortDisplayName": "S Bratislava",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/521.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#FF7F84",
+       "description": "Eliminated"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -16
+       },
+       {
+        "name": "points",
+        "value": 0
+       },
+       {
+        "name": "rank",
+        "value": 36
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

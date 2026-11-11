@@ -123,6 +123,25 @@ export async function requireMember(
   return member;
 }
 
+/**
+ * Vero se chi chiede è nella chat e la chat pinna quella squadra: la guardia delle query del drawer.
+ * `null` e `false` si comportano allo stesso modo per il client: non c'è niente da mostrare.
+ */
+export async function canSeePinnedTeam(ctx: QueryCtx, conversationId: Id<"conversations">, teamId: string): Promise<boolean> {
+  const me = await getProfile(ctx);
+  if (!me) return false;
+  const member = await ctx.db
+    .query("members")
+    .withIndex("by_conversation_and_profile", (q) => q.eq("conversationId", conversationId).eq("profileId", me._id))
+    .unique();
+  if (!member) return false;
+  const pin = await ctx.db
+    .query("teamPins")
+    .withIndex("by_conversation_and_teamId", (q) => q.eq("conversationId", conversationId).eq("teamId", teamId))
+    .first();
+  return pin !== null;
+}
+
 /** Restituisce la chat diretta tra due profili, creandola se non esiste. */
 export async function ensureDirectConversation(
   ctx: MutationCtx,

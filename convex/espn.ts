@@ -283,6 +283,66 @@ export async function fetchSchedule(teamId: string, kind: "results" | "fixtures"
   );
 }
 
+/** La classifica di una competizione come la salva `footballStandings`, senza slug e `fetchedAt`. */
+export type ProviderStandings = Pick<Doc<"footballStandings">, "season" | "endDate" | "groups">;
+
+/** Una statistica della riga, per nome. Un nome che manca è un errore: le righe hanno sempre le stesse. */
+function standingsStat(stats: Map<string, unknown>, name: string): number {
+  const value = stats.get(name);
+  if (value === undefined) throw new EspnError(`ESPN: stats.${name} missing`);
+  return readNumber(value, `stats.${name}`);
+}
+
+/**
+ * Le classifiche di una competizione (`/v2/sports/soccer/{league}/standings`), ridotte a gironi e righe.
+ * Una coppa senza tabella è una risposta senza `children`: i gironi restano vuoti, non è un errore.
+ * ESPN manda le righe di un girone per id, non per posizione: qui si ordinano per posizione. La zona
+ * può avere il colore con più `#` e l'etichetta con tab e spazi: si puliscono, e senza etichetta non c'è.
+ */
+export function parseStandings(json: unknown): ProviderStandings {
+  const root = obj(json, "standings");
+  const season = obj(root.season, "season");
+  const endDate = Date.parse(str(season.endDate, "season.endDate"));
+  if (Number.isNaN(endDate)) throw new EspnError("ESPN: season.endDate missing");
+
+  const groups: ProviderStandings["groups"] = [];
+  for (const rawGroup of root.children === undefined ? [] : arr(root.children, "children")) {
+    const group = obj(rawGroup, "children[]");
+    const entries = arr(obj(group.standings, "standings").entries, "standings.entries");
+    const rows = entries.map((rawEntry) => {
+      const entry = obj(rawEntry, "standings.entries[]");
+      const stats = new Map(
+        arr(entry.stats, "entry.stats").map((rawStat) => {
+          const stat = obj(rawStat, "stats[]");
+          return [str(stat.name, "stats[].name"), stat.value] as const;
+        }),
+      );
+      const team = parseTeam(entry.team);
+      const note = optObj(entry.note);
+      const color = note ? optStr(note.color)?.trim().replace(/^#+/, "") : undefined;
+      const label = note ? optStr(note.description)?.replace(/\s+/g, " ").trim() : undefined;
+      return {
+        rank: standingsStat(stats, "rank"),
+        teamId: team.teamId,
+        name: team.name,
+        shortName: team.shortName,
+        ...(team.logo ? { logo: team.logo } : {}),
+        played: standingsStat(stats, "gamesPlayed"),
+        goalDifference: standingsStat(stats, "pointDifferential"),
+        points: standingsStat(stats, "points"),
+        ...(color && label ? { zone: { color, label } } : {}),
+      };
+    });
+    groups.push({ name: str(group.name, "children[].name"), rows: rows.sort((a, b) => a.rank - b.rank) });
+  }
+  return { season: str(season.displayName, "season.displayName"), endDate, groups };
+}
+
+/** La classifica di una competizione: gironi e righe, letti dal fornitore. */
+export async function fetchStandings(league: string): Promise<ProviderStandings> {
+  return parseStandings(await getJson(`/v2/sports/soccer/${league}/standings`));
+}
+
 /** Le partite di un tabellone ESPN già scaricato. Una partita illeggibile rende illeggibile tutto il tabellone. */
 export function parseScoreboard(json: unknown, league: string): ProviderMatch[] {
   return arr(obj(json, "scoreboard").events, "events").map((event) => parseEvent(event, league));

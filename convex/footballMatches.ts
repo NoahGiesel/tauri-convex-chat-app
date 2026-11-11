@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
-import { internalAction, internalMutation, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
+import { internalAction, internalMutation, internalQuery, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import {
   espnDays,
   fetchNextMatch,
@@ -69,8 +69,12 @@ export async function recordMatch(ctx: MutationCtx, match: ProviderMatch, fetche
     for (const team of await pinnedSides(ctx, match)) {
       await ctx.db.patch("footballTeams", team._id, { lastMatchId: id });
       await ctx.scheduler.runAfter(0, internal.footballMatches.refreshNextMatch, { teamId: team.teamId });
-      // Il risultato arriva nel calendario un po' dopo il fischio finale: si rifà a FT + 10 minuti.
-      await ctx.scheduler.runAfter(FULL_TIME_REFRESH_MS, internal.footballTeamSchedules.refresh, { teamId: team.teamId });
+      // Il risultato arriva nel calendario un po' dopo il fischio finale: si rifà a FT + 10 minuti, con
+      // la classifica del campionato della partita (le due richieste del calendario più una).
+      await ctx.scheduler.runAfter(FULL_TIME_REFRESH_MS, internal.footballTeamSchedules.refresh, {
+        teamId: team.teamId,
+        standingsLeague: match.league,
+      });
     }
   }
   return id;
@@ -185,15 +189,52 @@ export const saveNextMatch = internalMutation({
   },
 });
 
-/** Ogni 6 ore: la prossima partita e il calendario di ogni squadra pinnata (una richiesta per squadra, anche se è pinnata in più chat). */
+/**
+ * I campionati con una partita in corso di una squadra pinnata. La classifica non cambia durante una
+ * partita, quindi non si chiede: il cron e il refresco del pin saltano tutto il campionato, non solo
+ * le squadre che stanno giocando. Un'action lo legge con `liveLeagueNames`.
+ */
+export async function liveLeagues(ctx: QueryCtx): Promise<Set<string>> {
+  const pins = await ctx.db.query("teamPins").take(MAX_PINS_SCANNED);
+  const leagues = new Set<string>();
+  for (const teamId of new Set(pins.map((pin) => pin.teamId))) {
+    const team = await teamRow(ctx, teamId);
+    const match = team?.nextMatchId ? await ctx.db.get("footballMatches", team.nextMatchId) : null;
+    if (match?.state === "in") leagues.add(match.league);
+  }
+  return leagues;
+}
+
+/** Gli stessi campionati, per le action: non hanno `ctx.db`. */
+export const liveLeagueNames = internalQuery({
+  args: {},
+  handler: async (ctx) => [...(await liveLeagues(ctx))],
+});
+
+/**
+ * Ogni 6 ore: la prossima partita e il calendario di ogni squadra pinnata (una richiesta per squadra, anche se è
+ * pinnata in più chat), poi la classifica di ogni competizione che le sue squadre giocano, una richiesta per
+ * competizione anche con più squadre nello stesso campionato, tranne i campionati con una partita in corso.
+ */
 export const refreshPinnedTeams = internalMutation({
   args: {},
   handler: async (ctx) => {
     const pins = await ctx.db.query("teamPins").take(MAX_PINS_SCANNED);
-    for (const teamId of new Set(pins.map((pin) => pin.teamId))) {
+    const teamIds = new Set(pins.map((pin) => pin.teamId));
+    const leagues = new Set<string>();
+    for (const teamId of teamIds) {
       await ctx.scheduler.runAfter(0, internal.footballMatches.refreshNextMatch, { teamId });
       await ctx.scheduler.runAfter(0, internal.footballTeamSchedules.refresh, { teamId });
     }
+    const live = await liveLeagues(ctx);
+    for (const teamId of teamIds) {
+      const schedule = await ctx.db
+        .query("footballTeamSchedules")
+        .withIndex("by_teamId", (q) => q.eq("teamId", teamId))
+        .unique();
+      for (const competition of schedule?.competitions ?? []) if (!live.has(competition.league)) leagues.add(competition.league);
+    }
+    for (const league of leagues) await ctx.scheduler.runAfter(0, internal.footballStandings.refreshLeague, { league });
     return null;
   },
 });

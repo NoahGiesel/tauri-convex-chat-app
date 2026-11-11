@@ -9,6 +9,7 @@ const NOW = Date.parse("2026-11-08T12:00Z");
 function game(eventId: string, home: string, away: string, patch: Partial<PinMatch> = {}): PinMatch {
   return {
     eventId,
+    league: "ita.1",
     kickoff: NOW + 86_400_000,
     state: "pre",
     statusName: "STATUS_SCHEDULED",

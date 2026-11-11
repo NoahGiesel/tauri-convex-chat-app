@@ -40,6 +40,11 @@ export function espnFetchStub() {
       const name = `scoreboard-${scoreboard[1]}-today`;
       return `./espnFixtures/${name}.json` in FIXTURES ? loadFixture(name) : undefined;
     }
+    const standings = path.match(/^\/v2\/sports\/soccer\/([^/]+)\/standings$/);
+    if (standings) {
+      const name = `standings-${standings[1]}`;
+      return `./espnFixtures/${name}.json` in FIXTURES ? loadFixture(name) : undefined;
+    }
     return undefined;
   };
 

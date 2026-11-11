@@ -118,6 +118,7 @@ export function openedMatchView(row: ScheduleMatch, team: TeamView, fetchedAt: n
   const opponent = sideOf(row.opponent);
   return {
     eventId: row.eventId,
+    league: row.league,
     kickoff: row.kickoff,
     state: "post",
     statusName: row.statusName ?? "STATUS_FULL_TIME",
