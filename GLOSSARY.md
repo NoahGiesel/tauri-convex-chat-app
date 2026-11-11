@@ -81,3 +81,11 @@ _Avoid_: Pinned team, followed team, subscription
 **Match bar**:
 The strip at the top of a direct chat that shows a Team pin's match: the next match before kick-off, the live score while it is played, and the final score for a while after. When two pinned teams play each other, one Match bar shows that match.
 _Avoid_: Score banner, live widget, header
+
+**Match drawer**:
+The panel beside a direct chat that opens from a Match bar. It shows a Team pin's match, its other matches and its standings.
+_Avoid_: Detail panel, side panel
+
+**Derby**:
+A match between two Team pins of the same chat. While it is the match of both teams, one Match bar shows it.
+_Avoid_: Head-to-head, shared match
