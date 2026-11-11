@@ -15,6 +15,8 @@ import { WordleResultLine } from "@/components/wordle/result-line";
 import { WordleSetupPopover } from "@/components/wordle/setup-popover";
 import { CalcioPicker } from "@/components/team-pins/calcio-picker";
 import { TeamPinRow } from "@/components/team-pins/pin-row";
+// PROTOTYPE (#131): richer match drawer variants, dev builds only. Never merged.
+import { MatchDrawerPrototype } from "@/components/team-pins/match-drawer.prototype";
 import { SystemLine } from "@/components/team-pins/system-line";
 import { EmbedPlayer, LinkPreview } from "@/components/link-preview";
 import { embedFor, htmlEmbed } from "@/lib/embeds";
@@ -772,7 +774,9 @@ export function ConversationView({
       {libraryOpen && <MediaLibrary conversationId={conversationId} onOpenMedia={setLightbox} onClose={() => setLibraryOpen(false)} />}
 
       {/* Messaggi e campo di scrittura restano montati (così non si perde la posizione) ma nascosti mentre si guarda l'elenco. */}
-      <div className={cn("flex min-h-0 flex-1 flex-col", libraryOpen && "hidden")}>
+      {/* PROTOTYPE (#131): row wrapper so the prototype drawer sits beside the chat column. Never merged. */}
+      <div className={cn("flex min-h-0 flex-1", libraryOpen && "hidden")}>
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       {info && !isGroup && <TeamPinRow conversationId={conversationId} />}
       <div ref={scrollRef} onScroll={onScroll} className={cn("min-h-0 flex-1 overflow-y-auto px-6 pt-5 pb-3", !revealed && "opacity-0")}>
         {!showHeader && (
@@ -1231,6 +1235,8 @@ export function ConversationView({
           </button>
         </div>
       </footer>
+      </div>
+      {import.meta.env.DEV && info && !isGroup && <MatchDrawerPrototype />}
       </div>
     </>
   );
