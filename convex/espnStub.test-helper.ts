@@ -24,11 +24,16 @@ export function espnFetchStub() {
   const replies = new Map<string, Reply>();
   const calls: string[] = [];
 
-  const fixtureFor = (path: string): unknown => {
+  const fixtureFor = (path: string, fixture: boolean): unknown => {
     const teams = path.match(/^\/site\/v2\/sports\/soccer\/([^/]+)\/teams$/);
     if (teams) return loadFixture(`teams-${teams[1]}`);
     const team = path.match(/^\/site\/v2\/sports\/soccer\/all\/teams\/(\d+)$/);
     if (team) return loadFixture(`team-${team[1]}`);
+    const schedule = path.match(/^\/site\/v2\/sports\/soccer\/all\/teams\/(\d+)\/schedule$/);
+    if (schedule) {
+      const name = `schedule-${schedule[1]}-${fixture ? "fixtures" : "results"}`;
+      return `./espnFixtures/${name}.json` in FIXTURES ? loadFixture(name) : undefined;
+    }
     // Il tabellone del giorno, qualunque sia `?dates=`: i test fissano l'ora sul giorno registrato.
     const scoreboard = path.match(/^\/site\/v2\/sports\/soccer\/([^/]+)\/scoreboard$/);
     if (scoreboard) {
@@ -52,7 +57,7 @@ export function espnFetchStub() {
       ? `./espnFixtures/${summary}.json` in FIXTURES
         ? loadFixture(summary)
         : undefined
-      : fixtureFor(url.pathname.slice("/apis".length));
+      : fixtureFor(url.pathname.slice("/apis".length), url.searchParams.get("fixture") === "true");
     if (body === undefined) return new Response("not found", { status: 404 });
     return new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
   };

@@ -3,6 +3,7 @@ import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { internalAction, internalMutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import { espnDays, fetchNextMatch, fetchScoreboard, fetchSummary, type ProviderDetails, type ProviderMatch } from "./espn";
+import { deleteUnpinnedSchedules } from "./footballTeamSchedules";
 import { getProfile } from "./model";
 import { teamRow } from "./footballTeams";
 import { MAX_TEAM_PINS } from "./teamPins";
@@ -31,6 +32,8 @@ const MISSING_RETRY_MS = 10 * MINUTE;
 /** Il riassunto finale, se alla fine non arriva, si riprova a parte (poi la partita non si segue più): 3 tentativi in tutto. */
 const FINAL_DETAILS_ATTEMPTS = 3;
 const FINAL_DETAILS_RETRY_MS = 2 * MINUTE;
+/** Il calendario di una squadra si rifà dieci minuti dopo il fischio finale, quando ESPN dà il risultato. */
+const FULL_TIME_REFRESH_MS = 10 * MINUTE;
 
 /** Una partita come la manda il fornitore: la riga di `footballMatches` senza `fetchedAt`. */
 export const matchValidator = schema.tables.footballMatches.validator.omit("fetchedAt");
@@ -55,6 +58,8 @@ export async function recordMatch(ctx: MutationCtx, match: ProviderMatch, fetche
     for (const team of await pinnedSides(ctx, match)) {
       await ctx.db.patch("footballTeams", team._id, { lastMatchId: id });
       await ctx.scheduler.runAfter(0, internal.footballMatches.refreshNextMatch, { teamId: team.teamId });
+      // Il risultato arriva nel calendario un po' dopo il fischio finale: si rifà a FT + 10 minuti.
+      await ctx.scheduler.runAfter(FULL_TIME_REFRESH_MS, internal.footballTeamSchedules.refresh, { teamId: team.teamId });
     }
   }
   return id;
@@ -169,13 +174,14 @@ export const saveNextMatch = internalMutation({
   },
 });
 
-/** Ogni 6 ore: la prossima partita di ogni squadra pinnata (una richiesta per squadra, anche se è pinnata in più chat). */
+/** Ogni 6 ore: la prossima partita e il calendario di ogni squadra pinnata (una richiesta per squadra, anche se è pinnata in più chat). */
 export const refreshPinnedTeams = internalMutation({
   args: {},
   handler: async (ctx) => {
     const pins = await ctx.db.query("teamPins").take(MAX_PINS_SCANNED);
     for (const teamId of new Set(pins.map((pin) => pin.teamId))) {
       await ctx.scheduler.runAfter(0, internal.footballMatches.refreshNextMatch, { teamId });
+      await ctx.scheduler.runAfter(0, internal.footballTeamSchedules.refresh, { teamId });
     }
     return null;
   },
@@ -313,6 +319,8 @@ export const applyPoll = internalMutation({
 export const cleanup = internalMutation({
   args: {},
   handler: async (ctx) => {
+    // Anche il calendario di una squadra che nessuna chat pinna più se ne va.
+    await deleteUnpinnedSchedules(ctx);
     const before = Date.now() - KEEP_FINISHED_MS;
     let deleted = 0;
     let scanned = 0;

@@ -5,6 +5,7 @@
  * come una risposta non 200 (docs/adr/0001-espn-json-for-team-pins.md).
  */
 import type { Doc } from "./_generated/dataModel";
+import { FRIENDLY_LEAGUES } from "./footballLeagues";
 
 const DEFAULT_BASE_URL = "https://site.api.espn.com/apis";
 /** Una richiesta ESPN appesa non deve bloccare il cron che l'ha lanciata. */
@@ -126,6 +127,13 @@ function readState(value: unknown): MatchState {
   throw new EspnError("ESPN: status.type.state missing");
 }
 
+/** La data ESPN in millisecondi. Una data assente o illeggibile è un errore. */
+function readKickoff(value: unknown): number {
+  const kickoff = Date.parse(str(value, "event.date"));
+  if (Number.isNaN(kickoff)) throw new EspnError("ESPN: event.date missing");
+  return kickoff;
+}
+
 /** Una partita, da un tabellone o da `nextEvent`. `league` è lo slug, che i tabelloni non ripetono per partita. */
 function parseEvent(value: unknown, league: string): ProviderMatch {
   const event = obj(value, "event");
@@ -183,6 +191,93 @@ export async function fetchNextMatch(teamId: string): Promise<ProviderMatch | nu
 export function competitionLeague(team: { competition?: string; national: boolean }): string | undefined {
   if (team.competition) return CLUB_COMPETITIONS.find((c) => c.label === team.competition)?.league;
   return team.national ? NATIONAL_TEAMS_LEAGUE : undefined;
+}
+
+/** Una partita del calendario alleggerita: la riga di `footballTeamSchedules` senza `fetchedAt`. */export type ProviderScheduleMatch = Doc<"footballTeamSchedules">["results"][number];
+export type ProviderCompetition = Doc<"footballTeamSchedules">["competitions"][number];
+export type ProviderSchedule = { matches: ProviderScheduleMatch[]; competitions: ProviderCompetition[] };
+
+/**
+ * Le partite di un calendario ESPN (`all/teams/{id}/schedule`), alleggerite in righe del tab Partite.
+ * Ogni voce porta competizione, turno, avversario, lato, punteggio e stato; il punteggio dei rigori
+ * sta in `competitors[].score.shootoutScore`, dove il tabellone non lo mette.
+ * Le competizioni sono gli slug della risposta senza le amichevoli; per una nazionale contano solo le
+ * voci della stagione in corso, perché le sue 25 partite attraversano più cicli.
+ */
+export function parseSchedule(json: unknown, teamId: string): ProviderSchedule {
+  const root = obj(json, "schedule");
+  const seasonYear = readNumber(obj(root.season, "season").year, "season.year");
+  const national = obj(root.team, "team").isNational === true;
+  const matches: ProviderScheduleMatch[] = [];
+  const competitions = new Map<string, ProviderCompetition>();
+
+  for (const raw of arr(root.events, "events")) {
+    const event = obj(raw, "events[]");
+    const competition = obj(arr(event.competitions, "competitions")[0], "competitions[0]");
+    const status = obj(competition.status ?? event.status, "status");
+    const state = readState(obj(status.type, "status.type").state);
+    const competitors = arr(competition.competitors, "competitors").map((c) => obj(c, "competitors[]"));
+    const homeSide = competitors.find((c) => c.homeAway === "home");
+    const awaySide = competitors.find((c) => c.homeAway === "away");
+    const teamIdOf = (c: Obj | undefined) => (c ? optStr(optObj(c.team)?.id) : undefined);
+    const homeTeamId = teamIdOf(homeSide);
+    const awayTeamId = teamIdOf(awaySide);
+    // Una voce rotta (senza un lato o senza una squadra) si salta: non deve fermare tutto il calendario.
+    if (!homeTeamId || !awayTeamId) continue;
+    const mine = homeTeamId === teamId ? homeSide : awayTeamId === teamId ? awaySide : undefined;
+    if (!mine || !homeSide || !awaySide) continue;
+    const other = mine === homeSide ? awaySide : homeSide;
+    const winner = homeSide.winner === true ? "home" : awaySide.winner === true ? "away" : undefined;
+
+    const match: ProviderScheduleMatch = {
+      eventId: str(event.id, "event.id"),
+      kickoff: readKickoff(event.date),
+      league: str(obj(event.league, "league").slug, "league.slug"),
+      leagueName: str(obj(event.league, "league").abbreviation, "league.abbreviation"),
+      round: str(obj(event.seasonType, "seasonType").name, "seasonType.name"),
+      opponent: parseTeam(other.team),
+      home: mine === homeSide,
+      state,
+      ...(winner ? { winner } : {}),
+      ...(event.timeValid === false ? { timeValid: false } : {}),
+    };
+    if (state !== "pre") {
+      match.score = { home: readNumber(homeSide.score, "home score"), away: readNumber(awaySide.score, "away score") };
+      const shootoutOf = (c: Obj) => {
+        const score = optObj(c.score);
+        return score && score.shootoutScore !== undefined ? readNumber(score.shootoutScore, "score.shootoutScore") : undefined;
+      };
+      const homeShootout = shootoutOf(homeSide);
+      const awayShootout = shootoutOf(awaySide);
+      if (homeShootout !== undefined || awayShootout !== undefined) {
+        match.shootout = { home: homeShootout ?? 0, away: awayShootout ?? 0 };
+      }
+    }
+    matches.push(match);
+
+    const league = obj(event.league, "league");
+    const slug = str(league.slug, "league.slug");
+    const entrySeason = obj(event.season, "season");
+    const entryYear = readNumber(entrySeason.year, "season.year");
+    if (FRIENDLY_LEAGUES.includes(slug) || competitions.has(slug)) continue;
+    if (national && entryYear !== seasonYear) continue;
+    competitions.set(slug, {
+      league: slug,
+      name: str(league.name, "league.name"),
+      shortName: str(league.abbreviation, "league.abbreviation"),
+      season: str(entrySeason.displayName, "season.displayName"),
+    });
+  }
+  return { matches, competitions: [...competitions.values()] };
+}
+
+/** Il calendario di una squadra: i risultati della stagione in corso o le partite in programma. */
+export async function fetchSchedule(teamId: string, kind: "results" | "fixtures"): Promise<ProviderSchedule> {
+  const query = kind === "fixtures" ? "?fixture=true" : "";
+  return parseSchedule(
+    await getJson(`/site/v2/sports/soccer/all/teams/${encodeURIComponent(teamId)}/schedule${query}`),
+    teamId,
+  );
 }
 
 /** Le partite di un tabellone ESPN già scaricato. Una partita illeggibile rende illeggibile tutto il tabellone. */

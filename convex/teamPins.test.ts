@@ -137,7 +137,7 @@ describe("aggiungere una squadra", () => {
       home: { teamId: "105", abbreviation: "ATA" },
       away: { teamId: INTER, abbreviation: "INT" },
     });
-    expect(stub.calls.filter((c) => c.includes("/all/teams/110"))).toHaveLength(1);
+    expect(stub.calls.filter((c) => c === "/site/v2/sports/soccer/all/teams/110")).toHaveLength(1);
   });
 
   it("messo mentre la squadra gioca, mostra la partita in corso", async () => {
@@ -255,7 +255,11 @@ describe("aggiornamento ogni 6 ore", () => {
     await f.t.mutation(internal.footballMatches.refreshPinnedTeams, {});
     await f.t.finishAllScheduledFunctions(vi.runAllTimers);
 
-    expect(stub.calls.slice(before)).toEqual([expect.stringContaining("/all/teams/110")]);
+    expect(stub.calls.slice(before).sort()).toEqual([
+      "/site/v2/sports/soccer/all/teams/110",
+      "/site/v2/sports/soccer/all/teams/110/schedule",
+      "/site/v2/sports/soccer/all/teams/110/schedule?fixture=true",
+    ]);
     for (const conversationId of [f.direct, f.other]) {
       const [pin] = await f.alice.query(api.teamPins.list, { conversationId });
       expect(pin.nextMatch?.kickoff).toBe(Date.parse("2026-11-23T17:00Z"));

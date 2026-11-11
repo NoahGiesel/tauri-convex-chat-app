@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
 import { AlertTriangle, X } from "lucide-react";
@@ -10,6 +10,16 @@ import type { MessageKey } from "@/i18n/en";
 import { useI18n } from "@/i18n/i18n-provider";
 import { chipState, isUnavailable, type PinMatch } from "@/lib/match-chip";
 import { isStale, DRAWER_WIDTH, type DrawerLayout } from "@/lib/match-drawer";
+import {
+  competitionTag,
+  matchOutcome,
+  matchesTab,
+  rowTail,
+  type MatchOutcome,
+  type MatchesTabView,
+  type ScheduleMatch,
+  type TeamSchedule,
+} from "@/lib/match-schedule";
 import {
   pitchView,
   playerMarks,
@@ -42,6 +52,20 @@ const EVENT_ICONS: Record<Details["events"][number]["kind"], string> = {
   substitution: "🔁",
 };
 
+const OUTCOME_LABELS: Record<MatchOutcome, MessageKey> = {
+  win: "teamPins.win",
+  draw: "teamPins.draw",
+  loss: "teamPins.loss",
+};
+
+type DrawerTab = "match" | "matches";
+
+/** I tab del drawer, nell'ordine in cui compaiono. */
+const TABS: { kind: DrawerTab; testId: string; label: MessageKey }[] = [
+  { kind: "match", testId: "tab-match", label: "teamPins.tabMatch" },
+  { kind: "matches", testId: "tab-matches", label: "teamPins.tabMatches" },
+];
+
 /**
  * Il drawer di una partita: intestazione, tab, poi Lineups, Bench, Events e Stats. Una sezione senza dati non compare,
  * quindi prima delle formazioni c'è solo il tab vuoto. Sta di fianco alla chat, che si restringe, oppure la copre
@@ -50,12 +74,15 @@ const EVENT_ICONS: Record<Details["events"][number]["kind"], string> = {
  */
 export function MatchDrawer({
   conversationId,
+  teamId,
   match,
   now,
   layout,
   onClose,
 }: {
   conversationId: Id<"conversations">;
+  /** La squadra pinnata del chip: il tab Partite mostra il suo calendario. */
+  teamId: string;
   match: PinMatch;
   now: number;
   layout: DrawerLayout;
@@ -63,16 +90,21 @@ export function MatchDrawer({
 }) {
   const { t } = useI18n();
   const details = useQuery(api.footballMatches.details, { conversationId, eventId: match.eventId });
+  const schedule = useQuery(api.footballTeamSchedules.forPin, { conversationId, teamId });
   const state = chipState(match);
   const stale = isUnavailable(match, now);
   const { when, time, clock } = useMatchTimes(match);
   const panel = useRef<HTMLElement>(null);
+  const [tab, setTab] = useState<DrawerTab>("match");
 
   const pitch = details ? pitchView(details.lineups) : null;
   const hasLineups = !!details && details.lineups.length > 0;
   const hasBench = !!details && details.lineups.some((lineup) => lineup.bench.length > 0);
   const hasData = !!details && (hasLineups || details.events.length > 0 || details.stats.length > 0);
   const staleDetails = !!details && isStale(details.fetchedAt, now);
+  const matches = schedule ? matchesTab(schedule) : null;
+  const hasMatches = !!matches && (matches.next.length > 0 || matches.recent.length > 0);
+  const matchesLoading = schedule === undefined || (schedule !== null && schedule.pending);
 
   // Esc chiude solo con il focus dentro il drawer: nel campo del messaggio, in una modifica o in un selettore no.
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -150,68 +182,164 @@ export function MatchDrawer({
       </header>
 
       <div role="tablist" aria-label={t("teamPins.details")} className="flex shrink-0 gap-5 border-b border-app-border px-5">
-        <span
-          role="tab"
-          aria-selected="true"
-          data-testid="tab-match"
-          className="border-b-2 border-app-accent px-0.5 py-2.5 text-[13px] font-semibold text-app-text-strong"
+        {TABS.map(({ kind, testId, label }) => (
+          <button
+            key={kind}
+            type="button"
+            role="tab"
+            aria-selected={tab === kind}
+            data-testid={testId}
+            onClick={() => setTab(kind)}
+            className={cn(
+              "border-b-2 px-0.5 py-2.5 text-[13px] font-semibold",
+              tab === kind ? "border-app-accent text-app-text-strong" : "border-transparent text-app-text-muted hover:text-app-text",
+            )}
+          >
+            {t(label)}
+          </button>
+        ))}
+      </div>
+
+      {tab === "match" ? (
+        <div
+          className="min-h-0 flex-1 overflow-y-auto px-5 py-4"
+          data-testid="match-tab"
+          data-state={details === undefined ? "loading" : hasData ? "ready" : "empty"}
         >
-          {t("teamPins.tabMatch")}
-        </span>
-      </div>
+          {details === undefined ? (
+            <Loading />
+          ) : details === null ? (
+            <p className="py-10 text-center text-[13px] text-app-text-muted" data-testid="match-tab-empty">
+              {t("teamPins.lineupsPending")}
+            </p>
+          ) : (
+            <div className="space-y-5">
+              {staleDetails && (
+                <p className="flex items-center gap-1.5 text-xs text-app-text-muted">
+                  <AlertTriangle className="size-3.5 text-amber-500" /> {t("teamPins.lastUpdated", { time: clock(details.fetchedAt) })}
+                </p>
+              )}
 
-      <div
-        className="min-h-0 flex-1 overflow-y-auto px-5 py-4"
-        data-testid="match-tab"
-        data-state={details === undefined ? "loading" : hasData ? "ready" : "empty"}
-      >
-        {details === undefined ? (
-          <Loading />
-        ) : details === null ? (
-          <p className="py-10 text-center text-[13px] text-app-text-muted" data-testid="match-tab-empty">
-            {t("teamPins.lineupsPending")}
-          </p>
-        ) : (
-          <div className="space-y-5">
-            {staleDetails && (
-              <p className="flex items-center gap-1.5 text-xs text-app-text-muted">
-                <AlertTriangle className="size-3.5 text-amber-500" /> {t("teamPins.lastUpdated", { time: clock(details.fetchedAt) })}
-              </p>
-            )}
+              {!hasData && (
+                <p className="py-10 text-center text-[13px] text-app-text-muted" data-testid="match-tab-empty">
+                  {t("teamPins.lineupsPending")}
+                </p>
+              )}
 
-            {!hasData && (
-              <p className="py-10 text-center text-[13px] text-app-text-muted" data-testid="match-tab-empty">
-                {t("teamPins.lineupsPending")}
-              </p>
-            )}
+              {hasLineups && (
+                <Section title={t("teamPins.lineups")}>
+                  {pitch ? <Pitch view={pitch} events={details.events} match={match} /> : <PlainLineups details={details} match={match} />}
+                </Section>
+              )}
 
-            {hasLineups && (
-              <Section title={t("teamPins.lineups")}>
-                {pitch ? <Pitch view={pitch} events={details.events} match={match} /> : <PlainLineups details={details} match={match} />}
-              </Section>
-            )}
+              {hasBench && (
+                <Section title={t("teamPins.bench")}>
+                  <Bench details={details} match={match} />
+                </Section>
+              )}
 
-            {hasBench && (
-              <Section title={t("teamPins.bench")}>
-                <Bench details={details} match={match} />
-              </Section>
-            )}
+              {details.events.length > 0 && (
+                <Section title={t("teamPins.events")}>
+                  <Timeline details={details} />
+                </Section>
+              )}
 
-            {details.events.length > 0 && (
-              <Section title={t("teamPins.events")}>
-                <Timeline details={details} />
-              </Section>
-            )}
-
-            {details.stats.length > 0 && (
-              <Section title={t("teamPins.stats")}>
-                <Stats details={details} />
-              </Section>
-            )}
-          </div>
-        )}
-      </div>
+              {details.stats.length > 0 && (
+                <Section title={t("teamPins.stats")}>
+                  <Stats details={details} />
+                </Section>
+              )}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div
+          className="min-h-0 flex-1 overflow-y-auto px-5 py-4"
+          data-testid="matches-tab"
+          data-state={matchesLoading ? "loading" : hasMatches ? "ready" : "empty"}
+        >
+          {matchesLoading ? <Loading /> : <MatchesTabBody schedule={schedule} matches={matches} now={now} clock={clock} />}
+        </div>
+      )}
     </aside>
+  );
+}
+
+/** Il tab Partite: le prossime 3 partite e gli ultimi 10 risultati, senza amichevoli, con la sigla della competizione e il badge W/D/L. */
+function MatchesTabBody({
+  schedule,
+  matches,
+  now,
+  clock,
+}: {
+  schedule: TeamSchedule | null;
+  matches: MatchesTabView | null;
+  now: number;
+  clock: (ts: number) => string;
+}) {
+  const { t, locale } = useI18n();
+  const date = (ts: number) => new Date(ts).toLocaleDateString(locale, { day: "numeric", month: "short" });
+  const staleAt = schedule?.fetchedAt != null && isStale(schedule.fetchedAt, now) ? schedule.fetchedAt : null;
+  const empty = !matches || (matches.next.length === 0 && matches.recent.length === 0);
+
+  const row = (match: ScheduleMatch) => {
+    const outcome = matchOutcome(match);
+    return (
+      <li
+        key={match.eventId}
+        data-testid={`match-row-${match.eventId}`}
+        className="flex items-center gap-2 border-b border-app-border/60 py-1.5 text-[13px] last:border-0"
+      >
+        <span className="w-12 shrink-0 text-app-text-muted tabular-nums">{date(match.kickoff)}</span>
+        <span className="w-9 shrink-0 rounded bg-app-field py-0.5 text-center text-[10px] font-bold text-app-text-muted">
+          {competitionTag(match.league, match.leagueName)}
+        </span>
+        <span className="w-3 shrink-0 text-[11px] font-semibold text-app-text-muted">{t(match.home ? "teamPins.home" : "teamPins.away")}</span>
+        <span className="min-w-0 flex-1 truncate text-app-text">{match.opponent.shortName}</span>
+        <span className="shrink-0 font-bold text-app-text-strong tabular-nums">{rowTail(match, clock(match.kickoff))}</span>
+        {outcome && (
+          <span
+            data-testid={`outcome-${match.eventId}`}
+            className={cn(
+              "flex size-4 shrink-0 items-center justify-center rounded text-[10px] font-bold",
+              outcome === "win" && "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+              outcome === "loss" && "bg-red-500/15 text-red-600 dark:text-red-400",
+              outcome === "draw" && "bg-app-field text-app-text-muted",
+            )}
+          >
+            {t(OUTCOME_LABELS[outcome])}
+          </span>
+        )}
+      </li>
+    );
+  };
+
+  return (
+    <div className="space-y-5">
+      {staleAt !== null && (
+        <p className="flex items-center gap-1.5 text-xs text-app-text-muted" data-testid="matches-tab-stale">
+          <AlertTriangle className="size-3.5 text-amber-500" /> {t("teamPins.lastUpdated", { time: clock(staleAt) })}
+        </p>
+      )}
+      {empty ? (
+        <p className="py-10 text-center text-[13px] text-app-text-muted" data-testid="matches-tab-empty">
+          {t("teamPins.noMatches")}
+        </p>
+      ) : (
+        <>
+          {matches.next.length > 0 && (
+            <Section title={t("teamPins.next")}>
+              <ul data-testid="matches-next">{matches.next.map(row)}</ul>
+            </Section>
+          )}
+          {matches.recent.length > 0 && (
+            <Section title={t("teamPins.recent")}>
+              <ul data-testid="matches-recent">{matches.recent.map(row)}</ul>
+            </Section>
+          )}
+        </>
+      )}
+    </div>
   );
 }
 

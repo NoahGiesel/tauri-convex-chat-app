@@ -25,6 +25,36 @@ const footballSide = v.object({
 });
 
 const footballSideKey = v.union(v.literal("home"), v.literal("away"));
+/** Una partita del calendario di una squadra, alleggerita: la riga del tab Partite (docs/MATCH-DRAWER-SPEC.md). */
+export const footballScheduleMatch = v.object({
+  eventId: v.string(),
+  kickoff: v.number(),
+  /** Slug ESPN della competizione (es. "ita.1"). */
+  league: v.string(),
+  /** Il nome corto della competizione dato da ESPN (es. "Serie A"). */
+  leagueName: v.string(),
+  /** Il turno ESPN (es. "Round of 16"); in campionato ripete la stagione. */
+  round: v.string(),
+  opponent: footballSide,
+  /** true se la partita si gioca in casa. */
+  home: v.boolean(),
+  score: v.optional(v.object({ home: v.number(), away: v.number() })),
+  shootout: v.optional(v.object({ home: v.number(), away: v.number() })),
+  /** Il lato che ESPN dà vincente: dopo i rigori è chi li ha vinti. */
+  winner: v.optional(footballSideKey),
+  state: v.union(v.literal("pre"), v.literal("in"), v.literal("post")),
+  /** false quando ESPN non ha ancora fissato il calcio d'inizio (il tab mostra solo la data). */
+  timeValid: v.optional(v.boolean()),
+});
+
+/** Una competizione della squadra in questa stagione, ricavata dal calendario. */
+export const footballCompetition = v.object({
+  league: v.string(),
+  name: v.string(),
+  shortName: v.string(),
+  season: v.string(),
+});
+
 /** Un giocatore in formazione: `row` e `order` solo per i titolari, quando il riassunto dà i posti in campo. */
 const lineupPlayer = v.object({
   name: v.string(),
@@ -459,4 +489,16 @@ export default defineSchema({
     ),
     fetchedAt: v.number(),
   }).index("by_matchId", ["matchId"]),
+
+  /**
+   * Il calendario di una squadra pinnata: i risultati della stagione in corso, le partite in programma e le
+   * competizioni, in una riga per squadra condivisa da tutte le chat (docs/MATCH-DRAWER-SPEC.md).
+   */
+  footballTeamSchedules: defineTable({
+    teamId: v.string(),
+    results: v.array(footballScheduleMatch),
+    fixtures: v.array(footballScheduleMatch),
+    competitions: v.array(footballCompetition),
+    fetchedAt: v.number(),
+  }).index("by_teamId", ["teamId"]),
 });
