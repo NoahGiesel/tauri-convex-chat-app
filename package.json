@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@convex-dev/better-auth": "^0.12.6",
+    "@convex-dev/rate-limiter": "^0.4.3",
     "@fontsource-variable/geist": "^5.3.0",
     "@fontsource-variable/manrope": "^5.2.0",
     "@tauri-apps/api": "^2",

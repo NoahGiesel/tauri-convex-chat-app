@@ -61,7 +61,9 @@ export type ErrorCode =
   | "team_pins_direct_only"
   | "too_many_team_pins"
   | "team_already_pinned"
-  | "unknown_team";
+  | "unknown_team"
+  | "match_not_in_schedule"
+  | "too_many_match_opens";
 
 export const fail = (code: ErrorCode) => new ConvexError({ code });
 

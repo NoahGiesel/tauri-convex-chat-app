@@ -35,6 +35,7 @@ import type * as previews from "../previews.js";
 import type * as quizRules from "../quizRules.js";
 import type * as quizzes from "../quizzes.js";
 import type * as r2 from "../r2.js";
+import type * as rateLimits from "../rateLimits.js";
 import type * as reactions from "../reactions.js";
 import type * as sidebar from "../sidebar.js";
 import type * as summary from "../summary.js";
@@ -82,6 +83,7 @@ declare const fullApi: ApiFromModules<{
   quizRules: typeof quizRules;
   quizzes: typeof quizzes;
   r2: typeof r2;
+  rateLimits: typeof rateLimits;
   reactions: typeof reactions;
   sidebar: typeof sidebar;
   summary: typeof summary;
@@ -124,4 +126,5 @@ export declare const internal: FilterApi<
 
 export declare const components: {
   betterAuth: import("@convex-dev/better-auth/_generated/component.js").ComponentApi<"betterAuth">;
+  rateLimiter: import("@convex-dev/rate-limiter/_generated/component.js").ComponentApi<"rateLimiter">;
 };

@@ -1,9 +1,10 @@
 /// <reference types="vite/client" />
 import { convexTest } from "convex-test";
+import rateLimiterTest from "@convex-dev/rate-limiter/test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { internal } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
-import { parseScoreboard } from "./espn";
+import { parseSchedule, parseScoreboard } from "./espn";
 import { espnFetchStub, loadFixture } from "./espnStub.test-helper";
 import schema from "./schema";
 
@@ -441,5 +442,209 @@ describe("lettura dei tabelloni", () => {
     const next = parseScoreboard(loadFixture("scoreboard-ita.1-today"), "ita.1").find((m) => m.eventId === FIO_JUV);
     expect(next).toMatchObject({ state: "pre", statusName: "STATUS_SCHEDULED" });
     expect(next?.score).toBeUndefined();
+  });
+});
+
+/** Una partita vecchia del calendario dell'Inter: Champions in trasferta, 0–3. */
+const OLD_MATCH = "401915307";
+const OLD_SUMMARY_PATH = `/site/v2/sports/soccer/all/summary?event=${OLD_MATCH}`;
+
+/**
+ * Alice e bob in una chat con l'Inter pinnata, una seconda chat di alice con la Juventus pinnata e
+ * il calendario dell'Inter già salvato. Carol non è in nessuna delle due.
+ */
+async function pastSetup() {
+  const t = convexTest(schema, modules);
+  rateLimiterTest.register(t);
+  await t.action(internal.footballTeams.rebuildIndex, {});
+  const ids = await t.run(async (ctx) => {
+    const alice = await ctx.db.insert("profiles", { tokenIdentifier: "test|alice", name: "alice", email: "alice@example.com", avatarIndex: 0 });
+    const bob = await ctx.db.insert("profiles", { tokenIdentifier: "test|bob", name: "bob", email: "bob@example.com", avatarIndex: 0 });
+    const carol = await ctx.db.insert("profiles", { tokenIdentifier: "test|carol", name: "carol", email: "carol@example.com", avatarIndex: 0 });
+    const direct = async (me: Id<"profiles">, other: Id<"profiles">) => {
+      const conversationId = await ctx.db.insert("conversations", { kind: "direct", createdBy: me, directKey: `${me}_${other}`, lastMessageAt: 0 });
+      for (const profileId of [me, other]) await ctx.db.insert("members", { conversationId, profileId, lastReadAt: 0, lastMessageAt: 0 });
+      return conversationId;
+    };
+    const conversationId = await direct(alice, bob);
+    await ctx.db.insert("teamPins", { conversationId, teamId: INTER, pinnedBy: alice, pinnedAt: 0 });
+    const juventusChat = await direct(alice, carol);
+    await ctx.db.insert("teamPins", { conversationId: juventusChat, teamId: JUVENTUS, pinnedBy: alice, pinnedAt: 0 });
+    const schedule = parseSchedule(loadFixture("schedule-110-results"), INTER);
+    await ctx.db.insert("footballTeamSchedules", {
+      teamId: INTER,
+      results: schedule.matches,
+      fixtures: [],
+      competitions: schedule.competitions,
+      fetchedAt: AT_HALFTIME,
+    });
+    return { alice, bob, carol, conversationId, juventusChat };
+  });
+  return {
+    t,
+    ...ids,
+    alice: t.withIdentity({ tokenIdentifier: "test|alice" }),
+    bob: t.withIdentity({ tokenIdentifier: "test|bob" }),
+    carol: t.withIdentity({ tokenIdentifier: "test|carol" }),
+  };
+}
+
+type Past = Awaited<ReturnType<typeof pastSetup>>;
+
+const matchOf = (p: Past, eventId: string) =>
+  p.t.run((ctx) =>
+    ctx.db
+      .query("footballMatches")
+      .withIndex("by_eventId", (q) => q.eq("eventId", eventId))
+      .unique(),
+  );
+
+const detailsOf = (p: Past, eventId: string) =>
+  p.t.run(async (ctx) => {
+    const match = await ctx.db
+      .query("footballMatches")
+      .withIndex("by_eventId", (q) => q.eq("eventId", eventId))
+      .unique();
+    return match
+      ? ctx.db
+          .query("footballMatchDetails")
+          .withIndex("by_matchId", (q) => q.eq("matchId", match._id))
+          .unique()
+      : null;
+  });
+
+const summaries = () => stub.calls.filter((c) => c.includes("/summary"));
+
+const openPast = (p: Past, eventId: string, who: "alice" | "bob" | "carol" = "alice", conversationId = p.conversationId) =>
+  p[who].mutation(api.footballMatches.openPast, { conversationId, eventId });
+
+async function openAndFinish(p: Past, eventId = OLD_MATCH) {
+  await openPast(p, eventId);
+  await p.t.finishAllScheduledFunctions(vi.runAllTimers);
+}
+
+describe("aprire una partita vecchia dal drawer", () => {
+  it("scrive la riga `post` dal calendario, chiede il riassunto una volta e lo salva", async () => {
+    const p = await pastSetup();
+    stub.reply(OLD_SUMMARY_PATH, loadFixture("summary-401874808"));
+    const interBefore = (await team(p.t, INTER))!;
+
+    await openAndFinish(p);
+
+    const row = (await matchOf(p, OLD_MATCH))!;
+    expect(row).toMatchObject({
+      eventId: OLD_MATCH,
+      league: "uefa.champions",
+      kickoff: Date.parse("2026-11-03T20:00:00Z"),
+      state: "post",
+      statusName: "STATUS_FULL_TIME",
+      score: { home: 0, away: 3 },
+      detailsRequestedAt: expect.any(Number),
+    });
+    expect(row.detailsRequestedAt).toBeGreaterThanOrEqual(AT_HALFTIME);
+    // L'Inter giocava in trasferta: la squadra pinnata sta a destra.
+    expect(row.home.teamId).toBe("142");
+    expect(row.away.teamId).toBe(INTER);
+
+    expect(summaries()).toEqual([OLD_SUMMARY_PATH]);
+    expect((await detailsOf(p, OLD_MATCH))?.matchId).toBe(row._id);
+
+    // Il chip, la diretta e l'ultima/prossima partita della squadra non cambiano.
+    const interAfter = (await team(p.t, INTER))!;
+    expect(interAfter.lastMatchId).toBe(interBefore.lastMatchId);
+    expect(interAfter.nextMatchId).toBe(interBefore.nextMatchId);
+    expect(interAfter.lastMatchId).toBeUndefined();
+    expect(interAfter.nextMatchId).toBeUndefined();
+  });
+
+  it("rifiuta chi non è nella chat, una squadra non pinnata e un evento fuori dal calendario", async () => {
+    const p = await pastSetup();
+    await expect(openPast(p, OLD_MATCH, "carol")).rejects.toMatchObject({ data: { code: "not_member" } });
+    await expect(openPast(p, OLD_MATCH, "alice", p.juventusChat)).rejects.toMatchObject({
+      data: { code: "match_not_in_schedule" },
+    });
+    await expect(openPast(p, "000000000")).rejects.toMatchObject({ data: { code: "match_not_in_schedule" } });
+    expect(summaries()).toEqual([]);
+  });
+
+  it("entro 60 secondi non richiede di nuovo il riassunto, oltre sì", async () => {
+    const p = await pastSetup();
+    stub.reply(OLD_SUMMARY_PATH, loadFixture("summary-401874808"));
+    await openAndFinish(p);
+    expect(summaries()).toHaveLength(1);
+
+    // Il riassunto manca ancora (richiesta fallita): la richiesta resta quella, e il tentativo ravvicinato non ne parte.
+    await p.t.run(async (ctx) => {
+      const match = await ctx.db
+        .query("footballMatches")
+        .withIndex("by_eventId", (q) => q.eq("eventId", OLD_MATCH))
+        .unique();
+      const details = await ctx.db
+        .query("footballMatchDetails")
+        .withIndex("by_matchId", (q) => q.eq("matchId", match!._id))
+        .unique();
+      await ctx.db.delete("footballMatchDetails", details!._id);
+    });
+    vi.setSystemTime(AT_HALFTIME + 30_000);
+    await openPast(p, OLD_MATCH);
+    await p.t.finishAllScheduledFunctions(vi.runAllTimers);
+    expect(summaries()).toHaveLength(1);
+
+    vi.setSystemTime(AT_HALFTIME + 61_000);
+    await openPast(p, OLD_MATCH);
+    await p.t.finishAllScheduledFunctions(vi.runAllTimers);
+    expect(summaries()).toHaveLength(2);
+    expect((await matchOf(p, OLD_MATCH))?.detailsRequestedAt).toBe(AT_HALFTIME + 61_000);
+  });
+
+  it("con i dettagli già salvati non chiede niente e non tocca la richiesta", async () => {
+    const p = await pastSetup();
+    stub.reply(OLD_SUMMARY_PATH, loadFixture("summary-401874808"));
+    await openAndFinish(p);
+    const before = (await matchOf(p, OLD_MATCH))!;
+
+    vi.setSystemTime(AT_HALFTIME + 5 * 60_000);
+    await openPast(p, OLD_MATCH);
+    await p.t.finishAllScheduledFunctions(vi.runAllTimers);
+
+    expect(summaries()).toHaveLength(1);
+    expect((await matchOf(p, OLD_MATCH))?.detailsRequestedAt).toBe(before.detailsRequestedAt);
+  });
+
+  it("l'undicesima apertura in un minuto è rifiutata", async () => {
+    const p = await pastSetup();
+    stub.reply(OLD_SUMMARY_PATH, loadFixture("summary-401874808"));
+    const { matches } = parseSchedule(loadFixture("schedule-110-results"), INTER);
+    const eventIds = matches.slice(0, 11).map((m) => m.eventId);
+
+    for (const eventId of eventIds.slice(0, 10)) await openPast(p, eventId);
+    await expect(openPast(p, eventIds[10])).rejects.toMatchObject({ data: { code: "too_many_match_opens" } });
+    expect(await matchOf(p, eventIds[10])).toBeNull();
+  });
+
+  it("il giro dei 30 secondi non interroga la partita aggiunta", async () => {
+    const p = await pastSetup();
+    stub.reply(OLD_SUMMARY_PATH, loadFixture("summary-401874808"));
+    await openAndFinish(p);
+    const before = (await matchOf(p, OLD_MATCH))!;
+    stub.calls.length = 0;
+
+    await runTick(p.t);
+
+    expect(scoreboardCalls()).toEqual([]);
+    expect((await matchOf(p, OLD_MATCH))?.fetchedAt).toBe(before.fetchedAt);
+  });
+
+  it("la pulizia del giorno dopo la toglie", async () => {
+    const p = await pastSetup();
+    stub.reply(OLD_SUMMARY_PATH, loadFixture("summary-401874808"));
+    await openAndFinish(p);
+    expect(await matchOf(p, OLD_MATCH)).not.toBeNull();
+
+    vi.setSystemTime(Date.parse("2026-11-16T12:00Z"));
+    await p.t.mutation(internal.footballMatches.cleanup, {});
+
+    expect(await matchOf(p, OLD_MATCH)).toBeNull();
+    expect(await detailsOf(p, OLD_MATCH)).toBeNull();
   });
 });

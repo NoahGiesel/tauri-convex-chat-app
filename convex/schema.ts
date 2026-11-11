@@ -432,6 +432,8 @@ export default defineSchema({
     shootout: v.optional(v.object({ home: v.number(), away: v.number() })),
     /** Minuto mostrato da ESPN (es. "67'"). */
     clock: v.optional(v.string()),
+    /** Una partita vecchia aperta dal drawer: quando ne è stato chiesto il riassunto (docs/MATCH-DRAWER-SPEC.md, Older matches). */
+    detailsRequestedAt: v.optional(v.number()),
     fetchedAt: v.number(),
   })
     .index("by_eventId", ["eventId"])
