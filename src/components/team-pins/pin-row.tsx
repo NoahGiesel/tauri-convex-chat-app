@@ -84,6 +84,7 @@ export function TeamPinRow({
         createPortal(
           <MatchDrawer
             conversationId={conversationId}
+            teamId={open.pins[0].team.teamId}
             match={open.match}
             now={now}
             layout={drawer.layout}
