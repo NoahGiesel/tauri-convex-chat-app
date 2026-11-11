@@ -29,6 +29,18 @@ if [ "${1:-}" = --opencode ]; then
   fi
   cmd=(powershell -NoProfile -Command "${setcfg}opencode --standalone --auto --prompt 'Read $task and do it.'")
 else
+  # Trust the worker's folder up front: Claude Code asks per folder (a trusted repo doesn't cover its worktrees),
+  # and that prompt would block the worker before it reads its task.
+  dir=$(cd "$folder" && { pwd -W 2>/dev/null || pwd; })
+  node -e '
+    const fs = require("fs"), f = require("os").homedir() + "/.claude.json";
+    const j = JSON.parse(fs.readFileSync(f, "utf8")), p = (j.projects ??= {});
+    const e = (p[process.argv[1]] ??= {});
+    if (!e.hasTrustDialogAccepted) {
+      e.hasTrustDialogAccepted = true;
+      fs.writeFileSync(f + ".tmp", JSON.stringify(j, null, 2));
+      fs.renameSync(f + ".tmp", f);
+    }' "$dir"
   cmd=(claude --permission-mode auto -n "$worker" "$@" "Read $task and do it.")
 fi
 
