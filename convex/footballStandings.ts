@@ -63,13 +63,17 @@ export const forPin = query({
           .withIndex("by_league_and_season", (q) => q.eq("league", args.league).eq("season", competition.season))
           .unique()
       : null;
+    // Una tabella di un'altra stagione c'è, ma non è quella di questa: non è una prima richiesta ancora in arrivo.
+    const anySeason =
+      row ?? (await ctx.db.query("footballStandings").withIndex("by_league_and_season", (q) => q.eq("league", args.league)).first());
     const group = row?.groups.find((g) => g.rows.some((r) => r.teamId === args.teamId));
     return {
       league: args.league,
-      pending: row === null,
+      pending: anySeason === null,
       season: competition?.season ?? null,
       endDate: row?.endDate ?? null,
       groups: group ? [group] : [],
+      groupCount: row?.groups.length ?? 0,
       fetchedAt: row?.fetchedAt ?? null,
     };
   },

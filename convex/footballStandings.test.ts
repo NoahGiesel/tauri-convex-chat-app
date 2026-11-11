@@ -20,6 +20,8 @@ const AT_HALFTIME = Date.parse("2026-11-08T17:50Z");
 const TEN_MINUTES = 10 * 60_000;
 
 const standingsPath = (league: string) => `/v2/sports/soccer/${league}/standings`;
+const schedulePath = (teamId: string, fixture = false) =>
+  `/site/v2/sports/soccer/all/teams/${teamId}/schedule${fixture ? "?fixture=true" : ""}`;
 
 /** La classifica di una competizione, come la scrive `parseStandings`. */
 function standingsOf(league: string) {
@@ -170,8 +172,12 @@ describe("aggiornamento delle classifiche", () => {
     await f.t.mutation(internal.footballMatches.tick, {});
     await f.t.finishAllScheduledFunctions(vi.runAllTimers);
 
+    // Una partita finita costa 3 richieste: i due calendari e la classifica della sua competizione.
+    expect(stub.calls.filter((c) => c === schedulePath(INTER))).toHaveLength(1);
+    expect(stub.calls.filter((c) => c === schedulePath(INTER, true))).toHaveLength(1);
+    expect(stub.calls.filter((c) => c.includes("/standings"))).toEqual([standingsPath("ita.1")]);
     expect((await standingsRow(f.t, "ita.1"))[0].fetchedAt).toBeGreaterThanOrEqual(AT_HALFTIME + TEN_MINUTES);
-    expect((await standingsRow(f.t, "uefa.champions"))[0].fetchedAt).toBeGreaterThanOrEqual(AT_HALFTIME + TEN_MINUTES);
+    expect(await standingsRow(f.t, "uefa.champions")).toEqual([]);
   });
 
   it("il cron delle 6 ore scarica ogni campionato una volta, anche con due chat e più squadre", async () => {
@@ -298,6 +304,7 @@ describe("classifica nel drawer", () => {
 
     const view = await f.alice.query(api.footballStandings.forPin, { conversationId: f.conversations[0], teamId: ITALY, league: "uefa.nations" });
     expect(view?.groups).toHaveLength(1);
+    expect(view?.groupCount).toBe(14);
     expect(view?.groups[0].name).toBe("Group A1");
     expect(view?.groups[0].rows.map((r) => r.teamId)).toContain(ITALY);
   });
@@ -307,8 +314,9 @@ describe("classifica nel drawer", () => {
     await withData(f, ITALY, [{ league: "uefa.euro", season: "2028 European Championship" }], ["uefa.euro"]);
 
     const view = await f.alice.query(api.footballStandings.forPin, { conversationId: f.conversations[0], teamId: ITALY, league: "uefa.euro" });
-    // La tabella del 2024 non è quella della stagione 2028 della squadra: non si mostra, e non è una risposta arrivata.
-    expect(view).toMatchObject({ pending: true, season: "2028 European Championship", groups: [] });
+    // La tabella del 2024 non è quella della stagione 2028 della squadra: non è la tabella di questa
+    // stagione, ma la risposta per la competizione è arrivata.
+    expect(view).toMatchObject({ pending: false, season: "2028 European Championship", groups: [] });
   });
 
   it("appena pinnata, prima che la classifica arrivi, dice di aspettare", async () => {

@@ -18,6 +18,7 @@ const minute = 60_000;
 const day = 24 * 60 * minute;
 const kickoff = Date.parse("2026-11-08T17:00Z");
 const INTER = "110";
+const ITALY = "162";
 
 function row(over: Partial<StandingsGroup["rows"][number]> & Pick<StandingsGroup["rows"][number], "teamId">) {
   return {
@@ -38,6 +39,7 @@ function standings(groups: StandingsGroup[], over: Partial<TeamStandings> = {}):
     season: "2026-27 Italian Serie A",
     endDate: Date.parse("2027-07-01T03:59Z"),
     groups,
+    groupCount: groups.length,
     fetchedAt: kickoff,
     ...over,
   };
@@ -142,6 +144,24 @@ describe("tab Classifica: coppa oltre la fase campionato", () => {
   it("una tabella di campionato non tratta il turno come un'eliminazione", () => {
     const scheduleRows = schedule([match({ eventId: "sa", kickoff, league: "ita.1" })]);
     expect(standingsView({ standings: SERIE_A, schedule: scheduleRows, teamId: INTER, otherTeamIds: [] }).kind).toBe("table");
+  });
+
+  it("una competizione a gironi tiene il suo girone anche dopo la fase a gironi", () => {
+    // Le qualificazioni mondiali hanno dodici gironi: il tab mostra solo quello della squadra,
+    // senza la testata "Fase campionato · finale" che spetta a una fase campionato unica.
+    const groups = standings(
+      [{ name: "Group A", rows: [row({ teamId: ITALY, rank: 2 })] }],
+      { league: "fifa.worldq.uefa", season: "2026 World Cup Qualifying - UEFA", groupCount: 12 },
+    );
+    const scheduleRows = schedule([
+      match({ eventId: "group", kickoff, league: "fifa.worldq.uefa", round: "Group A" }),
+      match({ eventId: "playoff", kickoff: kickoff + 30 * day, league: "fifa.worldq.uefa", round: "Playoff Finals", state: "pre", score: undefined }),
+    ]);
+
+    const view = standingsView({ standings: groups, schedule: scheduleRows, teamId: ITALY, otherTeamIds: [] });
+    expect(view.kind).toBe("table");
+    if (view.kind !== "table") return;
+    expect(view.rows.map((r) => r.teamId)).toEqual([ITALY]);
   });
 
   it("il percorso senza tabella non filtra per nome del turno", () => {

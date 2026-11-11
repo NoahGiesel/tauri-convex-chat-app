@@ -141,5 +141,7 @@ export function standingsView({
   const rows = tableRows(group, teamId, otherTeamIds);
   const legend = zoneLegend(group.rows);
   const steps = pathSteps(matches.filter((match) => isKnockoutRound(match.round)));
-  return steps.length > 0 ? { kind: "knockout", steps, rows, legend } : { kind: "table", rows, legend };
+  // La testata "Fase campionato · finale" spetta a una fase campionato unica, non a un girone di una
+  // competizione a gironi: quella tiene la sua tabella e basta.
+  return steps.length > 0 && standings.groupCount === 1 ? { kind: "knockout", steps, rows, legend } : { kind: "table", rows, legend };
 }

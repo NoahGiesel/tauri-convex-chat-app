@@ -20,7 +20,7 @@ export function mergeCompetitions(lists: ProviderCompetition[][]): ProviderCompe
  * due richieste in tutto. Se una delle due fallisce la riga resta com'era e l'errore finisce nei log.
  */
 export const refresh = internalAction({
-  args: { teamId: v.string(), standings: v.optional(v.boolean()) },
+  args: { teamId: v.string(), standings: v.optional(v.boolean()), standingsLeague: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const fetchedAt = Date.now();
     let results: ProviderSchedule;
@@ -40,15 +40,16 @@ export const refresh = internalAction({
       competitions,
       fetchedAt,
     });
-    // Al pin e dopo una partita servono subito le classifiche delle competizioni appena lette. Il cron
-    // delle 6 ore le chiede da sé, una volta per campionato, così due squadre non chiedono la stessa due volte.
+    // Al pin servono le classifiche di tutte le competizioni appena lette; dopo una partita solo quella
+    // del suo campionato (3 richieste in tutto, come da spec). Il cron delle 6 ore le chiede da sé.
     // Un campionato con una partita in corso aspetta: la classifica non cambia durante la partita.
-    if (args.standings) {
+    const wanted = new Set<string>();
+    if (args.standings) for (const competition of competitions) wanted.add(competition.league);
+    if (args.standingsLeague) wanted.add(args.standingsLeague);
+    if (wanted.size > 0) {
       const live = new Set(await ctx.runQuery(internal.footballMatches.liveLeagueNames, {}));
-      for (const competition of competitions) {
-        if (!live.has(competition.league)) {
-          await ctx.scheduler.runAfter(0, internal.footballStandings.refreshLeague, { league: competition.league });
-        }
+      for (const league of wanted) {
+        if (!live.has(league)) await ctx.scheduler.runAfter(0, internal.footballStandings.refreshLeague, { league });
       }
     }
     return null;

@@ -69,8 +69,12 @@ export async function recordMatch(ctx: MutationCtx, match: ProviderMatch, fetche
     for (const team of await pinnedSides(ctx, match)) {
       await ctx.db.patch("footballTeams", team._id, { lastMatchId: id });
       await ctx.scheduler.runAfter(0, internal.footballMatches.refreshNextMatch, { teamId: team.teamId });
-      // Il risultato arriva nel calendario un po' dopo il fischio finale: si rifà a FT + 10 minuti, con le classifiche.
-      await ctx.scheduler.runAfter(FULL_TIME_REFRESH_MS, internal.footballTeamSchedules.refresh, { teamId: team.teamId, standings: true });
+      // Il risultato arriva nel calendario un po' dopo il fischio finale: si rifà a FT + 10 minuti, con
+      // la classifica del campionato della partita (le due richieste del calendario più una).
+      await ctx.scheduler.runAfter(FULL_TIME_REFRESH_MS, internal.footballTeamSchedules.refresh, {
+        teamId: team.teamId,
+        standingsLeague: match.league,
+      });
     }
   }
   return id;
