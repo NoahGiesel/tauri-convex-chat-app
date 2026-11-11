@@ -40,10 +40,10 @@ const bySoonest = (a: ScheduleMatch, b: ScheduleMatch) => a.kickoff - b.kickoff;
 
 const byNewest = (a: ScheduleMatch, b: ScheduleMatch) => b.kickoff - a.kickoff;
 
-/** Le prossime 3 partite e gli ultimi 10 risultati, senza amichevoli, dal più recente. */
+/** Le prossime 3 partite e gli ultimi 10 risultati, dal più recente; le amichevoli restano solo fra le prossime. */
 export function matchesTab(schedule: Pick<TeamSchedule, "results" | "fixtures">): MatchesTabView {
   return {
-    next: schedule.fixtures.filter((m) => !isFriendly(m) && m.state !== "post").sort(bySoonest).slice(0, NEXT_COUNT),
+    next: schedule.fixtures.filter((m) => m.state !== "post").sort(bySoonest).slice(0, NEXT_COUNT),
     recent: schedule.results
       .filter((m) => !isFriendly(m) && m.state === "post")
       .sort(byNewest)
@@ -57,11 +57,11 @@ function goals(match: ScheduleMatch, score: Score): [number, number] {
 }
 
 /**
- * W, D o L dal lato della squadra; `null` se la partita non si è ancora giocata.
+ * W, D o L dal lato della squadra; `null` finché la partita non è finita.
  * Una partita decisa ai rigori è una vittoria o una sconfitta, non un pareggio: conta il lato vincente di ESPN.
  */
 export function matchOutcome(match: ScheduleMatch): MatchOutcome | null {
-  if (match.state === "pre" || !match.score) return null;
+  if (match.state !== "post" || !match.score) return null;
   if (match.shootout && match.winner) return match.winner === (match.home ? "home" : "away") ? "win" : "loss";
   const [own, other] = goals(match, match.score);
   return own > other ? "win" : own < other ? "loss" : "draw";
@@ -76,9 +76,13 @@ export function scoreLine(match: ScheduleMatch): string | null {
   return `${own}–${other} (${ownPens}–${otherPens})`;
 }
 
-/** Il testo a destra di una riga: il punteggio, l'ora del calcio d'inizio, o niente se ESPN non l'ha fissata. */
+/**
+ * Il testo a destra di una riga: il punteggio di una partita finita, altrimenti l'ora del calcio d'inizio
+ * (o niente se ESPN non l'ha fissata). Una partita in corso non mostra il punteggio parziale.
+ */
 export function rowTail(match: ScheduleMatch, kickoffTime: string): string {
-  return scoreLine(match) ?? (match.timeValid === false ? "" : kickoffTime);
+  if (match.state === "post") return scoreLine(match) ?? "";
+  return match.timeValid === false ? "" : kickoffTime;
 }
 
 /** La sigla della competizione per la riga (`SA`, `UCL`, `CI`): quella nota, o le iniziali del nome. */

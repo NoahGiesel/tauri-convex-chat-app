@@ -42,7 +42,7 @@ describe("tab Partite: quali partite mostra", () => {
     );
   });
 
-  it("toglie le amichevoli dai risultati e dalle prossime partite", () => {
+  it("toglie le amichevoli dai risultati, ma le tiene fra le prossime partite", () => {
     const all = [
       ...results(2),
       row({ eventId: "club-friendly", kickoff: kickoff - 3 * day, league: "club.friendly" }),
@@ -54,7 +54,7 @@ describe("tab Partite: quali partite mostra", () => {
     ];
     const tab = matchesTab({ results: all, fixtures });
     expect(tab.recent.map((m) => m.eventId)).toEqual(["result-1", "result-0"]);
-    expect(tab.next.map((m) => m.eventId)).toEqual(["serie-a"]);
+    expect(tab.next.map((m) => m.eventId)).toEqual(["friendly", "serie-a"]);
   });
 
   it("senza partite dà due liste vuote", () => {
@@ -94,6 +94,11 @@ describe("tab Partite: risultato e punteggio", () => {
     expect(matchOutcome({ ...home, home: false })).toBe("win");
   });
 
+  it("una partita in corso non ha ancora un risultato, anche col punteggio", () => {
+    expect(matchOutcome(row({ eventId: "live", kickoff, state: "in", score: { home: 1, away: 0 } }))).toBeNull();
+    expect(matchOutcome(row({ eventId: "live-away", kickoff, home: false, state: "in", score: { home: 0, away: 1 } }))).toBeNull();
+  });
+
   it("una partita non ancora giocata non ha risultato", () => {
     expect(matchOutcome(row({ eventId: "next", kickoff, state: "pre", score: undefined }))).toBeNull();
   });
@@ -114,6 +119,8 @@ describe("tab Partite: risultato e punteggio", () => {
     expect(rowTail(row({ eventId: "unknown", kickoff, state: "pre", score: undefined, timeValid: undefined }), "20:45")).toBe("20:45");
     expect(rowTail(row({ eventId: "tbd", kickoff, state: "pre", score: undefined, timeValid: false }), "20:45")).toBe("");
     expect(rowTail(row({ eventId: "played", kickoff, score: { home: 2, away: 0 } }), "20:45")).toBe("2–0");
+    // Una partita in corso mostra il calcio d'inizio, non il punteggio parziale.
+    expect(rowTail(row({ eventId: "live", kickoff, state: "in", score: { home: 1, away: 0 } }), "20:45")).toBe("20:45");
   });
 });
 

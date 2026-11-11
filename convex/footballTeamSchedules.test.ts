@@ -144,10 +144,18 @@ describe("lettura del calendario", () => {
     expect(matches).toHaveLength(25); // i risultati restano tutti
   });
 
-  it("un calendario senza la squadra chiesta non vale", () => {
-    const raw = loadFixture("schedule-110-results") as { events: { competitions: { competitors: { team: { id: string } }[] }[] }[] };
-    for (const event of raw.events) for (const competitor of event.competitions[0].competitors) competitor.team.id = "999";
-    expect(() => parseSchedule(raw, INTER)).toThrow(/ESPN/);
+  it("una voce rotta del calendario si salta, le altre restano", () => {
+    const raw = loadFixture("schedule-110-results");
+    const [first, withoutSide, withoutTeam] = raw.events;
+    // Una voce senza uno dei due lati e una senza la squadra di un lato: si saltano, non fermano il resto.
+    withoutSide.competitions[0].competitors.pop();
+    delete withoutTeam.competitions[0].competitors[0].team;
+
+    const { matches } = parseSchedule(raw, INTER);
+    expect(matches).toHaveLength(19);
+    expect(matches.map((m) => m.eventId)).not.toContain(withoutSide.id);
+    expect(matches.map((m) => m.eventId)).not.toContain(withoutTeam.id);
+    expect(matches[0].eventId).toBe(first.id);
   });
 });
 

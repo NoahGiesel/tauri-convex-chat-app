@@ -76,15 +76,6 @@ export async function deleteUnpinnedSchedules(ctx: MutationCtx): Promise<void> {
   }
 }
 
-/** La stessa pulizia, richiamabile come funzione interna. */
-export const cleanup = internalMutation({
-  args: {},
-  handler: async (ctx) => {
-    await deleteUnpinnedSchedules(ctx);
-    return null;
-  },
-});
-
 /**
  * Il calendario di una squadra pinnata nel drawer: risultati, partite in programma e competizioni.
  * `null` se chi chiede non è nella chat o la chat non pinna la squadra; `pending` finché la prima riga

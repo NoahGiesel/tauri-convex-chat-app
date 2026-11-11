@@ -217,13 +217,16 @@ export function parseSchedule(json: unknown, teamId: string): ProviderSchedule {
     const status = obj(competition.status ?? event.status, "status");
     const state = readState(obj(status.type, "status.type").state);
     const competitors = arr(competition.competitors, "competitors").map((c) => obj(c, "competitors[]"));
-    const idOf = (c: Obj) => str(obj(c.team, "competitor.team").id, "competitor.team.id");
     const homeSide = competitors.find((c) => c.homeAway === "home");
     const awaySide = competitors.find((c) => c.homeAway === "away");
-    if (!homeSide || !awaySide) throw new EspnError("ESPN: competitors sides missing");
-    const mine = [homeSide, awaySide].find((c) => idOf(c) === teamId);
+    const teamIdOf = (c: Obj | undefined) => (c ? optStr(optObj(c.team)?.id) : undefined);
+    const homeTeamId = teamIdOf(homeSide);
+    const awayTeamId = teamIdOf(awaySide);
+    // Una voce rotta (senza un lato o senza una squadra) si salta: non deve fermare tutto il calendario.
+    if (!homeTeamId || !awayTeamId) continue;
+    const mine = homeTeamId === teamId ? homeSide : awayTeamId === teamId ? awaySide : undefined;
+    if (!mine || !homeSide || !awaySide) continue;
     const other = mine === homeSide ? awaySide : homeSide;
-    if (!mine) throw new EspnError(`ESPN: team ${teamId} missing from schedule event`);
     const winner = homeSide.winner === true ? "home" : awaySide.winner === true ? "away" : undefined;
 
     const match: ProviderScheduleMatch = {
