@@ -49,6 +49,7 @@ type Friends = Awaited<ReturnType<typeof twoFriends>>;
 const errorCode = (e: unknown) => (e as { data?: { code?: string } }).data?.code;
 const refused = (code: string) => (e: unknown) => errorCode(e) === code;
 
+const standingsPath = (league: string) => `/v2/sports/soccer/${league}/standings`;
 const INTER = "110";
 const MILAN = "103";
 const JUVENTUS = "111";
@@ -259,6 +260,10 @@ describe("aggiornamento ogni 6 ore", () => {
       "/site/v2/sports/soccer/all/teams/110",
       "/site/v2/sports/soccer/all/teams/110/schedule",
       "/site/v2/sports/soccer/all/teams/110/schedule?fixture=true",
+      standingsPath("ita.1"),
+      standingsPath("ita.coppa_italia"),
+      standingsPath("ita.super_cup"),
+      standingsPath("uefa.champions"),
     ]);
     for (const conversationId of [f.direct, f.other]) {
       const [pin] = await f.alice.query(api.teamPins.list, { conversationId });

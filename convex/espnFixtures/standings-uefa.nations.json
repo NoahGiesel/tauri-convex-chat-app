@@ -1,0 +1,1798 @@
+{
+ "season": {
+  "year": 2026,
+  "startDate": "2026-06-01T04:00Z",
+  "endDate": "2028-04-01T03:59Z",
+  "displayName": "2026-27 UEFA Nations League"
+ },
+ "children": [
+  {
+   "name": "Group A1",
+   "standings": {
+    "entries": [
+     {
+      "team": {
+       "id": "162",
+       "abbreviation": "ITA",
+       "displayName": "Italy",
+       "shortDisplayName": "Italy",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/ita.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#B5E7CE",
+       "description": "A: Qualifies for QFs; B-D: Promotion playoffs"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 3
+       },
+       {
+        "name": "points",
+        "value": 7
+       },
+       {
+        "name": "rank",
+        "value": 2
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "459",
+       "abbreviation": "BEL",
+       "displayName": "Belgium",
+       "shortDisplayName": "Belgium",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bel.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#FEB4B5",
+       "description": "A, B: Relegation playoffs"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 1
+       },
+       {
+        "name": "points",
+        "value": 6
+       },
+       {
+        "name": "rank",
+        "value": 3
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "465",
+       "abbreviation": "TUR",
+       "displayName": "Türkiye",
+       "shortDisplayName": "Türkiye",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/tur.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#FF7F84",
+       "description": "A, B: Relegation; C: Relegation or playoffs"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -9
+       },
+       {
+        "name": "points",
+        "value": 0
+       },
+       {
+        "name": "rank",
+        "value": 4
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "478",
+       "abbreviation": "FRA",
+       "displayName": "France",
+       "shortDisplayName": "France",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/fra.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#81D6AC",
+       "description": "A: Qualifies for QFs; B-D: Promotion"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 5
+       },
+       {
+        "name": "points",
+        "value": 10
+       },
+       {
+        "name": "rank",
+        "value": 1
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "Group A2",
+   "standings": {
+    "entries": [
+     {
+      "team": {
+       "id": "449",
+       "abbreviation": "NED",
+       "displayName": "Netherlands",
+       "shortDisplayName": "Netherlands",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/ned.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 2
+       },
+       {
+        "name": "points",
+        "value": 8
+       },
+       {
+        "name": "rank",
+        "value": 1
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "455",
+       "abbreviation": "GRE",
+       "displayName": "Greece",
+       "shortDisplayName": "Greece",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/gre.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 2
+       },
+       {
+        "name": "points",
+        "value": 8
+       },
+       {
+        "name": "rank",
+        "value": 2
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "481",
+       "abbreviation": "GER",
+       "displayName": "Germany",
+       "shortDisplayName": "Germany",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/ger.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 1
+       },
+       {
+        "name": "points",
+        "value": 5
+       },
+       {
+        "name": "rank",
+        "value": 3
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "6757",
+       "abbreviation": "SRB",
+       "displayName": "Serbia",
+       "shortDisplayName": "Serbia",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/sba.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -5
+       },
+       {
+        "name": "points",
+        "value": 0
+       },
+       {
+        "name": "rank",
+        "value": 4
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "Group A3",
+   "standings": {
+    "entries": [
+     {
+      "team": {
+       "id": "164",
+       "abbreviation": "ESP",
+       "displayName": "Spain",
+       "shortDisplayName": "Spain",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/esp.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 7
+       },
+       {
+        "name": "points",
+        "value": 12
+       },
+       {
+        "name": "rank",
+        "value": 1
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "448",
+       "abbreviation": "ENG",
+       "displayName": "England",
+       "shortDisplayName": "England",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/eng.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 11
+       },
+       {
+        "name": "points",
+        "value": 9
+       },
+       {
+        "name": "rank",
+        "value": 2
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "450",
+       "abbreviation": "CZE",
+       "displayName": "Czechia",
+       "shortDisplayName": "Czechia",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/cze.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -8
+       },
+       {
+        "name": "points",
+        "value": 0
+       },
+       {
+        "name": "rank",
+        "value": 4
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "477",
+       "abbreviation": "CRO",
+       "displayName": "Croatia",
+       "shortDisplayName": "Croatia",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/cro.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -10
+       },
+       {
+        "name": "points",
+        "value": 3
+       },
+       {
+        "name": "rank",
+        "value": 3
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "Group A4",
+   "standings": {
+    "entries": [
+     {
+      "team": {
+       "id": "464",
+       "abbreviation": "NOR",
+       "displayName": "Norway",
+       "shortDisplayName": "Norway",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/nor.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -2
+       },
+       {
+        "name": "points",
+        "value": 3
+       },
+       {
+        "name": "rank",
+        "value": 4
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "479",
+       "abbreviation": "DEN",
+       "displayName": "Denmark",
+       "shortDisplayName": "Denmark",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/den.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 0
+       },
+       {
+        "name": "points",
+        "value": 6
+       },
+       {
+        "name": "rank",
+        "value": 2
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "482",
+       "abbreviation": "POR",
+       "displayName": "Portugal",
+       "shortDisplayName": "Portugal",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/por.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 5
+       },
+       {
+        "name": "points",
+        "value": 12
+       },
+       {
+        "name": "rank",
+        "value": 1
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "578",
+       "abbreviation": "WAL",
+       "displayName": "Wales",
+       "shortDisplayName": "Wales",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/wal.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -3
+       },
+       {
+        "name": "points",
+        "value": 3
+       },
+       {
+        "name": "rank",
+        "value": 3
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "Group B1",
+   "standings": {
+    "entries": [
+     {
+      "team": {
+       "id": "463",
+       "abbreviation": "MKD",
+       "displayName": "North Macedonia",
+       "shortDisplayName": "North Macedonia",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/mkd.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -10
+       },
+       {
+        "name": "points",
+        "value": 0
+       },
+       {
+        "name": "rank",
+        "value": 4
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "472",
+       "abbreviation": "SVN",
+       "displayName": "Slovenia",
+       "shortDisplayName": "Slovenia",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/svn.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 2
+       },
+       {
+        "name": "points",
+        "value": 7
+       },
+       {
+        "name": "rank",
+        "value": 2
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "475",
+       "abbreviation": "SUI",
+       "displayName": "Switzerland",
+       "shortDisplayName": "Switzerland",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/sui.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 10
+       },
+       {
+        "name": "points",
+        "value": 12
+       },
+       {
+        "name": "rank",
+        "value": 1
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "580",
+       "abbreviation": "SCO",
+       "displayName": "Scotland",
+       "shortDisplayName": "Scotland",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/sco.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -2
+       },
+       {
+        "name": "points",
+        "value": 4
+       },
+       {
+        "name": "rank",
+        "value": 3
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "Group B2",
+   "standings": {
+    "entries": [
+     {
+      "team": {
+       "id": "457",
+       "abbreviation": "UKR",
+       "displayName": "Ukraine",
+       "shortDisplayName": "Ukraine",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/ukr.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -3
+       },
+       {
+        "name": "points",
+        "value": 4
+       },
+       {
+        "name": "rank",
+        "value": 3
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "480",
+       "abbreviation": "HUN",
+       "displayName": "Hungary",
+       "shortDisplayName": "Hungary",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/hun.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 1
+       },
+       {
+        "name": "points",
+        "value": 7
+       },
+       {
+        "name": "rank",
+        "value": 2
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "584",
+       "abbreviation": "GEO",
+       "displayName": "Georgia",
+       "shortDisplayName": "Georgia",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/geo.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -2
+       },
+       {
+        "name": "points",
+        "value": 2
+       },
+       {
+        "name": "rank",
+        "value": 4
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "586",
+       "abbreviation": "NIR",
+       "displayName": "Northern Ireland",
+       "shortDisplayName": "N Ireland",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/nir.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 4
+       },
+       {
+        "name": "points",
+        "value": 8
+       },
+       {
+        "name": "rank",
+        "value": 1
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "Group B3",
+   "standings": {
+    "entries": [
+     {
+      "team": {
+       "id": "461",
+       "abbreviation": "ISR",
+       "displayName": "Israel",
+       "shortDisplayName": "Israel",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/isr.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -5
+       },
+       {
+        "name": "points",
+        "value": 2
+       },
+       {
+        "name": "rank",
+        "value": 4
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "474",
+       "abbreviation": "AUT",
+       "displayName": "Austria",
+       "shortDisplayName": "Austria",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/aut.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 4
+       },
+       {
+        "name": "points",
+        "value": 8
+       },
+       {
+        "name": "rank",
+        "value": 1
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "476",
+       "abbreviation": "IRL",
+       "displayName": "Republic of Ireland",
+       "shortDisplayName": "Rep Ireland",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/irl.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 2
+       },
+       {
+        "name": "points",
+        "value": 5
+       },
+       {
+        "name": "rank",
+        "value": 3
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "18272",
+       "abbreviation": "KOS",
+       "displayName": "Kosovo",
+       "shortDisplayName": "Kosovo",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/kosovo.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -1
+       },
+       {
+        "name": "points",
+        "value": 5
+       },
+       {
+        "name": "rank",
+        "value": 2
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "Group B4",
+   "standings": {
+    "entries": [
+     {
+      "team": {
+       "id": "452",
+       "abbreviation": "BIH",
+       "displayName": "Bosnia-Herzegovina",
+       "shortDisplayName": "Bosnia-Herz",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bih.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 3
+       },
+       {
+        "name": "points",
+        "value": 8
+       },
+       {
+        "name": "rank",
+        "value": 2
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "466",
+       "abbreviation": "SWE",
+       "displayName": "Sweden",
+       "shortDisplayName": "Sweden",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/swe.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 4
+       },
+       {
+        "name": "points",
+        "value": 10
+       },
+       {
+        "name": "rank",
+        "value": 1
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "471",
+       "abbreviation": "POL",
+       "displayName": "Poland",
+       "shortDisplayName": "Poland",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/pol.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 3
+       },
+       {
+        "name": "points",
+        "value": 4
+       },
+       {
+        "name": "rank",
+        "value": 3
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "473",
+       "abbreviation": "ROU",
+       "displayName": "Romania",
+       "shortDisplayName": "Romania",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/rom.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -10
+       },
+       {
+        "name": "points",
+        "value": 0
+       },
+       {
+        "name": "rank",
+        "value": 4
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "Group C1",
+   "standings": {
+    "entries": [
+     {
+      "team": {
+       "id": "458",
+       "abbreviation": "FIN",
+       "displayName": "Finland",
+       "shortDisplayName": "Finland",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/fin.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 7
+       },
+       {
+        "name": "points",
+        "value": 7
+       },
+       {
+        "name": "rank",
+        "value": 3
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "583",
+       "abbreviation": "BLR",
+       "displayName": "Belarus",
+       "shortDisplayName": "Belarus",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/blr.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 3
+       },
+       {
+        "name": "points",
+        "value": 7
+       },
+       {
+        "name": "rank",
+        "value": 2
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "585",
+       "abbreviation": "ALB",
+       "displayName": "Albania",
+       "shortDisplayName": "Albania",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/alb.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 5
+       },
+       {
+        "name": "points",
+        "value": 9
+       },
+       {
+        "name": "rank",
+        "value": 1
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "588",
+       "abbreviation": "SMR",
+       "displayName": "San Marino",
+       "shortDisplayName": "San Marino",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/smr.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -15
+       },
+       {
+        "name": "points",
+        "value": 0
+       },
+       {
+        "name": "rank",
+        "value": 4
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "Group C2",
+   "standings": {
+    "entries": [
+     {
+      "team": {
+       "id": "445",
+       "abbreviation": "CYP",
+       "displayName": "Cyprus",
+       "shortDisplayName": "Cyprus",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/cyp.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 2
+       },
+       {
+        "name": "points",
+        "value": 7
+       },
+       {
+        "name": "rank",
+        "value": 2
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "456",
+       "abbreviation": "LVA",
+       "displayName": "Latvia",
+       "shortDisplayName": "Latvia",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/lva.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -4
+       },
+       {
+        "name": "points",
+        "value": 1
+       },
+       {
+        "name": "rank",
+        "value": 4
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "579",
+       "abbreviation": "ARM",
+       "displayName": "Armenia",
+       "shortDisplayName": "Armenia",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/fifa.armenia.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -1
+       },
+       {
+        "name": "points",
+        "value": 4
+       },
+       {
+        "name": "rank",
+        "value": 3
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "6775",
+       "abbreviation": "MNE",
+       "displayName": "Montenegro",
+       "shortDisplayName": "Montenegro",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/mtg.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 3
+       },
+       {
+        "name": "points",
+        "value": 10
+       },
+       {
+        "name": "rank",
+        "value": 1
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "Group C3",
+   "standings": {
+    "entries": [
+     {
+      "team": {
+       "id": "447",
+       "abbreviation": "FRO",
+       "displayName": "Faroe Islands",
+       "shortDisplayName": "Faroe Islands",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/fro.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 0
+       },
+       {
+        "name": "points",
+        "value": 4
+       },
+       {
+        "name": "rank",
+        "value": 2
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "468",
+       "abbreviation": "SVK",
+       "displayName": "Slovakia",
+       "shortDisplayName": "Slovakia",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/svk.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 7
+       },
+       {
+        "name": "points",
+        "value": 10
+       },
+       {
+        "name": "rank",
+        "value": 1
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "483",
+       "abbreviation": "MDA",
+       "displayName": "Moldova",
+       "shortDisplayName": "Moldova",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/mda.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -5
+       },
+       {
+        "name": "points",
+        "value": 4
+       },
+       {
+        "name": "rank",
+        "value": 3
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "2619",
+       "abbreviation": "KAZ",
+       "displayName": "Kazakhstan",
+       "shortDisplayName": "Kazakhstan",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/kaz.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -2
+       },
+       {
+        "name": "points",
+        "value": 2
+       },
+       {
+        "name": "rank",
+        "value": 4
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "Group C4",
+   "standings": {
+    "entries": [
+     {
+      "team": {
+       "id": "444",
+       "abbreviation": "EST",
+       "displayName": "Estonia",
+       "shortDisplayName": "Estonia",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/est.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 1
+       },
+       {
+        "name": "points",
+        "value": 6
+       },
+       {
+        "name": "rank",
+        "value": 2
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "462",
+       "abbreviation": "BUL",
+       "displayName": "Bulgaria",
+       "shortDisplayName": "Bulgaria",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bul.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -2
+       },
+       {
+        "name": "points",
+        "value": 4
+       },
+       {
+        "name": "rank",
+        "value": 3
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "470",
+       "abbreviation": "ISL",
+       "displayName": "Iceland",
+       "shortDisplayName": "Iceland",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/isl.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": 6
+       },
+       {
+        "name": "points",
+        "value": 8
+       },
+       {
+        "name": "rank",
+        "value": 1
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "582",
+       "abbreviation": "LUX",
+       "displayName": "Luxembourg",
+       "shortDisplayName": "Luxembourg",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/lux.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 4
+       },
+       {
+        "name": "pointDifferential",
+        "value": -5
+       },
+       {
+        "name": "points",
+        "value": 3
+       },
+       {
+        "name": "rank",
+        "value": 4
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "Group D1",
+   "standings": {
+    "entries": [
+     {
+      "team": {
+       "id": "453",
+       "abbreviation": "MLT",
+       "displayName": "Malta",
+       "shortDisplayName": "Malta",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/mlt.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 3
+       },
+       {
+        "name": "pointDifferential",
+        "value": 2
+       },
+       {
+        "name": "points",
+        "value": 7
+       },
+       {
+        "name": "rank",
+        "value": 1
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "587",
+       "abbreviation": "AND",
+       "displayName": "Andorra",
+       "shortDisplayName": "Andorra",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/and.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 3
+       },
+       {
+        "name": "pointDifferential",
+        "value": -2
+       },
+       {
+        "name": "points",
+        "value": 1
+       },
+       {
+        "name": "rank",
+        "value": 3
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "16721",
+       "abbreviation": "GIB",
+       "displayName": "Gibraltar",
+       "shortDisplayName": "Gibraltar",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/gib.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 2
+       },
+       {
+        "name": "pointDifferential",
+        "value": 0
+       },
+       {
+        "name": "points",
+        "value": 2
+       },
+       {
+        "name": "rank",
+        "value": 2
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "Group D2",
+   "standings": {
+    "entries": [
+     {
+      "team": {
+       "id": "460",
+       "abbreviation": "LTU",
+       "displayName": "Lithuania",
+       "shortDisplayName": "Lithuania",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/ltu.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 3
+       },
+       {
+        "name": "pointDifferential",
+        "value": 1
+       },
+       {
+        "name": "points",
+        "value": 4
+       },
+       {
+        "name": "rank",
+        "value": 2
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "581",
+       "abbreviation": "AZE",
+       "displayName": "Azerbaijan",
+       "shortDisplayName": "Azerbaijan",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/aze.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 3
+       },
+       {
+        "name": "pointDifferential",
+        "value": 1
+       },
+       {
+        "name": "points",
+        "value": 5
+       },
+       {
+        "name": "rank",
+        "value": 1
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "589",
+       "abbreviation": "LIE",
+       "displayName": "Liechtenstein",
+       "shortDisplayName": "Liechtenstein",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/lie.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 2
+       },
+       {
+        "name": "pointDifferential",
+        "value": -2
+       },
+       {
+        "name": "points",
+        "value": 1
+       },
+       {
+        "name": "rank",
+        "value": 3
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

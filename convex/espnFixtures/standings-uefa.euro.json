@@ -1,0 +1,868 @@
+{
+ "season": {
+  "year": 2024,
+  "startDate": "2024-06-01T04:00Z",
+  "endDate": "2024-07-31T03:59Z",
+  "displayName": "2024 European Championship"
+ },
+ "children": [
+  {
+   "name": "Group A",
+   "standings": {
+    "entries": [
+     {
+      "team": {
+       "id": "475",
+       "abbreviation": "SUI",
+       "displayName": "Switzerland",
+       "shortDisplayName": "Switzerland",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/sui.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#81D6AC",
+       "description": "Qualifies for round of 16"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 3
+       },
+       {
+        "name": "pointDifferential",
+        "value": 2
+       },
+       {
+        "name": "points",
+        "value": 5
+       },
+       {
+        "name": "rank",
+        "value": 2
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "480",
+       "abbreviation": "HUN",
+       "displayName": "Hungary",
+       "shortDisplayName": "Hungary",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/hun.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#B5E7CE",
+       "description": "Four best 3rd placed nations qualify for round of 16"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 3
+       },
+       {
+        "name": "pointDifferential",
+        "value": -3
+       },
+       {
+        "name": "points",
+        "value": 3
+       },
+       {
+        "name": "rank",
+        "value": 3
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "481",
+       "abbreviation": "GER",
+       "displayName": "Germany",
+       "shortDisplayName": "Germany",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/ger.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#81D6AC",
+       "description": "Qualifies for round of 16"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 3
+       },
+       {
+        "name": "pointDifferential",
+        "value": 6
+       },
+       {
+        "name": "points",
+        "value": 7
+       },
+       {
+        "name": "rank",
+        "value": 1
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "580",
+       "abbreviation": "SCO",
+       "displayName": "Scotland",
+       "shortDisplayName": "Scotland",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/sco.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 3
+       },
+       {
+        "name": "pointDifferential",
+        "value": -5
+       },
+       {
+        "name": "points",
+        "value": 1
+       },
+       {
+        "name": "rank",
+        "value": 4
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "Group B",
+   "standings": {
+    "entries": [
+     {
+      "team": {
+       "id": "162",
+       "abbreviation": "ITA",
+       "displayName": "Italy",
+       "shortDisplayName": "Italy",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/ita.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#81D6AC",
+       "description": "Qualifies for round of 16"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 3
+       },
+       {
+        "name": "pointDifferential",
+        "value": 0
+       },
+       {
+        "name": "points",
+        "value": 4
+       },
+       {
+        "name": "rank",
+        "value": 2
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "164",
+       "abbreviation": "ESP",
+       "displayName": "Spain",
+       "shortDisplayName": "Spain",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/esp.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#81D6AC",
+       "description": "Qualifies for round of 16"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 3
+       },
+       {
+        "name": "pointDifferential",
+        "value": 5
+       },
+       {
+        "name": "points",
+        "value": 9
+       },
+       {
+        "name": "rank",
+        "value": 1
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "477",
+       "abbreviation": "CRO",
+       "displayName": "Croatia",
+       "shortDisplayName": "Croatia",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/cro.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#B5E7CE",
+       "description": "Four best 3rd placed nations qualify for round of 16"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 3
+       },
+       {
+        "name": "pointDifferential",
+        "value": -3
+       },
+       {
+        "name": "points",
+        "value": 2
+       },
+       {
+        "name": "rank",
+        "value": 3
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "585",
+       "abbreviation": "ALB",
+       "displayName": "Albania",
+       "shortDisplayName": "Albania",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/alb.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 3
+       },
+       {
+        "name": "pointDifferential",
+        "value": -2
+       },
+       {
+        "name": "points",
+        "value": 1
+       },
+       {
+        "name": "rank",
+        "value": 4
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "Group C",
+   "standings": {
+    "entries": [
+     {
+      "team": {
+       "id": "448",
+       "abbreviation": "ENG",
+       "displayName": "England",
+       "shortDisplayName": "England",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/eng.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#81D6AC",
+       "description": "Qualifies for round of 16"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 3
+       },
+       {
+        "name": "pointDifferential",
+        "value": 1
+       },
+       {
+        "name": "points",
+        "value": 5
+       },
+       {
+        "name": "rank",
+        "value": 1
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "472",
+       "abbreviation": "SVN",
+       "displayName": "Slovenia",
+       "shortDisplayName": "Slovenia",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/svn.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#B5E7CE",
+       "description": "Four best 3rd placed nations qualify for round of 16"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 3
+       },
+       {
+        "name": "pointDifferential",
+        "value": 0
+       },
+       {
+        "name": "points",
+        "value": 3
+       },
+       {
+        "name": "rank",
+        "value": 3
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "479",
+       "abbreviation": "DEN",
+       "displayName": "Denmark",
+       "shortDisplayName": "Denmark",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/den.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#81D6AC",
+       "description": "Qualifies for round of 16"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 3
+       },
+       {
+        "name": "pointDifferential",
+        "value": 0
+       },
+       {
+        "name": "points",
+        "value": 3
+       },
+       {
+        "name": "rank",
+        "value": 2
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "6757",
+       "abbreviation": "SRB",
+       "displayName": "Serbia",
+       "shortDisplayName": "Serbia",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/sba.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 3
+       },
+       {
+        "name": "pointDifferential",
+        "value": -1
+       },
+       {
+        "name": "points",
+        "value": 2
+       },
+       {
+        "name": "rank",
+        "value": 4
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "Group D",
+   "standings": {
+    "entries": [
+     {
+      "team": {
+       "id": "449",
+       "abbreviation": "NED",
+       "displayName": "Netherlands",
+       "shortDisplayName": "Netherlands",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/ned.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#B5E7CE",
+       "description": "Four best 3rd placed nations qualify for round of 16"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 3
+       },
+       {
+        "name": "pointDifferential",
+        "value": 0
+       },
+       {
+        "name": "points",
+        "value": 4
+       },
+       {
+        "name": "rank",
+        "value": 3
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "471",
+       "abbreviation": "POL",
+       "displayName": "Poland",
+       "shortDisplayName": "Poland",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/pol.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 3
+       },
+       {
+        "name": "pointDifferential",
+        "value": -3
+       },
+       {
+        "name": "points",
+        "value": 1
+       },
+       {
+        "name": "rank",
+        "value": 4
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "474",
+       "abbreviation": "AUT",
+       "displayName": "Austria",
+       "shortDisplayName": "Austria",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/aut.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#81D6AC",
+       "description": "Qualifies for round of 16"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 3
+       },
+       {
+        "name": "pointDifferential",
+        "value": 2
+       },
+       {
+        "name": "points",
+        "value": 6
+       },
+       {
+        "name": "rank",
+        "value": 1
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "478",
+       "abbreviation": "FRA",
+       "displayName": "France",
+       "shortDisplayName": "France",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/fra.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#81D6AC",
+       "description": "Qualifies for round of 16"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 3
+       },
+       {
+        "name": "pointDifferential",
+        "value": 1
+       },
+       {
+        "name": "points",
+        "value": 5
+       },
+       {
+        "name": "rank",
+        "value": 2
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "Group E",
+   "standings": {
+    "entries": [
+     {
+      "team": {
+       "id": "457",
+       "abbreviation": "UKR",
+       "displayName": "Ukraine",
+       "shortDisplayName": "Ukraine",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/ukr.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 3
+       },
+       {
+        "name": "pointDifferential",
+        "value": -2
+       },
+       {
+        "name": "points",
+        "value": 4
+       },
+       {
+        "name": "rank",
+        "value": 4
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "459",
+       "abbreviation": "BEL",
+       "displayName": "Belgium",
+       "shortDisplayName": "Belgium",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/bel.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#81D6AC",
+       "description": "Qualifies for round of 16"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 3
+       },
+       {
+        "name": "pointDifferential",
+        "value": 1
+       },
+       {
+        "name": "points",
+        "value": 4
+       },
+       {
+        "name": "rank",
+        "value": 2
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "468",
+       "abbreviation": "SVK",
+       "displayName": "Slovakia",
+       "shortDisplayName": "Slovakia",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/svk.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#B5E7CE",
+       "description": "Four best 3rd placed nations qualify for round of 16"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 3
+       },
+       {
+        "name": "pointDifferential",
+        "value": 0
+       },
+       {
+        "name": "points",
+        "value": 4
+       },
+       {
+        "name": "rank",
+        "value": 3
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "473",
+       "abbreviation": "ROU",
+       "displayName": "Romania",
+       "shortDisplayName": "Romania",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/rom.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#81D6AC",
+       "description": "Qualifies for round of 16"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 3
+       },
+       {
+        "name": "pointDifferential",
+        "value": 1
+       },
+       {
+        "name": "points",
+        "value": 4
+       },
+       {
+        "name": "rank",
+        "value": 1
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "Group F",
+   "standings": {
+    "entries": [
+     {
+      "team": {
+       "id": "450",
+       "abbreviation": "CZE",
+       "displayName": "Czechia",
+       "shortDisplayName": "Czechia",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/cze.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 3
+       },
+       {
+        "name": "pointDifferential",
+        "value": -2
+       },
+       {
+        "name": "points",
+        "value": 1
+       },
+       {
+        "name": "rank",
+        "value": 4
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "465",
+       "abbreviation": "TUR",
+       "displayName": "Türkiye",
+       "shortDisplayName": "Türkiye",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/tur.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#81D6AC",
+       "description": "Qualifies for round of 16"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 3
+       },
+       {
+        "name": "pointDifferential",
+        "value": 0
+       },
+       {
+        "name": "points",
+        "value": 6
+       },
+       {
+        "name": "rank",
+        "value": 2
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "482",
+       "abbreviation": "POR",
+       "displayName": "Portugal",
+       "shortDisplayName": "Portugal",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/por.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#81D6AC",
+       "description": "Qualifies for round of 16"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 3
+       },
+       {
+        "name": "pointDifferential",
+        "value": 2
+       },
+       {
+        "name": "points",
+        "value": 6
+       },
+       {
+        "name": "rank",
+        "value": 1
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "584",
+       "abbreviation": "GEO",
+       "displayName": "Georgia",
+       "shortDisplayName": "Georgia",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/geo.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#B5E7CE",
+       "description": "Four best 3rd placed nations qualify for round of 16"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 3
+       },
+       {
+        "name": "pointDifferential",
+        "value": 0
+       },
+       {
+        "name": "points",
+        "value": 4
+       },
+       {
+        "name": "rank",
+        "value": 3
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

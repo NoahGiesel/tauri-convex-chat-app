@@ -69,8 +69,8 @@ export async function recordMatch(ctx: MutationCtx, match: ProviderMatch, fetche
     for (const team of await pinnedSides(ctx, match)) {
       await ctx.db.patch("footballTeams", team._id, { lastMatchId: id });
       await ctx.scheduler.runAfter(0, internal.footballMatches.refreshNextMatch, { teamId: team.teamId });
-      // Il risultato arriva nel calendario un po' dopo il fischio finale: si rifà a FT + 10 minuti.
-      await ctx.scheduler.runAfter(FULL_TIME_REFRESH_MS, internal.footballTeamSchedules.refresh, { teamId: team.teamId });
+      // Il risultato arriva nel calendario un po' dopo il fischio finale: si rifà a FT + 10 minuti, con le classifiche.
+      await ctx.scheduler.runAfter(FULL_TIME_REFRESH_MS, internal.footballTeamSchedules.refresh, { teamId: team.teamId, standings: true });
     }
   }
   return id;
@@ -185,15 +185,30 @@ export const saveNextMatch = internalMutation({
   },
 });
 
-/** Ogni 6 ore: la prossima partita e il calendario di ogni squadra pinnata (una richiesta per squadra, anche se è pinnata in più chat). */
+/**
+ * Ogni 6 ore: la prossima partita e il calendario di ogni squadra pinnata (una richiesta per squadra, anche se è
+ * pinnata in più chat), poi la classifica di ogni competizione che le sue squadre giocano, una richiesta per
+ * competizione anche con più squadre nello stesso campionato.
+ */
 export const refreshPinnedTeams = internalMutation({
   args: {},
   handler: async (ctx) => {
     const pins = await ctx.db.query("teamPins").take(MAX_PINS_SCANNED);
+    const leagues = new Set<string>();
     for (const teamId of new Set(pins.map((pin) => pin.teamId))) {
       await ctx.scheduler.runAfter(0, internal.footballMatches.refreshNextMatch, { teamId });
       await ctx.scheduler.runAfter(0, internal.footballTeamSchedules.refresh, { teamId });
+      // Durante una partita la classifica non cambia: il suo campionato aspetta il cron dopo il fischio finale.
+      const team = await teamRow(ctx, teamId);
+      const next = team?.nextMatchId ? await ctx.db.get("footballMatches", team.nextMatchId) : null;
+      if (next?.state === "in") continue;
+      const schedule = await ctx.db
+        .query("footballTeamSchedules")
+        .withIndex("by_teamId", (q) => q.eq("teamId", teamId))
+        .unique();
+      for (const competition of schedule?.competitions ?? []) leagues.add(competition.league);
     }
+    for (const league of leagues) await ctx.scheduler.runAfter(0, internal.footballStandings.refreshLeague, { league });
     return null;
   },
 });

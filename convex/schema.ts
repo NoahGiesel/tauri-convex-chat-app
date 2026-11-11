@@ -49,6 +49,26 @@ export const footballScheduleMatch = v.object({
   timeValid: v.optional(v.boolean()),
 });
 
+/** Una riga della classifica di una competizione (docs/MATCH-DRAWER-SPEC.md, `footballStandings`). */
+export const footballStandingsRow = v.object({
+  rank: v.number(),
+  teamId: v.string(),
+  name: v.string(),
+  shortName: v.string(),
+  logo: v.optional(v.string()),
+  played: v.number(),
+  goalDifference: v.number(),
+  points: v.number(),
+  /** La zona di ESPN, pulita: il colore senza `#` e l'etichetta senza spazi di troppo. */
+  zone: v.optional(v.object({ color: v.string(), label: v.string() })),
+});
+
+/** Un girone (uno solo per un campionato), con le righe già ordinate per posizione. */
+export const footballStandingsGroup = v.object({
+  name: v.string(),
+  rows: v.array(footballStandingsRow),
+});
+
 /** Una competizione della squadra in questa stagione, ricavata dal calendario. */
 export const footballCompetition = v.object({
   league: v.string(),
@@ -505,4 +525,21 @@ export default defineSchema({
     competitions: v.array(footballCompetition),
     fetchedAt: v.number(),
   }).index("by_teamId", ["teamId"]),
+
+  /**
+   * La classifica di una competizione: una riga per slug e stagione, condivisa da ogni chat
+   * (docs/MATCH-DRAWER-SPEC.md, `footballStandings`). Una coppa senza tabella non ha gironi.
+   */
+  footballStandings: defineTable({
+    /** Slug ESPN della competizione (es. "ita.1"). */
+    league: v.string(),
+    /** La stagione, come la scrive ESPN (es. "2026-27 Italian Serie A"). */
+    season: v.string(),
+    /** La fine della stagione: un campionato finito da anni si riconosce da qui. */
+    endDate: v.number(),
+    groups: v.array(footballStandingsGroup),
+    fetchedAt: v.number(),
+  })
+    .index("by_league", ["league"])
+    .index("by_league_and_season", ["league", "season"]),
 });

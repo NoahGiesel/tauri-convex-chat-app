@@ -20,7 +20,7 @@ export function mergeCompetitions(lists: ProviderCompetition[][]): ProviderCompe
  * due richieste in tutto. Se una delle due fallisce la riga resta com'era e l'errore finisce nei log.
  */
 export const refresh = internalAction({
-  args: { teamId: v.string() },
+  args: { teamId: v.string(), standings: v.optional(v.boolean()) },
   handler: async (ctx, args) => {
     const fetchedAt = Date.now();
     let results: ProviderSchedule;
@@ -32,13 +32,21 @@ export const refresh = internalAction({
       console.error(`Calendario di ${args.teamId}:`, e instanceof Error ? e.message : e);
       return null;
     }
+    const competitions = mergeCompetitions([results.competitions, fixtures.competitions]);
     await ctx.runMutation(internal.footballTeamSchedules.save, {
       teamId: args.teamId,
       results: results.matches,
       fixtures: fixtures.matches,
-      competitions: mergeCompetitions([results.competitions, fixtures.competitions]),
+      competitions,
       fetchedAt,
     });
+    // Al pin e dopo una partita servono subito le classifiche delle competizioni appena lette. Il cron
+    // delle 6 ore le chiede da sé, una volta per campionato, così due squadre non chiedono la stessa due volte.
+    if (args.standings) {
+      for (const competition of competitions) {
+        await ctx.scheduler.runAfter(0, internal.footballStandings.refreshLeague, { league: competition.league });
+      }
+    }
     return null;
   },
 });

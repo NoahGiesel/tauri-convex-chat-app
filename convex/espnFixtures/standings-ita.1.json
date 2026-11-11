@@ -1,0 +1,677 @@
+{
+ "season": {
+  "year": 2026,
+  "startDate": "2026-06-05T04:00Z",
+  "endDate": "2027-07-01T03:59Z",
+  "displayName": "2026-27 Italian Serie A"
+ },
+ "children": [
+  {
+   "name": "2026-2027 Italian Serie A",
+   "standings": {
+    "entries": [
+     {
+      "team": {
+       "id": "112",
+       "abbreviation": "LAZ",
+       "displayName": "Lazio",
+       "shortDisplayName": "Lazio",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/112.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#81D6AC",
+       "description": "Champions League"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 11
+       },
+       {
+        "name": "pointDifferential",
+        "value": 16
+       },
+       {
+        "name": "points",
+        "value": 29
+       },
+       {
+        "name": "rank",
+        "value": 1
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "110",
+       "abbreviation": "INT",
+       "displayName": "Internazionale",
+       "shortDisplayName": "Inter Milan",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/110.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#81D6AC",
+       "description": "Champions League"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 11
+       },
+       {
+        "name": "pointDifferential",
+        "value": 15
+       },
+       {
+        "name": "points",
+        "value": 28
+       },
+       {
+        "name": "rank",
+        "value": 2
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "104",
+       "abbreviation": "ROMA",
+       "displayName": "AS Roma",
+       "shortDisplayName": "AS Roma",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/104.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#81D6AC",
+       "description": "Champions League"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 11
+       },
+       {
+        "name": "pointDifferential",
+        "value": 21
+       },
+       {
+        "name": "points",
+        "value": 27
+       },
+       {
+        "name": "rank",
+        "value": 3
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "103",
+       "abbreviation": "MIL",
+       "displayName": "AC Milan",
+       "shortDisplayName": "Milan",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/103.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#81D6AC",
+       "description": "Champions League"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 11
+       },
+       {
+        "name": "pointDifferential",
+        "value": 10
+       },
+       {
+        "name": "points",
+        "value": 24
+       },
+       {
+        "name": "rank",
+        "value": 4
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "2572",
+       "abbreviation": "COMO",
+       "displayName": "Como",
+       "shortDisplayName": "Como",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/2572.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#B2BFD0",
+       "description": "Europa League"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 11
+       },
+       {
+        "name": "pointDifferential",
+        "value": 8
+       },
+       {
+        "name": "points",
+        "value": 23
+       },
+       {
+        "name": "rank",
+        "value": 5
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "4057",
+       "abbreviation": "FRO",
+       "displayName": "Frosinone",
+       "shortDisplayName": "Frosinone",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/4057.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#B2BFD0",
+       "description": "Europa League"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 11
+       },
+       {
+        "name": "pointDifferential",
+        "value": 9
+       },
+       {
+        "name": "points",
+        "value": 20
+       },
+       {
+        "name": "rank",
+        "value": 6
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "111",
+       "abbreviation": "JUV",
+       "displayName": "Juventus",
+       "shortDisplayName": "Juventus",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/111.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#B2BFD0",
+       "description": "Conference League qualifying"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 11
+       },
+       {
+        "name": "pointDifferential",
+        "value": 3
+       },
+       {
+        "name": "points",
+        "value": 18
+       },
+       {
+        "name": "rank",
+        "value": 7
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "107",
+       "abbreviation": "BOL",
+       "displayName": "Bologna",
+       "shortDisplayName": "Bologna",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/107.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 11
+       },
+       {
+        "name": "pointDifferential",
+        "value": 2
+       },
+       {
+        "name": "points",
+        "value": 17
+       },
+       {
+        "name": "rank",
+        "value": 8
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "2925",
+       "abbreviation": "CAG",
+       "displayName": "Cagliari",
+       "shortDisplayName": "Cagliari",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/2925.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 11
+       },
+       {
+        "name": "pointDifferential",
+        "value": -5
+       },
+       {
+        "name": "points",
+        "value": 16
+       },
+       {
+        "name": "rank",
+        "value": 9
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "114",
+       "abbreviation": "NAP",
+       "displayName": "Napoli",
+       "shortDisplayName": "Napoli",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/114.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 11
+       },
+       {
+        "name": "pointDifferential",
+        "value": 4
+       },
+       {
+        "name": "points",
+        "value": 15
+       },
+       {
+        "name": "rank",
+        "value": 10
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "239",
+       "abbreviation": "TOR",
+       "displayName": "Torino",
+       "shortDisplayName": "Torino",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/239.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 11
+       },
+       {
+        "name": "pointDifferential",
+        "value": -2
+       },
+       {
+        "name": "points",
+        "value": 14
+       },
+       {
+        "name": "rank",
+        "value": 11
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "105",
+       "abbreviation": "ATA",
+       "displayName": "Atalanta",
+       "shortDisplayName": "Atalanta",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/105.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 11
+       },
+       {
+        "name": "pointDifferential",
+        "value": -3
+       },
+       {
+        "name": "points",
+        "value": 14
+       },
+       {
+        "name": "rank",
+        "value": 12
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "3263",
+       "abbreviation": "GEN",
+       "displayName": "Genoa",
+       "shortDisplayName": "Genoa",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/3263.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 11
+       },
+       {
+        "name": "pointDifferential",
+        "value": -5
+       },
+       {
+        "name": "points",
+        "value": 13
+       },
+       {
+        "name": "rank",
+        "value": 13
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "113",
+       "abbreviation": "LEC",
+       "displayName": "Lecce",
+       "shortDisplayName": "Lecce",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/113.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 11
+       },
+       {
+        "name": "pointDifferential",
+        "value": -10
+       },
+       {
+        "name": "points",
+        "value": 10
+       },
+       {
+        "name": "rank",
+        "value": 14
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "109",
+       "abbreviation": "FIO",
+       "displayName": "Fiorentina",
+       "shortDisplayName": "Fiorentina",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/109.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 11
+       },
+       {
+        "name": "pointDifferential",
+        "value": -8
+       },
+       {
+        "name": "points",
+        "value": 9
+       },
+       {
+        "name": "rank",
+        "value": 15
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "115",
+       "abbreviation": "PAR",
+       "displayName": "Parma",
+       "shortDisplayName": "Parma",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/115.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 11
+       },
+       {
+        "name": "pointDifferential",
+        "value": -8
+       },
+       {
+        "name": "points",
+        "value": 8
+       },
+       {
+        "name": "rank",
+        "value": 16
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "3997",
+       "abbreviation": "SAS",
+       "displayName": "Sassuolo",
+       "shortDisplayName": "Sassuolo",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/3997.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 11
+       },
+       {
+        "name": "pointDifferential",
+        "value": -13
+       },
+       {
+        "name": "points",
+        "value": 8
+       },
+       {
+        "name": "rank",
+        "value": 17
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "4007",
+       "abbreviation": "MON",
+       "displayName": "Monza",
+       "shortDisplayName": "Monza",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/4007.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#FF7F84",
+       "description": "Relegated"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 11
+       },
+       {
+        "name": "pointDifferential",
+        "value": -8
+       },
+       {
+        "name": "points",
+        "value": 7
+       },
+       {
+        "name": "rank",
+        "value": 18
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "17530",
+       "abbreviation": "VEN",
+       "displayName": "Venezia",
+       "shortDisplayName": "Venezia",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/17530.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#FF7F84",
+       "description": "Relegated"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 11
+       },
+       {
+        "name": "pointDifferential",
+        "value": -13
+       },
+       {
+        "name": "points",
+        "value": 6
+       },
+       {
+        "name": "rank",
+        "value": 19
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "118",
+       "abbreviation": "UDI",
+       "displayName": "Udinese",
+       "shortDisplayName": "Udinese",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/soccer/500/118.png"
+        }
+       ]
+      },
+      "note": {
+       "color": "#FF7F84",
+       "description": "Relegated"
+      },
+      "stats": [
+       {
+        "name": "gamesPlayed",
+        "value": 11
+       },
+       {
+        "name": "pointDifferential",
+        "value": -13
+       },
+       {
+        "name": "points",
+        "value": 5
+       },
+       {
+        "name": "rank",
+        "value": 20
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}
