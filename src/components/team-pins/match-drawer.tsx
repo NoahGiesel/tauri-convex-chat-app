@@ -1,27 +1,28 @@
 import { useRef } from "react";
 import { useQuery } from "convex/react";
+import type { FunctionReturnType } from "convex/server";
 import { AlertTriangle, X } from "lucide-react";
 import { api } from "../../../convex/_generated/api";
-import type { Doc, Id } from "../../../convex/_generated/dataModel";
+import type { Id } from "../../../convex/_generated/dataModel";
 import { Crest } from "@/components/team-pins/crest";
 import { StateLabel, StatusDot, useMatchTimes } from "@/components/team-pins/match-label";
 import type { MessageKey } from "@/i18n/en";
 import { useI18n } from "@/i18n/i18n-provider";
 import { chipState, isUnavailable, type PinMatch } from "@/lib/match-chip";
-import { DRAWER_WIDTH, type DrawerLayout } from "@/lib/match-drawer";
-import { pitchView, playerMarks, type PitchMarker, type PlayerMarks } from "@/lib/match-pitch";
+import { isStale, DRAWER_WIDTH, type DrawerLayout } from "@/lib/match-drawer";
+import {
+  pitchView,
+  playerMarks,
+  readableInk,
+  type PitchMarker,
+  type PitchView,
+  type PlayerMarks,
+  type SideKey,
+} from "@/lib/match-pitch";
 import { cn } from "@/lib/utils";
 
-/** I dettagli come li manda `footballMatches.details`: la riga senza partita e `fetchedAt`. */
-type Details = {
-  competition: string | null;
-  venue: string | null;
-  events: Doc<"footballMatchDetails">["events"];
-  lineups: Doc<"footballMatchDetails">["lineups"];
-  stats: Doc<"footballMatchDetails">["stats"];
-  fetchedAt: number;
-};
-type SideKey = "home" | "away";
+/** I dettagli come li manda `footballMatches.details`. */
+type Details = NonNullable<FunctionReturnType<typeof api.footballMatches.details>>;
 
 const STAT_LABELS: Record<Details["stats"][number]["key"], MessageKey> = {
   possession: "teamPins.possession",
@@ -40,9 +41,6 @@ const EVENT_ICONS: Record<Details["events"][number]["kind"], string> = {
   redCard: "🟥",
   substitution: "🔁",
 };
-
-/** Oltre un giorno i dati della scheda sono vecchi (docs/MATCH-DRAWER-SPEC.md, Loading, no data and stale data). */
-const STALE_MS = 24 * 60 * 60_000;
 
 /**
  * Il drawer di una partita: intestazione, tab, poi Lineups, Bench, Events e Stats. Una sezione senza dati non compare,
@@ -74,7 +72,7 @@ export function MatchDrawer({
   const hasLineups = !!details && details.lineups.length > 0;
   const hasBench = !!details && details.lineups.some((lineup) => lineup.bench.length > 0);
   const hasData = !!details && (hasLineups || details.events.length > 0 || details.stats.length > 0);
-  const staleDetails = !!details && now - details.fetchedAt > STALE_MS;
+  const staleDetails = !!details && isStale(details.fetchedAt, now);
 
   // Esc chiude solo con il focus dentro il drawer: nel campo del messaggio, in una modifica o in un selettore no.
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -189,7 +187,7 @@ export function MatchDrawer({
 
             {hasLineups && (
               <Section title={t("teamPins.lineups")}>
-                {pitch ? <Pitch details={details} match={match} /> : <PlainLineups details={details} match={match} />}
+                {pitch ? <Pitch view={pitch} events={details.events} match={match} /> : <PlainLineups details={details} match={match} />}
               </Section>
             )}
 
@@ -247,9 +245,7 @@ function Loading() {
 }
 
 /** Le due squadre sullo stesso campo verticale: la trasferta in alto, la casa in basso. */
-function Pitch({ details, match }: { details: Details; match: PinMatch }) {
-  const view = pitchView(details.lineups);
-  if (!view) return null;
+function Pitch({ view, events, match }: { view: PitchView; events: Details["events"]; match: PinMatch }) {
   return (
     <div className="relative overflow-hidden rounded-lg" style={{ background: "repeating-linear-gradient(0deg, #15803d 0 28px, #166534 28px 56px)" }} data-testid="match-pitch">
       <PitchLines />
@@ -259,11 +255,11 @@ function Pitch({ details, match }: { details: Details; match: PinMatch }) {
           {view.away.formation && ` · ${view.away.formation}`}
         </p>
         {view.away.rows.map((row, i) => (
-          <PitchRow key={`away-${i}`} side="away" row={row} marks={details.events} />
+          <PitchRow key={`away-${i}`} side="away" row={row} events={events} color={view.away.color} />
         ))}
         <div className="h-2" />
         {[...view.home.rows].reverse().map((row, i) => (
-          <PitchRow key={`home-${i}`} side="home" row={row} marks={details.events} />
+          <PitchRow key={`home-${i}`} side="home" row={row} events={events} color={view.home.color} />
         ))}
         <p className="truncate text-center text-[10px] font-bold text-white/80">
           {match.home.name}
@@ -286,11 +282,17 @@ function PitchLines() {
   );
 }
 
-function PitchRow({ side, row, marks }: { side: SideKey; row: PitchMarker[]; marks: Details["events"] }) {
+function PitchRow({ side, row, events, color }: { side: SideKey; row: PitchMarker[]; events: Details["events"]; color?: string }) {
   return (
     <div className="flex justify-around gap-0.5">
       {row.map((player) => (
-        <PlayerMarker key={player.athleteId ?? `${player.jersey ?? ""}:${player.shortName}`} side={side} player={player} marks={playerMarks(marks, side, player.athleteId)} />
+        <PlayerMarker
+          key={player.athleteId ?? `${player.jersey ?? ""}:${player.shortName}`}
+          side={side}
+          player={player}
+          marks={playerMarks(events, side, player.athleteId)}
+          color={color}
+        />
       ))}
     </div>
   );
@@ -300,10 +302,12 @@ function PlayerMarker({
   side,
   player,
   marks,
+  color,
 }: {
   side: SideKey;
-  player: { athleteId?: string; name: string; shortName: string; jersey?: string };
+  player: PitchMarker;
   marks: PlayerMarks;
+  color?: string;
 }) {
   return (
     <div
@@ -311,14 +315,20 @@ function PlayerMarker({
       data-testid={`pitch-player-${side}-${player.athleteId ?? player.name}`}
     >
       <div className="relative">
-        <span className="flex size-7 items-center justify-center rounded-full bg-black/55 text-[11px] font-bold text-white ring-1 ring-white/50 tabular-nums">
+        <span
+          className={cn(
+            "flex size-7 items-center justify-center rounded-full text-[11px] font-bold ring-1 ring-white/50 tabular-nums",
+            !color && "bg-black/55 text-white",
+          )}
+          style={color ? { backgroundColor: `#${color.replace(/^#+/, "")}`, color: readableInk(color) } : undefined}
+        >
           {player.jersey}
         </span>
         <span className="absolute -top-2 -right-2 flex items-center gap-0.5" aria-hidden>
           {marks.goals > 0 && <span className="text-[9px] leading-none">{"⚽".repeat(marks.goals)}</span>}
           {marks.yellow && <span className="inline-block h-2 w-1.5 rounded-[1px] bg-yellow-400" />}
           {marks.red && <span className="inline-block h-2 w-1.5 rounded-[1px] bg-red-600" />}
-          {marks.off && <span className="rounded bg-black/50 px-0.5 text-[8px] font-bold text-red-400">↓{marks.off}</span>}
+          {marks.off && <span className="rounded bg-black/50 px-0.5 text-[8px] font-bold text-red-400">{`↓ ${marks.off}`}</span>}
         </span>
       </div>
       <span className="mt-0.5 max-w-full truncate rounded bg-black/35 px-1 text-[10px] font-semibold text-white">{player.shortName}</span>
@@ -332,11 +342,10 @@ function Bench({ details, match }: { details: Details; match: PinMatch }) {
   return (
     <div className="grid grid-cols-2 gap-4">
       {(["home", "away"] as const).map((side) => {
-        const lineup = details.lineups.find((l) => l.side === side);
+        const lineup = lineupOf(details, side);
         if (!lineup || lineup.bench.length === 0) return <div key={side} />;
         return (
-          <div key={side} className="min-w-0">
-            <p className="mb-1 text-xs font-bold text-app-text-strong">{match[side].abbreviation}</p>
+          <SideColumn key={side} side={side} match={match}>
             <ul className="space-y-0.5">
               {lineup.bench.map((p) => {
                 const marks = playerMarks(details.events, side, p.athleteId);
@@ -355,7 +364,7 @@ function Bench({ details, match }: { details: Details; match: PinMatch }) {
                 );
               })}
             </ul>
-          </div>
+          </SideColumn>
         );
       })}
     </div>
@@ -368,19 +377,31 @@ function PlainLineups({ details, match }: { details: Details; match: PinMatch })
   return (
     <div className="grid grid-cols-2 gap-4" data-testid="plain-lineups">
       {(["home", "away"] as const).map((side) => {
-        const lineup = details.lineups.find((l) => l.side === side);
+        const lineup = lineupOf(details, side);
         if (!lineup) return <div key={side} />;
         return (
-          <div key={side} className="min-w-0">
-            <p className="mb-1 text-xs font-bold text-app-text-strong">
-              {match[side].abbreviation}
-              {lineup.formation && <span className="ml-1.5 font-normal text-app-text-muted">{lineup.formation}</span>}
-            </p>
+          <SideColumn key={side} side={side} match={match}>
+            {lineup.formation && <p className="mb-1 text-xs text-app-text-muted">{lineup.formation}</p>}
             <PlayerList players={lineup.starters} />
-          </div>
+          </SideColumn>
         );
       })}
       <p className="col-span-2 text-xs text-app-text-muted">{t("teamPins.positionsUnavailable")}</p>
+    </div>
+  );
+}
+
+/** La formazione di un lato, o niente. */
+function lineupOf(details: Details, side: SideKey) {
+  return details.lineups.find((lineup) => lineup.side === side);
+}
+
+/** Una delle due colonne sotto il campo, con la sigla della squadra in testa. */
+function SideColumn({ side, match, children }: { side: SideKey; match: PinMatch; children: React.ReactNode }) {
+  return (
+    <div className="min-w-0">
+      <p className="mb-1 text-xs font-bold text-app-text-strong">{match[side].abbreviation}</p>
+      {children}
     </div>
   );
 }

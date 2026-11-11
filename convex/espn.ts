@@ -234,6 +234,9 @@ const STAT_NAMES: Record<string, StatKey> = {
 };
 const STAT_ORDER: StatKey[] = ["possession", "shots", "shotsOnTarget", "corners", "fouls", "offsides"];
 
+/** Una posizione in campo: la riga dal fondo (0 è il portiere) e l'ordine da sinistra. */
+type Spot = { row: number; order: number };
+
 /**
  * Le dodici formazioni viste nei dati, con il numero di posto ESPN (`formationPlace`) di ogni riga,
  * dal portiere all'attacco e da sinistra a destra. Il numero di posto cambia significato da una
@@ -295,7 +298,7 @@ function labelSide(label: string): number {
  * profondità, si tagliano nelle righe della formazione e si ordina ogni riga da sinistra a destra.
  * `null` quando le etichette non bastano (per esempio prima del calcio d'inizio, quando sono `SUB`).
  */
-function placesByLabel(formation: string, players: { place: string; label?: string }[]): Map<string, { row: number; order: number }> | null {
+function placesByLabel(formation: string, players: { place: string; label?: string }[]): Map<string, Spot> | null {
   const sizes = formation.split("-").map((size) => Number.parseInt(size, 10));
   if (sizes.some((size) => !Number.isInteger(size) || size <= 0)) return null;
   const outfield = players.filter((p) => p.place !== "1");
@@ -309,9 +312,10 @@ function placesByLabel(formation: string, players: { place: string; label?: stri
   }
   lines.sort((a, b) => a.depth - b.depth);
 
-  const places = new Map<string, { row: number; order: number }>();
+  const places = new Map<string, Spot>();
   if (players.some((p) => p.place === "1")) places.set("1", { row: 0, order: 0 });
-  // Le righe non devono spezzare una classe di profondità (una linea difensiva divisa a metà).
+  // Se un taglio spezza una classe di profondità (una linea difensiva divisa a metà) le etichette non
+  // bastano a dire chi sta dove: si rinuncia e il drawer mostra le due liste.
   let boundary = 0;
   for (const size of sizes) {
     boundary += size;
@@ -321,7 +325,8 @@ function placesByLabel(formation: string, players: { place: string; label?: stri
   for (const [row, size] of sizes.entries()) {
     const line = lines.slice(from, from + size);
     from += size;
-    // Due giocatori della stessa riga non stanno sullo stesso lato.
+    // Se due giocatori della stessa riga finiscono sullo stesso lato la regola non li sa ordinare:
+    // stessa resa, si torna alle liste.
     line.sort((a, b) => a.side - b.side);
     if (new Set(line.map((p) => p.side)).size !== line.length) return null;
     line.forEach((p, order) => places.set(p.place, { row: row + 1, order }));
@@ -330,11 +335,11 @@ function placesByLabel(formation: string, players: { place: string; label?: stri
 }
 
 /** Il posto di ogni titolare: la tabella per formazione, poi la regola delle etichette. */
-function placesOf(formation: string | undefined, starters: Obj[]): Map<string, { row: number; order: number }> {
+function placesOf(formation: string | undefined, starters: Obj[]): Map<string, Spot> {
   if (!formation) return new Map();
   const rows = FORMATION_ROWS[formation];
   if (rows) {
-    const places = new Map<string, { row: number; order: number }>();
+    const places = new Map<string, Spot>();
     rows.forEach((line, row) => line.forEach((place, order) => places.set(place, { row, order })));
     return places;
   }
@@ -355,10 +360,14 @@ export function parseSummary(json: unknown): ProviderDetails {
   const header = obj(root.header, "header");
   const competition = obj(arr(header.competitions, "header.competitions")[0], "header.competitions[0]");
   const sideOf = new Map<string, Side>();
+  /** Il colore della maglia di ogni squadra, dall'intestazione: può mancare. */
+  const colorOf = new Map<Side, string>();
   for (const c of arr(competition.competitors, "header.competitors").map((c) => obj(c, "header.competitors[]"))) {
     const homeAway = c.homeAway;
     if (homeAway !== "home" && homeAway !== "away") throw new EspnError("ESPN: header.competitors[].homeAway missing");
     sideOf.set(str(c.id, "header.competitors[].id"), homeAway);
+    const color = optStr(optObj(c.team)?.color)?.replace(/^#+/, "");
+    if (color) colorOf.set(homeAway, color);
   }
   const side = (teamId: unknown, what: string): Side => {
     const found = sideOf.get(str(teamId, what));
@@ -413,9 +422,12 @@ export function parseSummary(json: unknown): ProviderDetails {
         ...(spot ? { row: spot.row, order: spot.order } : {}),
       };
     };
+    const lineupSide = side(obj(r.team, "rosters[].team").id, "rosters[].team.id");
+    const color = colorOf.get(lineupSide);
     lineups.push({
-      side: side(obj(r.team, "rosters[].team").id, "rosters[].team.id"),
+      side: lineupSide,
       ...(formation ? { formation } : {}),
+      ...(color ? { color } : {}),
       starters: starters.map(toPlayer),
       bench: players.filter((p) => p.starter !== true).map(toPlayer),
     });

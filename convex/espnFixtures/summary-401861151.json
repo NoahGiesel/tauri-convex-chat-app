@@ -8,11 +8,17 @@
     "competitors": [
      {
       "id": "162",
-      "homeAway": "home"
+      "homeAway": "home",
+      "team": {
+       "color": "103cd6"
+      }
      },
      {
       "id": "478",
-      "homeAway": "away"
+      "homeAway": "away",
+      "team": {
+       "color": "000080"
+      }
      }
     ]
    }

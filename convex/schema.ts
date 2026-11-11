@@ -434,7 +434,14 @@ export default defineSchema({
       }),
     ),
     lineups: v.array(
-      v.object({ side: footballSideKey, formation: v.optional(v.string()), starters: v.array(lineupPlayer), bench: v.array(lineupPlayer) }),
+      v.object({
+        side: footballSideKey,
+        formation: v.optional(v.string()),
+        /** Il colore della squadra da ESPN (es. "00239c"), senza `#`: riempie il cerchio in campo. */
+        color: v.optional(v.string()),
+        starters: v.array(lineupPlayer),
+        bench: v.array(lineupPlayer),
+      }),
     ),
     stats: v.array(
       v.object({

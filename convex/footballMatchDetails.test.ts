@@ -197,6 +197,12 @@ describe("posto in campo", () => {
     expect(rows).toEqual([["97"], ["27", "3", "6", "4", "2"], ["5", "7", "9"], ["10", "20"]]);
   });
 
+  it("il colore della squadra arriva dal riassunto", () => {
+    const details = parseSummary(loadFixture("summary-401874808"));
+    expect(details.lineups.find((l) => l.side === "home")!.color).toBe("00239c");
+    expect(details.lineups.find((l) => l.side === "away")!.color).toBe("4169E1");
+  });
+
   it("il riassunto 2015 non ha posti: nessuna riga, la formazione resta", () => {
     const details = parseSummary(loadFixture("summary-432260"));
     for (const lineup of details.lineups) {

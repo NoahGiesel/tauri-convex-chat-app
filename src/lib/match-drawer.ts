@@ -5,6 +5,13 @@ import type { TeamChip } from "./team-pins";
 export const DRAWER_WIDTH = 380;
 /** Sotto questa larghezza della colonna della chat il drawer copre invece di starci di fianco. */
 const MIN_CHAT_COLUMN = 360;
+/** Oltre un giorno i dati di un tab sono vecchi (docs/MATCH-DRAWER-SPEC.md, Loading, no data and stale data). */
+const STALE_MS = 24 * 60 * 60_000;
+
+/** Un tab mostra "Last updated" solo quando i suoi dati hanno più di 24 ore. */
+export function isStale(fetchedAt: number, now: number): boolean {
+  return now - fetchedAt > STALE_MS;
+}
 
 /** Le squadre pinnate che il drawer sta seguendo, nell'ordine in cui sono state pinnate. */
 export type DrawerTarget = { teams: string[] };

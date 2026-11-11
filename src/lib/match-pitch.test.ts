@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Doc } from "../../convex/_generated/dataModel";
-import { pitchView, playerMarks } from "./match-pitch";
+import { pitchView, playerMarks, readableInk } from "./match-pitch";
 
 type Lineups = Doc<"footballMatchDetails">["lineups"];
 type Events = Doc<"footballMatchDetails">["events"];
@@ -11,6 +11,7 @@ function lineup(side: "home" | "away"): Lineups[number] {
   return {
     side,
     formation: "4-2-3-1",
+    color: side === "home" ? "00239c" : "4169E1",
     starters: [
       { name: "Portiere", shortName: "Portiere", jersey: "1", athleteId: `${prefix}1`, row: 0, order: 0 },
       { name: "Terzino sinistro", shortName: "T. sinistro", jersey: "3", athleteId: `${prefix}2`, row: 1, order: 0 },
@@ -33,6 +34,8 @@ describe("distesa delle formazioni sul campo", () => {
     const view = pitchView([lineup("home"), lineup("away")])!;
 
     expect(view.home.formation).toBe("4-2-3-1");
+    expect(view.home.color).toBe("00239c");
+    expect(view.away.color).toBe("4169E1");
     expect(view.home.rows.map((row) => row.map((p) => p.jersey))).toEqual([
       ["1"],
       ["3", "6", "5", "2"],
@@ -69,6 +72,20 @@ describe("distesa delle formazioni sul campo", () => {
     delete home.starters[0].shortName;
     const view = pitchView([home, lineup("away")])!;
     expect(view.home.rows[0][0]).toMatchObject({ name: "Portiere", shortName: "Portiere" });
+  });
+});
+
+describe("numero leggibile sul colore della squadra", () => {
+  it("è scuro sui colori chiari e bianco su quelli scuri", () => {
+    expect(readableInk("ffffff")).toBe("#111827");
+    expect(readableInk("ffd700")).toBe("#111827");
+    expect(readableInk("00239c")).toBe("#ffffff");
+    expect(readableInk("000000")).toBe("#ffffff");
+  });
+
+  it("senza un colore valido resta bianco", () => {
+    expect(readableInk(undefined)).toBe("#ffffff");
+    expect(readableInk("non-un-colore")).toBe("#ffffff");
   });
 });
 

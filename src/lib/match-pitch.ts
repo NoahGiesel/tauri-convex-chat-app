@@ -2,7 +2,7 @@ import type { Doc } from "../../convex/_generated/dataModel";
 
 type Lineups = Doc<"footballMatchDetails">["lineups"];
 type Events = Doc<"footballMatchDetails">["events"];
-type SideKey = "home" | "away";
+export type SideKey = "home" | "away";
 
 /** Un giocatore come lo disegna il campo: il numero, il nome corto e l'id che lo lega agli eventi. */
 export type PitchMarker = {
@@ -12,8 +12,8 @@ export type PitchMarker = {
   jersey?: string;
 };
 
-/** Una squadra sul campo: la formazione e le righe dal fondo (portiere) all'attacco. */
-export type PitchSide = { formation?: string; rows: PitchMarker[][] };
+/** Una squadra sul campo: la formazione, il colore della maglia e le righe dal fondo (portiere) all'attacco. */
+export type PitchSide = { formation?: string; color?: string; rows: PitchMarker[][] };
 /** Le due squadre sullo stesso campo verticale: la trasferta in alto, la casa in basso. */
 export type PitchView = { home: PitchSide; away: PitchSide };
 
@@ -49,9 +49,19 @@ export function pitchView(lineups: Lineups): PitchView | null {
   const awayRows = rowsOf(away);
   if (!homeRows || !awayRows) return null;
   return {
-    home: { formation: home.formation, rows: homeRows },
-    away: { formation: away.formation, rows: awayRows.map((row) => [...row].reverse()) },
+    home: { formation: home.formation, color: home.color, rows: homeRows },
+    away: { formation: away.formation, color: away.color, rows: awayRows.map((row) => [...row].reverse()) },
   };
+}
+
+/** Il colore del numero sulla maglia: scuro sui colori chiari, bianco sugli altri. */
+export function readableInk(color?: string): string {
+  const hex = color?.replace(/^#+/, "");
+  if (!hex || !/^[0-9a-f]{6}$/i.test(hex)) return "#ffffff";
+  const [r, g, b] = [0, 2, 4].map((i) => Number.parseInt(hex.slice(i, i + 2), 16) / 255);
+  const linear = (value: number) => (value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
+  const luminance = 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b);
+  return luminance > 0.179 ? "#111827" : "#ffffff";
 }
 
 /** I distintivi di un giocatore: gol, cartellini, il minuto in cui esce e chi entra al suo posto. */
