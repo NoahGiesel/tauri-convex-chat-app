@@ -1,10 +1,23 @@
 import type { FunctionReturnType } from "convex/server";
 import type { api } from "../../convex/_generated/api";
 import { FRIENDLY_LEAGUES } from "../../convex/footballLeagues";
+import type { PinMatch } from "./match-chip";
 
 /** Il calendario di una squadra come lo manda `footballTeamSchedules.forPin`. */
 export type TeamSchedule = NonNullable<FunctionReturnType<typeof api.footballTeamSchedules.forPin>>;
 export type ScheduleMatch = TeamSchedule["results"][number];
+/** Una squadra pinnata, come la manda `teamPins.list`. */
+export type TeamView = {
+  teamId: string;
+  name: string;
+  shortName: string;
+  abbreviation: string;
+  logo?: string | null;
+};
+/** Oltre questo tempo senza dettagli il drawer dice che la partita non si è potuta caricare (spec, Opening a finished match). */
+export const DETAILS_TIMEOUT_MS = 20_000;
+/** La partita vecchia aperta nel drawer: la riga del calendario e quando ne è stato chiesto il riassunto. */
+export type OpenedMatch = { match: ScheduleMatch; requestedAt: number };
 /** Le due liste del tab Partite: le prossime partite e gli ultimi risultati. */
 export type MatchesTabView = { next: ScheduleMatch[]; recent: ScheduleMatch[] };
 export type MatchOutcome = "win" | "draw" | "loss";
@@ -83,6 +96,53 @@ export function scoreLine(match: ScheduleMatch): string | null {
 export function rowTail(match: ScheduleMatch, kickoffTime: string): string {
   if (match.state === "post") return scoreLine(match) ?? "";
   return match.timeValid === false ? "" : kickoffTime;
+}
+
+/** Solo una partita finita si apre dal tab Partite; una in programma no. */
+export function opensMatch(match: ScheduleMatch): boolean {
+  return match.state === "post";
+}
+
+/** Una squadra come lato di una partita, con lo stemma sempre presente o `null`. */
+function sideOf(team: TeamView | ScheduleMatch["opponent"]): PinMatch["home"] {
+  return {
+    teamId: team.teamId,
+    name: team.name,
+    shortName: team.shortName,
+    abbreviation: team.abbreviation,
+    logo: team.logo ?? null,
+  };
+}
+
+/**
+ * La partita vecchia aperta dal tab Partite, come la leggono intestazione e campo: la squadra pinnata
+ * dal suo lato, il punteggio del calendario e lo stato finale.
+ */
+export function openedMatchView(row: ScheduleMatch, team: TeamView, fetchedAt: number): PinMatch {
+  const pinned = sideOf(team);
+  const opponent = sideOf(row.opponent);
+  return {
+    eventId: row.eventId,
+    kickoff: row.kickoff,
+    state: "post",
+    statusName: "STATUS_FULL_TIME",
+    home: row.home ? pinned : opponent,
+    away: row.home ? opponent : pinned,
+    score: row.score ?? null,
+    shootout: row.shootout ?? null,
+    clock: null,
+    fetchedAt,
+  };
+}
+
+/** Il nome di una partita per il link "← Back": le due squadre, come sul chip. */
+export function matchTitle(match: Pick<PinMatch, "home" | "away">): string {
+  return `${match.home.shortName}–${match.away.shortName}`;
+}
+
+/** I dettagli di una partita aperta non sono arrivati entro 20 secondi. */
+export function detailsTimedOut(requestedAt: number, now: number): boolean {
+  return now - requestedAt >= DETAILS_TIMEOUT_MS;
 }
 
 /** La sigla della competizione per la riga (`SA`, `UCL`, `CI`): quella nota, o le iniziali del nome. */

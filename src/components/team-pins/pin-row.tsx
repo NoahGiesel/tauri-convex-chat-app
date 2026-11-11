@@ -12,6 +12,7 @@ import { useMatchDrawer } from "@/hooks/use-match-drawer";
 import { useI18n } from "@/i18n/i18n-provider";
 import { chipState, isUnavailable, type ChipState } from "@/lib/match-chip";
 import { teamIdsOf } from "@/lib/match-drawer";
+import type { OpenedMatch } from "@/lib/match-schedule";
 import { teamChips, type TeamChip, type TeamPin } from "@/lib/team-pins";
 import { cn } from "@/lib/utils";
 
@@ -49,8 +50,25 @@ export function TeamPinRow({
   const drawerState = useMatchDrawer(conversationId, chips, pins ? pinnedTeamIds : null);
   /** I pulsanti dei chip: chiudendo con la X o con Esc il focus torna su quello che aveva aperto il drawer. */
   const chipButtons = useRef(new Map<string, HTMLButtonElement>());
-  if (!pins || pins.length === 0) return null;
+  /** La partita vecchia aperta dal tab Partite: vive nel drawer, e si perde quando cambia o si chiude il chip. */
+  const [opened, setOpened] = useState<OpenedMatch | null>(null);
   const open = drawerState.chip;
+  const openKey = open?.key ?? null;
+
+  // Cambiare chip o chiudere il drawer riporta alla partita del chip.
+  useEffect(() => {
+    setOpened(null);
+  }, [openKey]);
+  if (!pins || pins.length === 0) return null;
+
+  const openChip = (chip: TeamChip) => {
+    // Un secondo clic sul chip di una partita vecchia torna alla partita del chip, non chiude il drawer.
+    if (drawerState.isOpen(chip) && opened) {
+      setOpened(null);
+      return;
+    }
+    drawerState.toggle(chip);
+  };
 
   const closeDrawer = () => {
     const shownKey = open?.key;
@@ -73,7 +91,7 @@ export function TeamPinRow({
               chip={chip}
               now={now}
               open={drawerState.isOpen(chip)}
-              onOpen={() => drawerState.toggle(chip)}
+              onOpen={() => openChip(chip)}
               buttonRef={trackButton(chip.key)}
             />
           ))}
@@ -84,8 +102,11 @@ export function TeamPinRow({
         createPortal(
           <MatchDrawer
             conversationId={conversationId}
-            teamId={open.pins[0].team.teamId}
+            team={open.pins[0].team}
             match={open.match}
+            opened={opened}
+            onOpen={(match) => setOpened({ match, requestedAt: Date.now() })}
+            onBack={() => setOpened(null)}
             now={now}
             layout={drawer.layout}
             onClose={closeDrawer}

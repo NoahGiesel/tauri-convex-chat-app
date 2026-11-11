@@ -13,11 +13,13 @@ export const RELEASE_NOTES: ReleaseNote[] = [
         "The match drawer opens beside the chat, which narrows so messages and the message box stay visible; it stays open until you close it, follows the team to its next match, and each chat remembers its own drawer",
         "The Match tab of the drawer draws both lineups on one pitch, with each player's goals, cards and substitutions, the bench with whoever came on, a centred timeline of events and the stats",
         "The Matches tab of the drawer lists the team's next three matches and its last ten results, each with its competition and a W/D/L badge",
+        "A finished match in the Matches tab opens its details in the Match tab, with a Back link to the team's current match",
       ],
       it: [
         "Il drawer della partita si apre accanto alla chat, che si restringe per lasciare visibili i messaggi e il campo di scrittura; resta aperto finché non lo chiudi, segue la squadra alla partita successiva e ogni chat ricorda il proprio drawer",
         "Il tab Partita del drawer disegna le due formazioni su un solo campo, con gol, cartellini e sostituzioni di ogni giocatore, la panchina con chi è entrato, gli eventi su una linea centrale e le statistiche",
         "Il tab Partite del drawer elenca le prossime tre partite della squadra e gli ultimi dieci risultati, ognuno con la competizione e il badge V/N/P",
+        "Una partita finita nel tab Partite apre i suoi dettagli nel tab Partita, con un link per tornare alla partita attuale della squadra",
       ],
     },
   },
