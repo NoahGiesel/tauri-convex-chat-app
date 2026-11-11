@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type Ref } from "react";
+import { createPortal } from "react-dom";
 import { useMutation, useQuery } from "convex/react";
 import { AlertTriangle, X } from "lucide-react";
 import { api } from "../../../convex/_generated/api";
@@ -6,8 +7,11 @@ import type { Id } from "../../../convex/_generated/dataModel";
 import { Crest } from "@/components/team-pins/crest";
 import { MatchDrawer } from "@/components/team-pins/match-drawer";
 import { StateLabel, StatusDot, useMatchTimes } from "@/components/team-pins/match-label";
+import type { DrawerSlot } from "@/hooks/use-drawer-slot";
+import { useMatchDrawer } from "@/hooks/use-match-drawer";
 import { useI18n } from "@/i18n/i18n-provider";
 import { chipState, isUnavailable, type ChipState } from "@/lib/match-chip";
+import { teamIdsOf } from "@/lib/match-drawer";
 import { teamChips, type TeamChip, type TeamPin } from "@/lib/team-pins";
 import { cn } from "@/lib/utils";
 
@@ -23,31 +27,88 @@ function useNow(everyMs: number): number {
   return now;
 }
 
-/** La fila dei chip delle squadre pinnate, sotto l'intestazione della chat: alta 44px, scorre di lato se non ci sta. */
-export function TeamPinRow({ conversationId }: { conversationId: Id<"conversations"> }) {
+/**
+ * La fila dei chip delle squadre pinnate, sotto l'intestazione della chat: alta 44px, scorre di lato se non ci sta.
+ * Il drawer del chip aperto vive fuori dalla colonna della chat, nello spazio che le sta di fianco: così la chat
+ * si restringe invece di finirci sotto, e nella finestra stretta lo copre. La fila dei chip resta sempre fuori
+ * dal drawer, così i suoi chip si possono ancora cliccare.
+ */
+export function TeamPinRow({
+  conversationId,
+  drawer,
+}: {
+  conversationId: Id<"conversations">;
+  /** Lo spazio del drawer accanto alla chat e la disposizione scelta per questa finestra. */
+  drawer: DrawerSlot;
+}) {
   const { t } = useI18n();
   const pins = useQuery(api.teamPins.list, { conversationId });
   const now = useNow(CLOCK_TICK_MS);
-  /** Il chip il cui drawer è aperto (la partita si rilegge a ogni aggiornamento, così il drawer segue la diretta). */
-  const [openKey, setOpenKey] = useState<string | null>(null);
-  const close = useCallback(() => setOpenKey(null), []);
+  const chips = useMemo(() => teamChips(pins ?? [], now), [pins, now]);
+  const pinnedTeamIds = useMemo(() => chips.flatMap(teamIdsOf), [chips]);
+  const drawerState = useMatchDrawer(conversationId, chips, pins ? pinnedTeamIds : null);
+  /** I pulsanti dei chip: chiudendo con la X o con Esc il focus torna su quello che aveva aperto il drawer. */
+  const chipButtons = useRef(new Map<string, HTMLButtonElement>());
   if (!pins || pins.length === 0) return null;
-  const chips = teamChips(pins, now);
-  const open = chips.find((c) => c.key === openKey)?.match;
+  const open = drawerState.chip;
+
+  const closeDrawer = () => {
+    const shownKey = open?.key;
+    drawerState.close();
+    if (shownKey) chipButtons.current.get(shownKey)?.focus();
+  };
+
+  const trackButton = (key: string) => (button: HTMLButtonElement | null) => {
+    if (button) chipButtons.current.set(key, button);
+    else chipButtons.current.delete(key);
+  };
 
   return (
-    <div data-team-pin-row className="shrink-0 border-b border-app-border">
-      <div role="list" aria-label={t("teamPins.row")} className="flex h-11 items-center gap-2 overflow-x-auto px-5">
-        {chips.map((chip) => (
-          <Chip key={chip.key} chip={chip} now={now} open={chip.key === openKey} onOpen={() => setOpenKey(chip.key === openKey ? null : chip.key)} />
-        ))}
+    <>
+      <div data-team-pin-row className="shrink-0 border-b border-app-border">
+        <div role="list" aria-label={t("teamPins.row")} className="flex h-11 items-center gap-2 overflow-x-auto px-5">
+          {chips.map((chip) => (
+            <Chip
+              key={chip.key}
+              chip={chip}
+              now={now}
+              open={drawerState.isOpen(chip)}
+              onOpen={() => drawerState.toggle(chip)}
+              buttonRef={trackButton(chip.key)}
+            />
+          ))}
+        </div>
       </div>
-      {open && <MatchDrawer conversationId={conversationId} match={open} now={now} onClose={close} />}
-    </div>
+      {open?.match &&
+        drawer.slot &&
+        createPortal(
+          <MatchDrawer
+            conversationId={conversationId}
+            match={open.match}
+            now={now}
+            layout={drawer.layout}
+            onClose={closeDrawer}
+          />,
+          drawer.slot,
+        )}
+    </>
   );
 }
 
-function Chip({ chip, now, open, onOpen }: { chip: TeamChip; now: number; open: boolean; onOpen: () => void }) {
+function Chip({
+  chip,
+  now,
+  open,
+  onOpen,
+  buttonRef,
+}: {
+  chip: TeamChip;
+  now: number;
+  open: boolean;
+  onOpen: () => void;
+  /** Serve a rimettere il focus sul chip quando il drawer si chiude. */
+  buttonRef: Ref<HTMLButtonElement>;
+}) {
   const { t } = useI18n();
   const { match } = chip;
   if (!match) {
@@ -70,6 +131,7 @@ function Chip({ chip, now, open, onOpen }: { chip: TeamChip; now: number; open: 
   return (
     <ChipFrame chip={chip} title={unavailable} stateKind={state.kind} open={open}>
       <button
+        ref={buttonRef}
         type="button"
         aria-haspopup="dialog"
         aria-expanded={open}

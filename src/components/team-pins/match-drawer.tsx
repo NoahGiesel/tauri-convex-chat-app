@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { useQuery } from "convex/react";
 import { AlertTriangle, X } from "lucide-react";
 import { api } from "../../../convex/_generated/api";
@@ -8,6 +8,7 @@ import { StateLabel, StatusDot, useMatchTimes } from "@/components/team-pins/mat
 import type { MessageKey } from "@/i18n/en";
 import { useI18n } from "@/i18n/i18n-provider";
 import { chipState, isUnavailable, type PinMatch } from "@/lib/match-chip";
+import { DRAWER_WIDTH, type DrawerLayout } from "@/lib/match-drawer";
 import { cn } from "@/lib/utils";
 
 type Details = Doc<"footballMatchDetails">;
@@ -31,20 +32,22 @@ const EVENT_ICONS: Record<Details["events"][number]["kind"], string> = {
 };
 
 /**
- * Il drawer di una partita, a destra sopra la chat (che non si sposta): intestazione, poi Eventi, Formazioni
- * e Statistiche. Una sezione senza dati non compare, quindi prima delle formazioni c'è solo l'intestazione.
- * Si chiude con la X, con Esc o con un clic fuori. Non copre la chat: un clic fuori chiude e arriva lo stesso
- * dove è stato fatto; un clic sulla fila dei chip lo gestiscono i chip (apre un'altra partita o richiude questa).
+ * Il drawer di una partita: intestazione, poi Eventi, Formazioni e Statistiche. Una sezione senza dati non compare,
+ * quindi prima delle formazioni c'è solo l'intestazione. Sta di fianco alla chat, che si restringe, oppure la copre
+ * quando è troppo stretta (docs/MATCH-DRAWER-SPEC.md, Layout and closing). Si chiude con la X, con un secondo clic
+ * sul suo chip o con Esc mentre il focus è dentro: un clic fuori no, e nemmeno Esc nel campo del messaggio.
  */
 export function MatchDrawer({
   conversationId,
   match,
   now,
+  layout,
   onClose,
 }: {
   conversationId: Id<"conversations">;
   match: PinMatch;
   now: number;
+  layout: DrawerLayout;
   onClose: () => void;
 }) {
   const { t } = useI18n();
@@ -54,20 +57,19 @@ export function MatchDrawer({
   const { when, time, clock } = useMatchTimes(match);
   const panel = useRef<HTMLElement>(null);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    const onPointer = (e: PointerEvent) => {
-      const target = e.target instanceof Element ? e.target : null;
-      if (target && (panel.current?.contains(target) || target.closest("[data-team-pin-row]"))) return;
-      onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    window.addEventListener("pointerdown", onPointer);
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      window.removeEventListener("pointerdown", onPointer);
-    };
-  }, [onClose]);
+  // Esc chiude solo con il focus dentro il drawer: nel campo del messaggio, in una modifica o in un selettore no.
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key !== "Escape") return;
+    e.stopPropagation();
+    onClose();
+  };
+
+  // Un clic su un punto non interattivo porta il focus nel drawer, così Esc funziona subito dopo.
+  const onPointerDown = (e: React.PointerEvent) => {
+    const target = e.target instanceof Element ? e.target : null;
+    if (target?.closest("button, a, input, textarea, select, [tabindex], [contenteditable='true']")) return;
+    panel.current?.focus();
+  };
 
   // Tempi supplementari e rigori scritti per esteso.
   let ending: string | null = null;
@@ -84,7 +86,17 @@ export function MatchDrawer({
       aria-label={t("teamPins.details")}
       data-testid="match-drawer"
       data-details={details === undefined ? "loading" : details ? "loaded" : "none"}
-      className="fixed top-0 right-0 z-40 flex h-full w-[380px] max-w-full flex-col border-l border-app-border-strong bg-app-panel shadow-2xl"
+      data-layout={layout}
+      tabIndex={-1}
+      onKeyDown={onKeyDown}
+      onPointerDown={onPointerDown}
+      style={layout === "beside" ? { width: DRAWER_WIDTH } : undefined}
+      className={cn(
+        "z-40 flex min-h-0 flex-col bg-app-panel outline-none",
+        layout === "beside"
+          ? "h-full shrink-0 border-l border-app-border-strong"
+          : "absolute inset-0",
+      )}
     >
       <header className="relative shrink-0 border-b border-app-border px-5 pt-4 pb-4">
         <button

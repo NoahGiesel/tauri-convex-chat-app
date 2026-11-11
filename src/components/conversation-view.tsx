@@ -28,6 +28,7 @@ import { Markdown, MessageBody, isEditableStyle } from "@/components/message-bod
 import { ReactionChips, ReactionToolbar } from "@/components/message-reactions";
 import type { MessageKey } from "@/i18n/en";
 import { useI18n } from "@/i18n/i18n-provider";
+import { useDrawerSlot } from "@/hooks/use-drawer-slot";
 import { usePresence } from "@/lib/presence";
 import { errorKey } from "@/lib/errors";
 import { fetchGifs } from "@/lib/giphy";
@@ -172,6 +173,8 @@ export function ConversationView({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [lightbox, setLightbox] = useState<LightboxItem | null>(null);
   const [libraryOpen, setLibraryOpen] = useState(false);
+  // Il drawer della partita vive accanto alla colonna della chat, che si restringe; la fila dei chip resta fuori.
+  const { rowRef: chatRowRef, attachSlot, drawerSlot } = useDrawerSlot();
   // Un'anteprima che compare cambia l'altezza: se eri in fondo alla chat, resti in fondo.
   const keepBottom = useCallback(() => {
     if (stickToBottom.current && scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -773,7 +776,10 @@ export function ConversationView({
 
       {/* Messaggi e campo di scrittura restano montati (così non si perde la posizione) ma nascosti mentre si guarda l'elenco. */}
       <div className={cn("flex min-h-0 flex-1 flex-col", libraryOpen && "hidden")}>
-      {info && !isGroup && <TeamPinRow conversationId={conversationId} />}
+      {info && !isGroup && <TeamPinRow conversationId={conversationId} drawer={drawerSlot} />}
+      {/* Il drawer misura questa riga (messaggi e campo di scrittura): la fila dei chip resta sopra, sempre cliccabile. */}
+      <div ref={chatRowRef} className="relative flex min-h-0 flex-1">
+      <div className="flex min-w-0 flex-1 flex-col">
       <div ref={scrollRef} onScroll={onScroll} className={cn("min-h-0 flex-1 overflow-y-auto px-6 pt-5 pb-3", !revealed && "opacity-0")}>
         {!showHeader && (
           <div className="pointer-events-none sticky top-0 z-10 h-0">
@@ -1231,6 +1237,10 @@ export function ConversationView({
           </button>
         </div>
       </footer>
+      </div>
+      {/* Lo spazio del drawer: `contents` fa sì che il drawer, portato qui, sia un fratello della colonna della chat. */}
+      <div ref={attachSlot} className="contents" />
+      </div>
       </div>
     </>
   );
