@@ -8,11 +8,12 @@ import { Crest } from "@/components/team-pins/crest";
 import { StateLabel, StatusDot, useMatchTimes } from "@/components/team-pins/match-label";
 import type { MessageKey } from "@/i18n/en";
 import { useI18n } from "@/i18n/i18n-provider";
+import { errorKey } from "@/lib/errors";
 import { chipState, isUnavailable, type PinMatch } from "@/lib/match-chip";
 import { isStale, DRAWER_WIDTH, type DrawerLayout } from "@/lib/match-drawer";
 import {
   competitionTag,
-  DETAILS_TIMEOUT_MS,
+  detailsTimedOut,
   matchOutcome,
   matchesTab,
   matchTitle,
@@ -64,6 +65,9 @@ const OUTCOME_LABELS: Record<MatchOutcome, MessageKey> = {
   loss: "teamPins.loss",
 };
 
+/** La data breve del tab e dell'intestazione di una partita vecchia, nella lingua scelta. */
+const shortDate = (locale: string, ts: number) => new Date(ts).toLocaleDateString(locale, { day: "numeric", month: "short" });
+
 type DrawerTab = "match" | "matches";
 
 /** I tab del drawer, nell'ordine in cui compaiono. */
@@ -114,24 +118,33 @@ export function MatchDrawer({
   const { when, time, clock } = useMatchTimes(shown);
   const panel = useRef<HTMLElement>(null);
   const [tab, setTab] = useState<DrawerTab>("match");
-  /** La partita aperta non è arrivata entro 20 secondi: il tab lo dice e offre "Try again". */
-  const [timedOut, setTimedOut] = useState(false);
+  /** Il rifiuto di `openPast` (troppe aperture, partita sparita): testo tradotto al posto del caricamento. */
+  const [requestError, setRequestError] = useState<MessageKey | null>(null);
+  /** L'ora locale per far scadere la richiesta dei dettagli dopo 20 secondi. */
+  const [openedNow, setOpenedNow] = useState(() => Date.now());
 
   const requestPast = (row: ScheduleMatch) => {
     setTab("match");
+    setRequestError(null);
     onOpen(row);
-    void openPast({ conversationId, eventId: row.eventId }).catch((e) => console.error(e));
+    void openPast({ conversationId, eventId: row.eventId }).catch((e) => setRequestError(errorKey(e)));
   };
 
   useEffect(() => {
-    setTimedOut(false);
-    if (!opened) return;
-    const id = setTimeout(() => setTimedOut(true), DETAILS_TIMEOUT_MS);
-    return () => clearTimeout(id);
+    if (!opened) {
+      setRequestError(null);
+      return;
+    }
+    setOpenedNow(Date.now());
+    const id = setInterval(() => setOpenedNow(Date.now()), 1_000);
+    return () => clearInterval(id);
   }, [opened?.match.eventId, opened?.requestedAt]);
 
-  const pastFailed = !!opened && !details && timedOut;
+  const pastFailed = !!opened && !details && detailsTimedOut(opened.requestedAt, openedNow);
   const pastLoading = !!opened && !details && !pastFailed;
+  const retry = () => {
+    if (opened) requestPast(opened.match);
+  };
 
   const pitch = details ? pitchView(details.lineups) : null;
   const hasLineups = !!details && details.lineups.length > 0;
@@ -141,7 +154,6 @@ export function MatchDrawer({
   const matches = schedule ? matchesTab(schedule) : null;
   const hasMatches = !!matches && (matches.next.length > 0 || matches.recent.length > 0);
   const matchesLoading = schedule === undefined || (schedule !== null && schedule.pending);
-  const matchDate = (ts: number) => new Date(ts).toLocaleDateString(locale, { day: "numeric", month: "short" });
 
   // Esc chiude solo con il focus dentro il drawer: nel campo del messaggio, in una modifica o in un selettore no.
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -207,7 +219,8 @@ export function MatchDrawer({
               <StatusDot state={state} stale={stale} />
               {opened ? (
                 <span className="tabular-nums" data-testid="opened-match-state">
-                  {t("teamPins.ft")} · {matchDate(shown.kickoff)}
+                  {t(state.kind === "finished" && state.ending === "aet" ? "teamPins.aet" : "teamPins.ft")} ·{" "}
+                  {shortDate(locale, shown.kickoff)}
                 </span>
               ) : (
                 <StateLabel state={state} when={when} time={time} />
@@ -248,7 +261,7 @@ export function MatchDrawer({
           className="min-h-0 flex-1 overflow-y-auto px-5 py-4"
           data-testid="match-tab"
           data-state={
-            pastFailed
+            requestError || pastFailed
               ? "failed"
               : pastLoading || details === undefined
                 ? "loading"
@@ -267,21 +280,31 @@ export function MatchDrawer({
               {t("teamPins.backTo", { match: matchTitle(match) })}
             </button>
           )}
-          {pastFailed ? (
-            <div className="py-10 text-center" data-testid="match-tab-failed">
-              <p className="text-[13px] text-app-text-muted">{t("teamPins.matchLoadFailed")}</p>
+          {requestError ? (
+            <div className="py-10 text-center" data-testid="match-tab-error">
+              <p className="text-[13px] text-app-text-muted">{t(requestError)}</p>
               <button
                 type="button"
                 data-testid="match-tab-retry"
-                onClick={() => opened && requestPast(opened.match)}
+                onClick={retry}
                 className="mt-3 rounded-lg border border-app-border-strong px-3 py-1.5 text-[13px] font-semibold text-app-text-strong hover:bg-app-field"
               >
                 {t("teamPins.tryAgain")}
               </button>
             </div>
-          ) : pastLoading ? (
-            <Loading />
-          ) : details === undefined ? (
+          ) : pastFailed ? (
+            <div className="py-10 text-center" data-testid="match-tab-failed">
+              <p className="text-[13px] text-app-text-muted">{t("teamPins.matchLoadFailed")}</p>
+              <button
+                type="button"
+                data-testid="match-tab-retry"
+                onClick={retry}
+                className="mt-3 rounded-lg border border-app-border-strong px-3 py-1.5 text-[13px] font-semibold text-app-text-strong hover:bg-app-field"
+              >
+                {t("teamPins.tryAgain")}
+              </button>
+            </div>
+          ) : pastLoading || details === undefined ? (
             <Loading />
           ) : details === null ? (
             <p className="py-10 text-center text-[13px] text-app-text-muted" data-testid="match-tab-empty">
@@ -360,7 +383,6 @@ function MatchesTabBody({
   onOpen: (match: ScheduleMatch) => void;
 }) {
   const { t, locale } = useI18n();
-  const date = (ts: number) => new Date(ts).toLocaleDateString(locale, { day: "numeric", month: "short" });
   const staleAt = schedule?.fetchedAt != null && isStale(schedule.fetchedAt, now) ? schedule.fetchedAt : null;
   const empty = !matches || (matches.next.length === 0 && matches.recent.length === 0);
 
@@ -368,7 +390,7 @@ function MatchesTabBody({
     const outcome = matchOutcome(match);
     const cells = (
       <>
-        <span className="w-12 shrink-0 text-app-text-muted tabular-nums">{date(match.kickoff)}</span>
+        <span className="w-12 shrink-0 text-app-text-muted tabular-nums">{shortDate(locale, match.kickoff)}</span>
         <span className="w-9 shrink-0 rounded bg-app-field py-0.5 text-center text-[10px] font-bold text-app-text-muted">
           {competitionTag(match.league, match.leagueName)}
         </span>

@@ -43,6 +43,8 @@ export const footballScheduleMatch = v.object({
   /** Il lato che ESPN dà vincente: dopo i rigori è chi li ha vinti. */
   winner: v.optional(footballSideKey),
   state: v.union(v.literal("pre"), v.literal("in"), v.literal("post")),
+  /** Nome ESPN dello stato (es. "STATUS_FINAL_AET"): l'intestazione di una partita vecchia lo usa. */
+  statusName: v.optional(v.string()),
   /** false quando ESPN non ha ancora fissato il calcio d'inizio (il tab mostra solo la data). */
   timeValid: v.optional(v.boolean()),
 });

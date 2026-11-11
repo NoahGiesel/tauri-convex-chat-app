@@ -377,7 +377,7 @@ function matchFromSchedule(
     away: entry.home ? entry.opponent : pinned,
     kickoff: entry.kickoff,
     state: "post",
-    statusName: "STATUS_FULL_TIME",
+    statusName: entry.statusName ?? "STATUS_FULL_TIME",
     ...(entry.score ? { score: entry.score } : {}),
     ...(entry.shootout ? { shootout: entry.shootout } : {}),
     detailsRequestedAt: requestedAt,

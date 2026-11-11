@@ -156,7 +156,7 @@ describe("tab Partite: dati vecchi", () => {
 });
 
 describe("aprire una partita dal tab Partite", () => {
-  const inter: TeamView = { teamId: "110", name: "Internazionale", shortName: "Inter", abbreviation: "INT" };
+  const inter: TeamView = { teamId: "110", name: "Internazionale", shortName: "Inter", abbreviation: "INT", logo: null };
 
   it("solo una partita finita si apre, una in programma no", () => {
     expect(opensMatch(row({ eventId: "played", kickoff }))).toBe(true);
@@ -184,6 +184,13 @@ describe("aprire una partita dal tab Partite", () => {
     const home = openedMatchView(row({ eventId: "home", kickoff, home: true, score: { home: 2, away: 0 } }), inter, 42);
     expect(home.home).toMatchObject({ teamId: "110" });
     expect(home.away).toMatchObject({ teamId: "103" });
+  });
+
+  it("tiene lo stato del calendario, così i supplementari si leggono, e senza stato è finale", () => {
+    expect(openedMatchView(row({ eventId: "aet", kickoff, statusName: "STATUS_FINAL_AET" }), inter, 42).statusName).toBe(
+      "STATUS_FINAL_AET",
+    );
+    expect(openedMatchView(row({ eventId: "plain", kickoff }), inter, 42).statusName).toBe("STATUS_FULL_TIME");
   });
 
   it("il titolo di una partita è quello delle due squadre", () => {

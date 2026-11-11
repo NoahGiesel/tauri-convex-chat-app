@@ -2,18 +2,13 @@ import type { FunctionReturnType } from "convex/server";
 import type { api } from "../../convex/_generated/api";
 import { FRIENDLY_LEAGUES } from "../../convex/footballLeagues";
 import type { PinMatch } from "./match-chip";
+import type { TeamPin } from "./team-pins";
 
 /** Il calendario di una squadra come lo manda `footballTeamSchedules.forPin`. */
 export type TeamSchedule = NonNullable<FunctionReturnType<typeof api.footballTeamSchedules.forPin>>;
 export type ScheduleMatch = TeamSchedule["results"][number];
 /** Una squadra pinnata, come la manda `teamPins.list`. */
-export type TeamView = {
-  teamId: string;
-  name: string;
-  shortName: string;
-  abbreviation: string;
-  logo?: string | null;
-};
+export type TeamView = TeamPin["team"];
 /** Oltre questo tempo senza dettagli il drawer dice che la partita non si è potuta caricare (spec, Opening a finished match). */
 export const DETAILS_TIMEOUT_MS = 20_000;
 /** La partita vecchia aperta nel drawer: la riga del calendario e quando ne è stato chiesto il riassunto. */
@@ -125,7 +120,7 @@ export function openedMatchView(row: ScheduleMatch, team: TeamView, fetchedAt: n
     eventId: row.eventId,
     kickoff: row.kickoff,
     state: "post",
-    statusName: "STATUS_FULL_TIME",
+    statusName: row.statusName ?? "STATUS_FULL_TIME",
     home: row.home ? pinned : opponent,
     away: row.home ? opponent : pinned,
     score: row.score ?? null,

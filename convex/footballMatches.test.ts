@@ -448,6 +448,8 @@ describe("lettura dei tabelloni", () => {
 /** Una partita vecchia del calendario dell'Inter: Champions in trasferta, 0–3. */
 const OLD_MATCH = "401915307";
 const OLD_SUMMARY_PATH = `/site/v2/sports/soccer/all/summary?event=${OLD_MATCH}`;
+/** Finale di Supercoppa ai rigori (1–1, 1–3 ai rigori) nel calendario dell'Inter. */
+const PENS_MATCH = "401871493";
 
 /**
  * Alice e bob in una chat con l'Inter pinnata, una seconda chat di alice con la Juventus pinnata e
@@ -557,6 +559,20 @@ describe("aprire una partita vecchia dal drawer", () => {
     expect(interAfter.nextMatchId).toBeUndefined();
   });
 
+  it("conserva lo stato ESPN della partita, anche quando è finita ai rigori", async () => {
+    const p = await pastSetup();
+    stub.reply(`/site/v2/sports/soccer/all/summary?event=${PENS_MATCH}`, loadFixture("summary-401874808"));
+
+    await openAndFinish(p, PENS_MATCH);
+
+    expect(await matchOf(p, PENS_MATCH)).toMatchObject({
+      state: "post",
+      statusName: "STATUS_FINAL_PEN",
+      score: { home: 1, away: 1 },
+      shootout: { home: 1, away: 3 },
+    });
+  });
+
   it("rifiuta chi non è nella chat, una squadra non pinnata e un evento fuori dal calendario", async () => {
     const p = await pastSetup();
     await expect(openPast(p, OLD_MATCH, "carol")).rejects.toMatchObject({ data: { code: "not_member" } });
@@ -574,17 +590,8 @@ describe("aprire una partita vecchia dal drawer", () => {
     expect(summaries()).toHaveLength(1);
 
     // Il riassunto manca ancora (richiesta fallita): la richiesta resta quella, e il tentativo ravvicinato non ne parte.
-    await p.t.run(async (ctx) => {
-      const match = await ctx.db
-        .query("footballMatches")
-        .withIndex("by_eventId", (q) => q.eq("eventId", OLD_MATCH))
-        .unique();
-      const details = await ctx.db
-        .query("footballMatchDetails")
-        .withIndex("by_matchId", (q) => q.eq("matchId", match!._id))
-        .unique();
-      await ctx.db.delete("footballMatchDetails", details!._id);
-    });
+    const details = (await detailsOf(p, OLD_MATCH))!;
+    await p.t.run((ctx) => ctx.db.delete("footballMatchDetails", details._id));
     vi.setSystemTime(AT_HALFTIME + 30_000);
     await openPast(p, OLD_MATCH);
     await p.t.finishAllScheduledFunctions(vi.runAllTimers);
