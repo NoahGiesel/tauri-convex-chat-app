@@ -362,6 +362,7 @@ export const details = query({
       events: row.events,
       lineups: row.lineups,
       stats: row.stats,
+      fetchedAt: row.fetchedAt,
     };
   },
 });
