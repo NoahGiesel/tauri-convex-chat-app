@@ -10,7 +10,7 @@ import type { MessageKey } from "@/i18n/en";
 import { useI18n } from "@/i18n/i18n-provider";
 import { errorKey } from "@/lib/errors";
 import { chipState, isUnavailable, type PinMatch } from "@/lib/match-chip";
-import { drawerTeam, keptLeague } from "@/lib/match-derby";
+import { drawerTeam } from "@/lib/match-derby";
 import { isStale, DRAWER_WIDTH, type DrawerLayout } from "@/lib/match-drawer";
 import {
   competitionTag,
@@ -29,8 +29,8 @@ import {
   type TeamView,
 } from "@/lib/match-schedule";
 import {
-  fallbackLeague,
-  initialLeague,
+  leagueChoice,
+  leagueRequest,
   standingsView,
   teamLeague,
   waitingTooLong,
@@ -128,19 +128,20 @@ export function MatchDrawer({
   /** La squadra scelta in un derby: `null` finché vale quella pinnata per prima. */
   const [pickedTeamId, setPickedTeamId] = useState<string | null>(null);
   const team = drawerTeam(teams, pickedTeamId);
+  const firstTeamId = teams[0].teamId;
   const otherTeamIds = pinnedTeamIds.filter((id) => id !== team.teamId);
   // La partita mostrata: quella del chip, oppure quella vecchia aperta dal tab Partite.
   const shown = opened ? openedMatchView(opened.match, team, opened.requestedAt) : match;
   const details = useQuery(api.footballMatches.details, { conversationId, eventId: shown.eventId });
   const schedule = useQuery(api.footballTeamSchedules.forPin, { conversationId, teamId: team.teamId });
   const competitions = schedule?.competitions ?? [];
+  const scheduleLoading = schedule === undefined || (schedule !== null && schedule.pending);
   /** La competizione scelta coi chip: `null` finché vale quella del chip della partita. */
   const [pickedLeague, setPickedLeague] = useState<string | null>(null);
   const teamLeagueId = schedule ? teamLeague(schedule, competitions) : null;
-  // In un derby la competizione scelta resta se anche la squadra mostrata la gioca, altrimenti torna a quella del derby.
-  const requestedLeague = pickedLeague
-    ? keptLeague(pickedLeague, match.league, competitions)
-    : initialLeague(competitions, match.league, teamLeagueId);
+  // Dopo un cambio squadra la scelta resta se la squadra mostrata la gioca, altrimenti diventa quella del derby.
+  const request = leagueRequest(pickedLeague, match.league, competitions, teamLeagueId, scheduleLoading);
+  const requestedLeague = request.requested;
   const primary = useQuery(
     api.footballStandings.forPin,
     requestedLeague ? { conversationId, teamId: team.teamId, league: requestedLeague } : "skip",
@@ -155,8 +156,7 @@ export function MatchDrawer({
   const fallbackView = viewFor(fallback);
   // Niente tabella e niente percorso, o una prima richiesta fallita: si passa al campionato della squadra.
   const primaryMissing = primaryView?.kind === "empty" || (!!primary?.pending && waitingTooLong(primary, schedule, now));
-  const league = pickedLeague ?? fallbackLeague(requestedLeague, primaryMissing, teamLeagueId);
-  const usingFallback = !!teamLeagueId && league === teamLeagueId && requestedLeague !== teamLeagueId;
+  const { league, usingFallback } = leagueChoice(requestedLeague, primaryMissing, teamLeagueId);
   const standings = usingFallback ? fallback : primary;
   const view = usingFallback ? fallbackView : primaryView;
   const state = chipState(shown);
@@ -168,15 +168,20 @@ export function MatchDrawer({
   const [requestError, setRequestError] = useState<MessageKey | null>(null);
   /** L'ora locale per far scadere la richiesta dei dettagli dopo 20 secondi. */
   const [openedNow, setOpenedNow] = useState(() => Date.now());
-  const scheduleLoading = schedule === undefined || (schedule !== null && schedule.pending);
   const standingsLoading =
     scheduleLoading || (!!requestedLeague && (primary === undefined || (primary !== null && primary.pending && !waitingTooLong(primary, schedule, now))));
 
-  // Un altro chip riparte dalla squadra pinnata per prima e dalla competizione della sua partita.
+  // La scelta caduta su un'altra competizione diventa quella vera: tornando alla prima squadra la vecchia non ricompare.
+  useEffect(() => {
+    if (request.picked !== pickedLeague) setPickedLeague(request.picked);
+  }, [request.picked, pickedLeague]);
+
+  // Un altro chip riparte dalla squadra pinnata per prima e dalla competizione della sua partita. Quando un derby
+  // si divide nel chip della sua prima squadra non si riparte: è lo stesso drawer, sulla stessa squadra.
   useEffect(() => {
     setPickedTeamId(null);
     setPickedLeague(null);
-  }, [match.eventId]);
+  }, [firstTeamId, match.eventId]);
 
   const requestPast = (row: ScheduleMatch) => {
     setTab("match");
@@ -318,6 +323,8 @@ export function MatchDrawer({
         ))}
       </div>
 
+      {tab !== "match" && <TeamSwitch teams={teams} team={team} onPick={pickTeam} />}
+
       {tab === "match" ? (
         <div
           className="min-h-0 flex-1 overflow-y-auto px-5 py-4"
@@ -418,7 +425,6 @@ export function MatchDrawer({
           data-testid="matches-tab"
           data-state={matchesLoading ? "loading" : hasMatches ? "ready" : "empty"}
         >
-          <TeamSwitch teams={teams} team={team} onPick={pickTeam} />
           {matchesLoading ? (
             <Loading />
           ) : (
@@ -427,9 +433,6 @@ export function MatchDrawer({
         </div>
       ) : (
         <StandingsTabBody
-          teams={teams}
-          team={team}
-          onPickTeam={pickTeam}
           competitions={competitions}
           league={league}
           onPick={setPickedLeague}
@@ -455,7 +458,7 @@ function TeamSwitch({ teams, team, onPick }: { teams: TeamView[]; team: TeamView
   const { t } = useI18n();
   if (teams.length < 2) return null;
   return (
-    <div role="tablist" aria-label={t("teamPins.teamSwitch")} data-testid="team-switch" className="mb-4 flex gap-1.5">
+    <div role="tablist" aria-label={t("teamPins.teamSwitch")} data-testid="team-switch" className="mx-5 mt-4 flex shrink-0 gap-1.5">
       {teams.map((side) => (
         <button
           key={side.teamId}
@@ -464,12 +467,7 @@ function TeamSwitch({ teams, team, onPick }: { teams: TeamView[]; team: TeamView
           aria-selected={side.teamId === team.teamId}
           data-testid={`team-switch-${side.teamId}`}
           onClick={() => onPick(side.teamId)}
-          className={cn(
-            "flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full border px-2.5 py-1 text-[12px] font-semibold",
-            side.teamId === team.teamId
-              ? "border-app-accent bg-app-accent-soft text-app-text-strong"
-              : "border-app-border text-app-text-muted hover:bg-app-field",
-          )}
+          className={cn("flex min-w-0 flex-1 items-center justify-center gap-1.5", pillClass(side.teamId === team.teamId))}
         >
           <Crest logo={side.logo} abbreviation={side.abbreviation} size={16} />
           <span className="truncate">{side.shortName}</span>
@@ -479,11 +477,16 @@ function TeamSwitch({ teams, team, onPick }: { teams: TeamView[]; team: TeamView
   );
 }
 
+/** Le classi di una pillola accesa o spenta, uguali per lo scambio di squadra e per i chip delle competizioni. */
+function pillClass(selected: boolean) {
+  return cn(
+    "rounded-full border px-2.5 py-1 text-[12px] font-semibold",
+    selected ? "border-app-accent bg-app-accent-soft text-app-text-strong" : "border-app-border text-app-text-muted hover:bg-app-field",
+  );
+}
+
 /** I chip delle competizioni, la tabella o il percorso, e la legenda delle zone. */
 function StandingsTabBody({
-  teams,
-  team,
-  onPickTeam,
   competitions,
   league,
   onPick,
@@ -496,9 +499,6 @@ function StandingsTabBody({
   clock,
   onOpen,
 }: {
-  teams: TeamView[];
-  team: TeamView;
-  onPickTeam: (teamId: string) => void;
   competitions: Competition[];
   league: string | null;
   onPick: (league: string) => void;
@@ -519,7 +519,6 @@ function StandingsTabBody({
       data-testid="standings-tab"
       data-state={loading ? "loading" : view && view.kind !== "empty" ? "ready" : "empty"}
     >
-      <TeamSwitch teams={teams} team={team} onPick={onPickTeam} />
       {competitions.length > 0 && (
         <div role="tablist" aria-label={t("teamPins.tabStandings")} className="mb-4 flex gap-1.5 overflow-x-auto">
           {competitions.map((competition) => (
@@ -530,12 +529,7 @@ function StandingsTabBody({
               aria-selected={competition.league === league}
               data-testid={`standings-chip-${competition.league}`}
               onClick={() => onPick(competition.league)}
-              className={cn(
-                "shrink-0 rounded-full border px-2.5 py-1 text-[12px] font-semibold",
-                competition.league === league
-                  ? "border-app-accent bg-app-accent-soft text-app-text-strong"
-                  : "border-app-border text-app-text-muted hover:bg-app-field",
-              )}
+              className={cn("shrink-0", pillClass(competition.league === league))}
             >
               {competition.shortName}
             </button>

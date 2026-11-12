@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   fallbackLeague,
   initialLeague,
+  leagueChoice,
+  leagueRequest,
   pathSteps,
   standingsView,
   tableRows,
@@ -59,6 +61,10 @@ function match(over: Partial<ScheduleMatch> & Pick<ScheduleMatch, "eventId" | "k
 
 function schedule(results: ScheduleMatch[], fixtures: ScheduleMatch[] = [], competitions: Competition[] = []): TeamSchedule {
   return { teamId: INTER, pending: false, results, fixtures, competitions, fetchedAt: kickoff };
+}
+
+function competition(league: string): Competition {
+  return { league, name: league, shortName: league, season: `2026-27 ${league}` };
 }
 
 const SERIE_A = standings([
@@ -202,6 +208,73 @@ describe("tab Classifica: quali competizioni", () => {
   it("senza competizioni non c'è una scelta", () => {
     expect(initialLeague([], "ita.1", null)).toBeNull();
     expect(teamLeague(schedule([]), [])).toBeNull();
+  });
+});
+
+describe("tab Classifica: la competizione dopo un cambio squadra", () => {
+  const ucl = competition("uefa.champions");
+  const serieA = competition("ita.1");
+  const coppa = competition("ita.coppa_italia");
+  /** Inter gioca anche la Champions; Milan no: è la squadra che resta senza la competizione scelta. */
+  const inter = [coppa, ucl, serieA];
+  const milan = [coppa, serieA];
+
+  it("se la squadra mostrata non gioca la competizione scelta, il chip acceso diventa quello del derby", () => {
+    const { requested } = leagueRequest("uefa.champions", "ita.1", milan, "ita.1", false);
+
+    expect(requested).toBe("ita.1");
+    expect(leagueChoice(requested, false, "ita.1").league).toBe("ita.1");
+  });
+
+  it("la competizione che giocano entrambe le squadre resta scelta", () => {
+    const { requested } = leagueRequest("uefa.champions", "ita.1", inter, "ita.1", false);
+
+    expect(requested).toBe("uefa.champions");
+    expect(leagueChoice(requested, false, "ita.1").league).toBe("uefa.champions");
+  });
+
+  it("tornando alla prima squadra resta la competizione del derby", () => {
+    const switched = leagueRequest("uefa.champions", "ita.1", milan, "ita.1", false);
+    expect(switched.picked).toBe("ita.1");
+
+    const back = leagueRequest(switched.picked, "ita.1", inter, "ita.1", false);
+
+    expect(back.requested).toBe("ita.1");
+    expect(leagueChoice(back.requested, false, "ita.1").league).toBe("ita.1");
+  });
+
+  it("mentre il calendario della squadra mostrata carica, la richiesta non oscilla", () => {
+    expect(leagueRequest("uefa.champions", "ita.1", [], "ita.1", true)).toEqual({
+      picked: "uefa.champions",
+      requested: "uefa.champions",
+    });
+  });
+
+  it("quando la competizione del derby non ha niente da mostrare, il tab ripiega sul campionato", () => {
+    const { requested } = leagueRequest("uefa.champions", "uefa.champions", milan, "ita.1", false);
+
+    expect(leagueChoice(requested, true, "ita.1")).toEqual({ league: "ita.1", usingFallback: true });
+  });
+});
+
+describe("tab Classifica: una sola squadra", () => {
+  const competitions: Competition[] = [
+    { league: "uefa.champions", name: "UEFA Champions League", shortName: "UCL", season: "2026-27 UEFA Champions League" },
+    { league: "ita.1", name: "Italian Serie A", shortName: "Serie A", season: "2026-27 Italian Serie A" },
+  ];
+
+  it("si apre sulla competizione della partita e la scelta fatta resta", () => {
+    const initial = leagueRequest(null, "uefa.champions", competitions, "ita.1", false);
+    expect(initial.requested).toBe("uefa.champions");
+    expect(leagueChoice(initial.requested, false, "ita.1")).toEqual({ league: "uefa.champions", usingFallback: false });
+
+    const picked = leagueRequest("ita.1", "uefa.champions", competitions, "ita.1", false);
+    expect(picked.requested).toBe("ita.1");
+    expect(leagueChoice(picked.requested, false, "ita.1")).toEqual({ league: "ita.1", usingFallback: false });
+  });
+
+  it("senza competizione della partita si apre sul campionato della squadra", () => {
+    expect(leagueRequest(null, undefined, competitions, "ita.1", false).requested).toBe("ita.1");
   });
 });
 

@@ -91,7 +91,7 @@ export function teamLeague(schedule: Pick<TeamSchedule, "results" | "fixtures">,
 }
 
 /** La competizione su cui si apre il tab: quella del chip, altrimenti il campionato della squadra. */
-export function initialLeague(competitions: Competition[], chipLeague: string | undefined, teamLeagueId: string | null): string | null {
+export function initialLeague(competitions: readonly Competition[], chipLeague: string | undefined, teamLeagueId: string | null): string | null {
   if (chipLeague && competitions.some((competition) => competition.league === chipLeague)) return chipLeague;
   return teamLeagueId ?? competitions[0]?.league ?? null;
 }
@@ -99,6 +99,34 @@ export function initialLeague(competitions: Competition[], chipLeague: string | 
 /** Quando la competizione scelta non ha niente da mostrare, il tab passa al campionato della squadra. */
 export function fallbackLeague(league: string | null, nothingToShow: boolean, teamLeagueId: string | null): string | null {
   return nothingToShow && teamLeagueId && league !== teamLeagueId ? teamLeagueId : league;
+}
+
+/**
+ * La competizione chiesta dal tab Classifica e la scelta da salvare. Dopo un cambio squadra la scelta
+ * resta se la squadra mostrata la gioca, altrimenti diventa quella del chip della partita (in un derby,
+ * la competizione del derby); senza una scelta vale `initialLeague`. Finché il calendario della squadra
+ * mostrata carica la scelta resta, così la richiesta non oscilla tra le due competizioni
+ * (docs/MATCH-DRAWER-SPEC.md, Derby).
+ */
+export function leagueRequest(
+  picked: string | null,
+  chipLeague: string | undefined,
+  competitions: readonly Competition[],
+  teamLeagueId: string | null,
+  loading: boolean,
+): { picked: string | null; requested: string | null } {
+  const kept = picked === null || loading || competitions.some((competition) => competition.league === picked) ? picked : (chipLeague ?? null);
+  return { picked: kept, requested: kept ?? initialLeague(competitions, chipLeague, teamLeagueId) };
+}
+
+/** Il chip acceso e se il tab mostra il campionato della squadra al posto della competizione chiesta. */
+export function leagueChoice(
+  requested: string | null,
+  nothingToShow: boolean,
+  teamLeagueId: string | null,
+): { league: string | null; usingFallback: boolean } {
+  const league = fallbackLeague(requested, nothingToShow, teamLeagueId);
+  return { league, usingFallback: !!teamLeagueId && league === teamLeagueId && requested !== teamLeagueId };
 }
 
 /** La classifica non è ancora arrivata e il calendario è vecchio: la prima richiesta è fallita. */
