@@ -5,22 +5,79 @@ import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { STUB_FILES, STUB_LOG, STUB_PORT } from './config.mjs';
-import { ESPN_PREFIX, UNAVAILABLE_LEAGUE, espnLiveSummary, espnScoreboard, espnTeamEndpoint, espnTeamList, footballMatches, TEAMS } from './football.mjs';
+import {
+  ESPN_PREFIX,
+  espnFinishedSummary,
+  espnLiveSummary,
+  espnSchedule,
+  espnScoreboard,
+  espnStandings,
+  espnTeamEndpoint,
+  espnTeamList,
+  FINISHED_MATCH,
+  footballMatches,
+  footballSchedules,
+  TEAMS,
+  UNAVAILABLE_LEAGUE,
+} from './football.mjs';
 
 /** What the `football` Seed and the Fixtures read, from the same canned data the stub serves. */
-export { ESPN_PREFIX, espnEvent, footballMatches, LIVE_DETAILS, SEEDED_MATCHES, SEEDED_PINS, TEAMS as FOOTBALL_TEAMS, UNAVAILABLE_LEAGUE } from './football.mjs';
+export {
+  COMPETITIONS,
+  ESPN_PREFIX,
+  espnEvent,
+  espnStandings,
+  footballMatches,
+  footballSchedules,
+  FINISHED_DETAILS,
+  FINISHED_MATCH,
+  LIVE_DETAILS,
+  LIVE_PLAYERS,
+  matchOf,
+  SEEDED_MATCHES,
+  SEEDED_PINS,
+  SEEDED_SCHEDULES,
+  SEEDED_STANDINGS,
+  TEAMS as FOOTBALL_TEAMS,
+  UNAVAILABLE_LEAGUE,
+} from './football.mjs';
 
 export const STUB_READY = 'stub ready';
 
 const ESPN_ROUTE = new RegExp(`^${ESPN_PREFIX}/site/v2/sports/soccer/([^/]+)/(teams|scoreboard|summary)$`);
 const ESPN_TEAM_ROUTE = new RegExp(`^${ESPN_PREFIX}/site/v2/sports/soccer/all/teams/([^/]+)$`);
+const ESPN_SCHEDULE_ROUTE = new RegExp(`^${ESPN_PREFIX}/site/v2/sports/soccer/all/teams/([^/]+)/schedule$`);
+const ESPN_STANDINGS_ROUTE = new RegExp(`^${ESPN_PREFIX}/v2/sports/soccer/([^/]+)/standings$`);
+
+/** The league of a team, by its ESPN id. A team the stub does not know is in none. */
+const leagueOfTeam = (teamId) => {
+  const known = Object.keys(TEAMS).find((key) => TEAMS[key].id === teamId);
+  return known ? TEAMS[known].league : undefined;
+};
 
 /**
- * ESPN, from the canned data: team lists, each team's next match, scoreboards and the live match's summary.
- * The unavailable league and its teams answer 503, so the Test backend's crons can never refresh that match.
+ * ESPN, from the canned data: team lists, each team's next match, scoreboards, schedules, standings and the
+ * summaries of the live match and the one a test opens. The unavailable league and its teams answer 503,
+ * so the Test backend's crons can never refresh that match.
  * Returns [status, body], or null when the path is not ESPN's.
  */
-function espnResponse(pathname, searchParams, matches) {
+function espnResponse(pathname, searchParams, matches, schedules) {
+  const standings = ESPN_STANDINGS_ROUTE.exec(pathname);
+  if (standings) {
+    const [, league] = standings;
+    if (league === UNAVAILABLE_LEAGUE) return [503, { error: 'unavailable' }];
+    const body = espnStandings(league);
+    return body ? [200, body] : [404, { error: 'no such competition' }];
+  }
+  const schedule = ESPN_SCHEDULE_ROUTE.exec(pathname);
+  if (schedule) {
+    const [, teamId] = schedule;
+    const league = leagueOfTeam(teamId);
+    if (!league) return [404, { error: 'no such team' }];
+    if (league === UNAVAILABLE_LEAGUE) return [503, { error: 'unavailable' }];
+    const key = Object.keys(TEAMS).find((k) => TEAMS[k].id === teamId);
+    return [200, espnSchedule(schedules, key, searchParams.get('fixture') === 'true')];
+  }
   const team = ESPN_TEAM_ROUTE.exec(pathname);
   if (team) {
     const known = Object.values(TEAMS).find((t) => t.id === team[1]);
@@ -34,8 +91,11 @@ function espnResponse(pathname, searchParams, matches) {
   if (kind === 'teams') return [200, espnTeamList(league)];
   if (league === UNAVAILABLE_LEAGUE) return [503, { error: 'unavailable' }];
   if (kind === 'scoreboard') return [200, espnScoreboard(league, matches)];
-  // Only the live match is ever polled successfully, so only it has a summary.
-  return searchParams.get('event') === matches.live.eventId ? [200, espnLiveSummary(matches)] : [404, { error: 'no summary' }];
+  // The drawer asks for the live match's summary, and for the one a test opens from the Matches tab.
+  const event = searchParams.get('event');
+  if (event === matches.live.eventId) return [200, espnLiveSummary(matches)];
+  if (event === FINISHED_MATCH.eventId) return [200, espnFinishedSummary()];
+  return [404, { error: 'no summary' }];
 }
 
 const CORS = {
@@ -79,6 +139,7 @@ export function startStub({ root = STUB_FILES, logFile = STUB_LOG, port = STUB_P
   const fileFor = (pathname) => path.join(root, encodeURIComponent(pathname));
   // Kick-offs are fixed when the stub starts, so a live match's kick-off does not move between polls.
   const matches = footballMatches(now);
+  const schedules = footballSchedules(now);
 
   const server = http.createServer((req, res) => {
     const { pathname, searchParams } = new URL(req.url, 'http://stub');
@@ -89,7 +150,7 @@ export function startStub({ root = STUB_FILES, logFile = STUB_LOG, port = STUB_P
     };
 
     if (req.method === 'OPTIONS') return send(204);
-    const espn = req.method === 'GET' ? espnResponse(pathname, searchParams, matches) : null;
+    const espn = req.method === 'GET' ? espnResponse(pathname, searchParams, matches, schedules) : null;
     if (espn) return send(espn[0], { 'content-type': 'application/json' }, JSON.stringify(espn[1]));
     if (req.method === 'GET' && (pathname === '/v1/gifs/trending' || pathname === '/v1/gifs/search')) {
       const search = pathname.endsWith('/search') ? (searchParams.get('q') ?? '') : '';

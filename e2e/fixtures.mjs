@@ -11,7 +11,7 @@ import { ASSET_TYPES, ASSETS, EXPIRED_INVITE_TOKEN, INTERFACE_WAIT_MS, MAIN_WIND
 import { reset } from './reset.mjs';
 import { scriptedUser } from './scripted-user.mjs';
 import { convexInStage } from './stage.mjs';
-import { FOOTBALL_TEAMS, gifAddress, gifTitles, readStubLog } from './stub.mjs';
+import { FOOTBALL_TEAMS, gifAddress, gifTitles, LIVE_DETAILS, LIVE_PLAYERS, matchOf, readStubLog } from './stub.mjs';
 import { waitUntil } from './wait.mjs';
 
 const WAIT = { timeout: INTERFACE_WAIT_MS, interval: POLL_MS };
@@ -141,11 +141,13 @@ const PICKER_SEARCH = `${PICKER}//input[@aria-label="${en['teamPins.searchPlaceh
 const pickerTeam = (team) => `${PICKER}//button[@role="option"][.//span[normalize-space(.)="${team}"]]`;
 const systemLine = (text) => `//*[@data-testid="system-line"][normalize-space(.)="${text}"]`;
 /** A chip names its teams by abbreviation, which the stub's canned data gives for each team name. */
-const abbreviationOf = (team) => {
+const footballTeam = (team) => {
   const found = Object.values(FOOTBALL_TEAMS).find((t) => t.name === team);
   if (!found) throw new Error(`the stub has no team called ${team}`);
-  return found.abbreviation;
+  return found;
 };
+const abbreviationOf = (team) => footballTeam(team).abbreviation;
+const teamIdOf = (team) => footballTeam(team).id;
 const chip = (team) => `//*[@data-testid="team-pin-chip"][.//span[normalize-space(.)="${abbreviationOf(team)}"]]`;
 /** A chip whose score is out of date carries the warning as its tooltip. */
 const UNAVAILABLE = textBefore('teamPins.unavailable');
@@ -156,6 +158,24 @@ const SETTLED_DRAWER = `${MATCH_DRAWER}[@data-details!="loading"]`;
 const unpinLabel = (team) => filled('teamPins.unpin', { team });
 const drawerSection = (key) => `${MATCH_DRAWER}//h3[normalize-space(.)="${en[key]}"]`;
 const DRAWER_SECTIONS = { Events: 'teamPins.events', Lineups: 'teamPins.lineups', Stats: 'teamPins.stats' };
+/** A part of the drawer by its `data-testid`, which the drawer needs for what a person cannot name. */
+const drawerPart = (testId) => `${MATCH_DRAWER}//*[@data-testid="${testId}"]`;
+const DRAWER_TABS = { Match: 'teamPins.tabMatch', Matches: 'teamPins.tabMatches', Standings: 'teamPins.tabStandings' };
+/** A tab of the drawer, by the words on it. */
+const drawerTab = (title) => `${MATCH_DRAWER}//*[@role="tab"][normalize-space(.)="${en[DRAWER_TABS[title]]}"]`;
+/** The way back to the chip's match, by the words on it: the dictionary's line, whose `{match}` a person reads as the match. */
+const BACK_TO_MATCH = `${MATCH_DRAWER}//button[starts-with(normalize-space(.), "${en['teamPins.backTo'].replace('{match}', '')}")]`;
+/** The tablist `teamPins.teamSwitch` names, then the side inside it, named by the team. */
+const TEAM_SWITCH = `${MATCH_DRAWER}//*[@role="tablist"][@aria-label="${en['teamPins.teamSwitch']}"]`;
+const teamSwitchChoice = (team) => `${TEAM_SWITCH}//*[@role="tab"][.//span[normalize-space(.)="${footballTeam(team).shortName}"]]`;
+/** The tablist `teamPins.tabStandings` names, then the competition chip, named by its short name. */
+const COMPETITION_CHIPS = `${MATCH_DRAWER}//*[@role="tablist"][@aria-label="${en['teamPins.tabStandings']}"]`;
+const competitionChip = (name) => `${COMPETITION_CHIPS}//*[@role="tab"][normalize-space(.)="${name}"]`;
+const matchRow = (home, away) => drawerPart(`match-row-${matchOf(home, away).id}`);
+const resultBadge = (home, away) => drawerPart(`outcome-${matchOf(home, away).id}`);
+const pitchPlayer = (side, athleteId) => drawerPart(`pitch-player-${side}-${athleteId}`);
+const benchPlayer = (side, athleteId) => drawerPart(`bench-player-${side}-${athleteId}`);
+const standingsRow = (team) => drawerPart(`standings-row-${teamIdOf(team)}`);
 const commandOffered = (command) => `//*[@role="listbox"]//button[@role="option"][.//strong[normalize-space(.)="/${command}:"]]`;
 
 /** A file from `e2e/assets`, ready to hand to the page, under its own name or another. */
@@ -168,6 +188,17 @@ const followedBy = (first, then) => `${first}/following::${then.replace(/^\/\//,
 function lookOf(element) {
   const { color, fontFamily, fontStyle, whiteSpace } = getComputedStyle(element);
   return { color, fontFamily, fontStyle, tag: element.tagName, whiteSpace };
+}
+
+/**
+ * Runs in the page. The element's whole box is in the window, and the element at its middle is it or inside it,
+ * so nothing else, such as the drawer, is drawn over it.
+ */
+function fullyVisible(element) {
+  const { top, left, bottom, right, width, height } = element.getBoundingClientRect();
+  if (top < 0 || left < 0 || bottom > window.innerHeight || right > window.innerWidth) return false;
+  const atMiddle = document.elementFromPoint(left + width / 2, top + height / 2);
+  return atMiddle === element || element.contains(atMiddle);
 }
 
 /** Runs in the page. What a screen reader would have nothing to say for, among the controls a person can reach. */
@@ -383,6 +414,8 @@ function drivenUser(name) {
       await b.$(COMPOSER).setValue(text);
       await b.keys('Enter');
     },
+    /** A click in the chat's message list, on a row of it, where a person also clicks to use the chat. */
+    clickChat: () => press('//*[@data-testid="message"]'),
     /** Presses Enter twice: a bare command is first completed, and only then sent. */
     async sendCompleted(command) {
       await b.$(COMPOSER).setValue(command);
@@ -866,6 +899,86 @@ function drivenUser(name) {
         if (await b.$(drawerSection(key)).isExisting()) throw new Error(`${name} sees ${en[key]} in a drawer before kick-off`);
       }
     },
+    seesDrawer: () => waitUntilShown(MATCH_DRAWER, `${name} did not see the match drawer`),
+    stopsSeeingDrawer: () => waitUntilGone(MATCH_DRAWER, `${name} still sees the match drawer`),
+    async hasNoDrawer() {
+      if (await b.$(MATCH_DRAWER).isExisting()) throw new Error(`${name} sees a match drawer`);
+    },
+    /** A second click on the chip that opened it closes the drawer. */
+    closeMatchWithChip: (team) => press(`${chip(team)}//button[@aria-haspopup="dialog"]`),
+    /** A click on the drawer, then Esc, which only closes it with the focus inside. */
+    async closeMatchWithEscape() {
+      await waitUntilShown(MATCH_DRAWER, `${name} has no match drawer to close`);
+      await press(MATCH_DRAWER);
+      await b.keys('Escape');
+    },
+    /** Esc in the message box leaves it open. */
+    async pressEscapeInComposer() {
+      await waitUntilShown(COMPOSER, `${name} has no message box`);
+      await press(COMPOSER);
+      await b.keys('Escape');
+    },
+    /** The whole box is in the window, and the drawer is not drawn over any part of it. */
+    seesComposerFullyVisible: () =>
+      waitUntilTrue(
+        async () => (await b.$(COMPOSER).isExisting()) && (await b.execute(fullyVisible, await b.$(COMPOSER))),
+        `${name} does not see the whole message box, or something is drawn over it`,
+      ),
+    showDrawerTab: (title) => press(drawerTab(title)),
+    /** The two lineups drawn on one pitch: every starter of both sides has a marker. */
+    async seesPitch(count) {
+      await waitUntilShown(drawerPart('match-pitch'), `${name} did not see the pitch`);
+      await waitUntilTrue(
+        async () => (await b.$$(`${drawerPart('match-pitch')}//*[starts-with(@data-testid, "pitch-player-")]`)).length === count,
+        `${name} did not see ${count} players on the pitch`,
+      );
+    },
+    /** The goal badge sits on the scorer's marker, joined to the event by the athlete's id. */
+    seesGoalOnPitch: () =>
+      waitUntilShown(`${pitchPlayer('home', LIVE_PLAYERS.scorer.id)}//*[normalize-space(.)="⚽"]`, `${name} did not see a goal badge on ${LIVE_PLAYERS.scorer.name}`),
+    /** A player who came on is in the bench with the minute and the player he replaced. */
+    seesSubstituteOnBench: () => {
+      const cameOn = filled('teamPins.cameOn', { minute: LIVE_DETAILS.minute, name: LIVE_DETAILS.replaced });
+      return waitUntilShown(`${benchPlayer('home', LIVE_PLAYERS.substitute.id)}[contains(normalize-space(.), "${cameOn}")]`, `${name} did not see ${cameOn} in the bench`);
+    },
+    seesMatchesTab: () => waitUntilShown(`${drawerPart('matches-tab')}[@data-state="ready"]`, `${name} did not see the Matches tab fill`),
+    seesMatchRow: (home, away) => waitUntilShown(matchRow(home, away), `${name} did not see ${home}–${away} in the Matches tab`),
+    async doesNotSeeMatchRow(home, away) {
+      if (await b.$(matchRow(home, away)).isExisting()) throw new Error(`${name} still sees ${home}–${away}`);
+    },
+    /** The W, D or L badge on that row. */
+    seesResultBadge: (home, away, outcome) =>
+      waitUntilShown(
+        `${resultBadge(home, away)}[normalize-space(.)="${en[`teamPins.${outcome}`]}"]`,
+        `${name} did not see ${en[`teamPins.${outcome}`]} on ${home}–${away}`,
+      ),
+    openFinishedMatch: (home, away) => press(`${matchRow(home, away)}/button`),
+    seesBackToMatch: () => waitUntilShown(BACK_TO_MATCH, `${name} has no way back to the chip's match`),
+    stopsSeeingBackToMatch: () => waitUntilGone(BACK_TO_MATCH, `${name} still has the way back to the chip's match`),
+    backToMatch: () => press(BACK_TO_MATCH),
+    seesOpenedMatchFinished: () =>
+      waitUntilShown(`${drawerPart('opened-match-state')}[starts-with(normalize-space(.), "${en['teamPins.ft']}")]`, `${name} did not see the opened match as finished`),
+    pickCompetition: (competition) => press(competitionChip(competition)),
+    seesCompetitionOn: (competition) =>
+      waitUntilShown(`${competitionChip(competition)}[@aria-selected="true"]`, `${name} does not see ${competition} chosen`),
+    seesTableRow: (team) => waitUntilShown(standingsRow(team), `${name} does not see ${team} in the table`),
+    seesTableRowOn: (team) => waitUntilShown(`${standingsRow(team)}[@data-selected="true"]`, `${name} does not see ${team}'s row highlighted`),
+    /** A row of the chat's other pinned team carries the pin icon. */
+    seesTableRowPinned: (team) => waitUntilShown(`${standingsRow(team)}[@data-pinned="true"]`, `${name} does not see ${team}'s row marked as pinned`),
+    seesStandingsTable: () => waitUntilShown(drawerPart('standings-table'), `${name} sees no table`),
+    /** A cup without a table shows the team's path, one step per round. */
+    seesCupPath: (steps) =>
+      waitUntilTrue(
+        async () => (await b.$$(`${drawerPart('standings-path')}//*[starts-with(@data-testid, "standings-step-")]`)).length === steps,
+        `${name} did not see a path of ${steps} rounds`,
+      ),
+    /** The drawer's header shows the team it follows, by the team's short name. */
+    seesDrawerHeaderTeam: (team) =>
+      waitUntilShown(`${MATCH_DRAWER}/header//span[normalize-space(.)="${footballTeam(team).shortName}"]`, `${name} does not see ${team} in the drawer's header`),
+    /** In a derby: the switch that shows one of the two teams at a time. */
+    seesTeamSwitch: () => waitUntilShown(TEAM_SWITCH, `${name} has no team switch for a derby`),
+    pickDrawerTeam: (team) => press(teamSwitchChoice(team)),
+    seesDrawerTeamOn: (team) => waitUntilShown(`${teamSwitchChoice(team)}[@aria-selected="true"]`, `${name} does not see the drawer showing ${team}`),
 
     typeInComposer: (text) => b.$(COMPOSER).setValue(text),
     seesCommandOffered: (command) => waitUntilShown(commandOffered(command), `${name} was not offered /${command}`),

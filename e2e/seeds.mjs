@@ -21,7 +21,7 @@ import {
 } from './config.mjs';
 import { clientFor } from './session-client.mjs';
 import { convexInStage, importSeed } from './stage.mjs';
-import { espnEvent, FOOTBALL_TEAMS, footballMatches, SEEDED_MATCHES, SEEDED_PINS } from './stub.mjs';
+import { espnEvent, espnStandings, FOOTBALL_TEAMS, footballMatches, footballSchedules, SEEDED_MATCHES, SEEDED_PINS, SEEDED_SCHEDULES, SEEDED_STANDINGS } from './stub.mjs';
 
 /** Carol's last sign of life in the `groups` Seed. Far past the 2 minutes that count as online, so "Last online" reads the same all run. */
 const CAROL_AWAY_MS = 3 * 24 * 60 * 60_000;
@@ -173,6 +173,17 @@ async function buildFootball(users) {
   const names = [...Object.values(SEEDED_MATCHES.last), ...Object.values(SEEDED_MATCHES.next)];
   const seed = { matches: names.map(seeded), last: pointers(SEEDED_MATCHES.last), next: pointers(SEEDED_MATCHES.next) };
   convexInStage(['run', 'e2eSeed:seedFootballMatches', JSON.stringify(seed)]);
+
+  // The drawer's Matches and Standings tabs: the schedules of the three teams of Alice's chat with Carol, and
+  // the tables of their competitions. Canned ESPN answers, read by the app's parsers, written after the pins'
+  // own refreshes have settled so no later lookup replaces them with the stub's copy.
+  const schedules = footballSchedules(now);
+  const drawer = {
+    schedules: SEEDED_SCHEDULES.map((team) => ({ teamId: FOOTBALL_TEAMS[team].id, results: schedules[team].results, fixtures: schedules[team].fixtures })),
+    standings: SEEDED_STANDINGS.map((league) => ({ league, json: espnStandings(league) })),
+    fetchedAt: now,
+  };
+  convexInStage(['run', 'e2eSeed:seedFootballSchedulesAndStandings', JSON.stringify(drawer)]);
   snapshot('football');
 }
 

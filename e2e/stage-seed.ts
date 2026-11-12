@@ -2,7 +2,8 @@
 import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import { internalMutation, internalQuery, type MutationCtx } from "./_generated/server";
-import { parseScoreboard } from "./espn";
+import { parseSchedule, parseScoreboard, parseStandings } from "./espn";
+import { mergeCompetitions } from "./footballTeamSchedules";
 
 /** By email, because IDs and tokens differ between runs. A Seed holds three profiles, so a scan is enough. */
 async function profileByEmail(ctx: MutationCtx, email: string) {
@@ -109,5 +110,47 @@ export const seedFootballMatches = internalMutation({
     };
     for (const { teamId, eventId } of args.last) await point(teamId, eventId, "lastMatchId");
     for (const { teamId, eventId } of args.next) await point(teamId, eventId, "nextMatchId");
+  },
+});
+
+/**
+ * The drawer's data no public function gives in a run: the schedules of the pinned teams and the tables of the
+ * competitions the stub serves. Both come as canned ESPN answers, read by the app's own parsers, so the Seed
+ * cannot disagree with what the stub serves. Written last, after the pins' own refreshes have settled.
+ */
+export const seedFootballSchedulesAndStandings = internalMutation({
+  args: {
+    schedules: v.array(v.object({ teamId: v.string(), results: v.any(), fixtures: v.any() })),
+    standings: v.array(v.object({ league: v.string(), json: v.any() })),
+    fetchedAt: v.number(),
+  },
+  handler: async (ctx, args) => {
+    for (const { teamId, results, fixtures } of args.schedules) {
+      const played = parseSchedule(results, teamId);
+      const scheduled = parseSchedule(fixtures, teamId);
+      const row = {
+        teamId,
+        results: played.matches,
+        fixtures: scheduled.matches,
+        competitions: mergeCompetitions([played.competitions, scheduled.competitions]),
+        fetchedAt: args.fetchedAt,
+      };
+      const existing = await ctx.db
+        .query("footballTeamSchedules")
+        .withIndex("by_teamId", (q) => q.eq("teamId", teamId))
+        .unique();
+      if (existing) await ctx.db.replace("footballTeamSchedules", existing._id, row);
+      else await ctx.db.insert("footballTeamSchedules", row);
+    }
+    for (const { league, json } of args.standings) {
+      const table = parseStandings(json);
+      const row = { league, ...table, fetchedAt: args.fetchedAt };
+      const existing = await ctx.db
+        .query("footballStandings")
+        .withIndex("by_league_and_season", (q) => q.eq("league", league).eq("season", table.season))
+        .unique();
+      if (existing) await ctx.db.replace("footballStandings", existing._id, row);
+      else await ctx.db.insert("footballStandings", row);
+    }
   },
 });

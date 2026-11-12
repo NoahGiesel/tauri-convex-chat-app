@@ -4,7 +4,19 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 import * as espn from '../convex/espn.ts';
-import { ESPN_PREFIX, FOOTBALL_TEAMS, LIVE_DETAILS, readStubLog, startStub, UNAVAILABLE_LEAGUE } from './stub.mjs';
+import {
+  COMPETITIONS,
+  ESPN_PREFIX,
+  FINISHED_DETAILS,
+  FINISHED_MATCH,
+  FOOTBALL_TEAMS,
+  LIVE_DETAILS,
+  readStubLog,
+  SEEDED_SCHEDULES,
+  SEEDED_STANDINGS,
+  startStub,
+  UNAVAILABLE_LEAGUE,
+} from './stub.mjs';
 
 const APP = 'http://tauri.localhost';
 let dir;
@@ -153,14 +165,87 @@ describe('the stub as ESPN', () => {
 
     const details = espn.parseSummary(await (await fetch(`${process.env.ESPN_BASE_URL}/site/v2/sports/soccer/ita.1/summary?event=${live.eventId}`)).json());
     assert.equal(details.venue, LIVE_DETAILS.venue);
-    assert.deepEqual(details.events.map((e) => [e.kind, e.player]), [['goal', LIVE_DETAILS.scorer], ['yellowCard', LIVE_DETAILS.booked]]);
+    assert.deepEqual(
+      details.events.map((e) => [e.kind, e.player]),
+      [
+        ['goal', LIVE_DETAILS.scorer],
+        ['yellowCard', LIVE_DETAILS.booked],
+        ['substitution', LIVE_DETAILS.substitute],
+      ],
+    );
     assert.deepEqual(details.lineups.map((l) => l.starters.length), [11, 11]);
     assert.equal(details.stats.length, 6);
   });
 
-  it('fails the unavailable league and its teams, so their match never refreshes', async () => {
+  it('gives the live match a place on the pitch for every starter, and a bench a test can read', async () => {
+    const [day] = espn.espnDays(NOW);
+    const board = await espn.fetchScoreboard('ita.1', day);
+    const live = board.find((match) => match.home.teamId === FOOTBALL_TEAMS.inter.id && match.state === 'in');
+    const details = espn.parseSummary(await (await fetch(`${process.env.ESPN_BASE_URL}/site/v2/sports/soccer/ita.1/summary?event=${live.eventId}`)).json());
+
+    for (const lineup of details.lineups) {
+      assert.ok(lineup.starters.every((p) => p.row !== undefined && p.order !== undefined), `${lineup.side} has a starter without a place`);
+    }
+    // The scorer and the substitute are linked to the events by their ESPN id.
+    const scorer = details.lineups.flatMap((l) => [...l.starters, ...l.bench]).find((p) => p.name === LIVE_DETAILS.scorer);
+    assert.ok(details.events.some((e) => e.kind === 'goal' && e.playerId === scorer.athleteId));
+    const substitute = details.lineups.flatMap((l) => l.bench).find((p) => p.name === LIVE_DETAILS.substitute);
+    assert.ok(substitute && substitute.row === undefined, 'a player who came on is on the bench');
+    assert.ok(details.events.some((e) => e.kind === 'substitution' && e.playerId === substitute.athleteId && e.other === LIVE_DETAILS.replaced));
+  });
+
+  it('serves the schedule of Inter, AC Milan and Juventus, read by the app parser', async () => {
+    for (const team of SEEDED_SCHEDULES) {
+      const results = await espn.fetchSchedule(FOOTBALL_TEAMS[team].id, 'results');
+      const fixtures = await espn.fetchSchedule(FOOTBALL_TEAMS[team].id, 'fixtures');
+      assert.ok(results.matches.length > 0, `${team} has no results`);
+      assert.ok(fixtures.matches.length > 0, `${team} has no fixtures`);
+      assert.ok(results.matches.every((m) => m.state === 'post'));
+      assert.ok(fixtures.matches.every((m) => m.state === 'pre'));
+    }
+    // The three competitions of Inter, the ones the drawer's chips show.
+    const results = await espn.fetchSchedule(FOOTBALL_TEAMS.inter.id, 'results');
+    const fixtures = await espn.fetchSchedule(FOOTBALL_TEAMS.inter.id, 'fixtures');
+    assert.deepEqual([...new Set([...results.competitions, ...fixtures.competitions].map((c) => c.league))].sort(), [...SEEDED_STANDINGS].sort());
+  });
+
+  it("serves the finished match a test opens from the Matches tab, and its summary", async () => {
+    const results = await espn.fetchSchedule(FOOTBALL_TEAMS.inter.id, 'results');
+    const opened = results.matches.find((m) => m.eventId === FINISHED_MATCH.eventId);
+    assert.ok(opened);
+    assert.deepEqual(opened.score, { home: FINISHED_MATCH.score[0], away: FINISHED_MATCH.score[1] });
+    assert.equal(opened.opponent.name, FOOTBALL_TEAMS[FINISHED_MATCH.away].name);
+
+    const details = espn.parseSummary(await (await fetch(`${process.env.ESPN_BASE_URL}/site/v2/sports/soccer/all/summary?event=${FINISHED_MATCH.eventId}`)).json());
+    assert.equal(details.venue, FINISHED_DETAILS.venue);
+    assert.deepEqual(
+      details.events.map((e) => [e.kind, e.player]),
+      [['goal', FINISHED_DETAILS.scorer]],
+    );
+  });
+
+  it('serves the table of Serie A and the Champions League, and none for the Coppa Italia', async () => {
+    const serieA = await espn.fetchStandings('ita.1');
+    assert.equal(serieA.season, COMPETITIONS['ita.1'].season);
+    assert.equal(serieA.groups.length, 1);
+    assert.deepEqual(
+      serieA.groups[0].rows.map((r) => r.teamId),
+      [FOOTBALL_TEAMS.inter.id, FOOTBALL_TEAMS.milan.id, FOOTBALL_TEAMS.juventus.id, FOOTBALL_TEAMS.napoli.id, FOOTBALL_TEAMS.atalanta.id, FOOTBALL_TEAMS.lazio.id, FOOTBALL_TEAMS.como.id],
+    );
+    assert.deepEqual(serieA.groups[0].rows[0].zone, { color: '0078FF', label: 'Champions League' });
+
+    const champions = await espn.fetchStandings('uefa.champions');
+    assert.equal(champions.groups[0].rows[0].teamId, FOOTBALL_TEAMS.inter.id);
+
+    const coppa = await espn.fetchStandings('ita.coppa_italia');
+    assert.deepEqual(coppa.groups, []);
+  });
+
+  it('fails the unavailable league and its teams, standings included, so their match never refreshes', async () => {
     await assert.rejects(espn.fetchScoreboard(UNAVAILABLE_LEAGUE, '20261108'), /HTTP 503/);
     await assert.rejects(espn.fetchNextMatch(FOOTBALL_TEAMS.realMadrid.id), /HTTP 503/);
+    await assert.rejects(espn.fetchSchedule(FOOTBALL_TEAMS.realMadrid.id, 'results'), /HTTP 503/);
+    await assert.rejects(espn.fetchStandings(UNAVAILABLE_LEAGUE), /HTTP 503/);
     assert.ok((await espn.fetchTeamList(UNAVAILABLE_LEAGUE)).length > 0); // the index still lists its teams
   });
 });

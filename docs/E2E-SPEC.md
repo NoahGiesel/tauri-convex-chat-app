@@ -14,7 +14,7 @@ Most scenarios are not written. The prototype proved the design with 8 tests and
 
 ## Scope
 
-**In scope:** 76 scenarios in three phases, plus a few unit tests.
+**In scope:** 83 scenarios in three phases, plus a few unit tests.
 
 **Out of scope:**
 
@@ -218,7 +218,7 @@ Every run has two Driven users, `alice` and `bob`. Single-user tests leave `bob`
 
 | Fixture | Seed | Hands to a test | Scenarios |
 |---|---|---|---|
-| `twoFriendsWithTeamPins` | `football` | `alice`, `bob` with their chat open, which has no Team pins | Pin with `/calcio`, find a national team by an alias, the picker's refusals, remove a pin, every chip state, the match drawer, a derby, no `/calcio` in a group chat |
+| `twoFriendsWithTeamPins` | `football` | `alice`, `bob` with their chat open, which has no Team pins | Pin with `/calcio`, find a national team by an alias, the picker's refusals, remove a pin, every chip state, the match drawer, a derby, no `/calcio` in a group chat, and the seven drawer scenarios below |
 
 The `football` Seed holds these chats. Carol, Dave and Erin have no UI.
 
@@ -230,11 +230,24 @@ The `football` Seed holds these chats. Carol, Dave and Erin have no UI.
 | alice–erin | Atalanta, with no match scheduled |
 
 - **Built the real way where it can be.** The team index is the real `footballTeams:rebuildIndex`, against the stub. Alice adds every pin with the public `teamPins.add`, so each has its System line, and each pin's next-match lookup reaches the stub. The Seed waits until no scheduled function is left, through the stage's `e2eSeed:pendingJobs`, so no lookup lands after a Reset.
-- **The internal fallback writes the rest.** No lookup gives a team's last match, and no public function makes an old score. So `e2eSeed:seedFootballMatches` writes Napoli's finished match, Arsenal's postponed one, and Real Madrid's live match with a `fetchedAt` 10 minutes old. It reads the canned events with the app's own parser.
+- **The internal fallback writes the rest.** No lookup gives a team's last match, no public function makes an old score, and none writes a schedule or a table. So `e2eSeed:seedFootballMatches` writes Napoli's finished match, Arsenal's postponed one, and Real Madrid's live match with a `fetchedAt` 10 minutes old. `e2eSeed:seedFootballSchedulesAndStandings` writes the three schedules and their tables from the stub's canned ESPN answers. Both read the events and tables with the app's own parsers.
 - **Kick-offs are relative to now.** The stub fixes `now` when it starts, and the Seed when it is built. The finished match's chip shows until the first 6 a.m. after kick-off + 2 hours. So it kicked off 100 minutes before, or, within the hour before 6 a.m., just under 2 hours before that 6 a.m., so the chip shows until the next one. The postponed match kicked off 30 minutes before, so it shows until 2.5 hours after the Seed.
 - **The live score is refreshed after each Reset.** The snapshot's score is minutes old when a test starts, which counts as unavailable after 2 minutes. So the Fixture runs `footballMatches:tick`, the poll the backend's cron runs every 30 s. The stub answers it, and the poll also stores the live match's details for the drawer. A test waits for a fresh chip before it opens the drawer.
 - **The unavailable match stays unavailable.** Its league's scoreboard and its teams' next-match lookups answer 503, so neither the tick nor a lookup can refresh it.
 - **A chip is found by a team's abbreviation,** which the stub's canned data gives for each team name, and read by its `data-state`. An unavailable chip carries the warning as its tooltip. The drawer has `data-testid="match-drawer"`, and its sections are its headings. Its `data-details` leaves `loading` once its details query has answered, so a check that a drawer before kick-off has no sections waits for that first.
+
+**The drawer's seven scenarios** (`e2e/specs/match-drawer.spec.mjs`):
+
+1. **It stays open:** clicking in the chat and sending a message keeps it open, and the message box stays fully visible; Esc in the message box keeps it open; Esc inside the drawer, its X and a second chip click each close it.
+2. **Another chat:** opening another chat leaves its drawer closed, and coming back reopens this chat's on the same team.
+3. **The pitch:** 22 markers, a goal badge on the scorer, and a player who came on in the bench.
+4. **The Matches tab:** rows with W, D and L badges; opening a finished row shows that match with "← Back", and the link returns to the chip's match.
+5. **The Standings tab:** Serie A with Inter highlighted and the chat's other pinned teams marked; the chips switch to the Champions League; the Coppa Italia shows the path.
+6. **A Derby:** the team switch on Matches and Standings changes the team, its matches and its highlighted row.
+7. **A removed pin:** Bob removes the pin and Alice's open drawer closes.
+
+- **The stub serves the drawer's data:** the schedules of Inter, AC Milan and Juventus, the tables of `ita.1` and `uefa.champions`, an empty Coppa Italia, and a summary with places for the live match. It also serves the summary of the result a test opens. The unavailable league's standings answer 503 as the rest of it does.
+- **The `football` Seed writes the schedules and the tables itself,** from the same canned data in `e2e/football.mjs`, read by the app's own parsers. So the Seed cannot disagree with the stub, and a Reset always brings the same drawer.
 
 ## Driving the app
 
@@ -249,7 +262,7 @@ const composer = () => b.$(`aria/${en['chat.composer']}`);
 - **All tests run in English**, because a Reset clears `chat:lang`.
 - **Seed data stays literal.** Names like `Bob Test` and message bodies are test data.
 - **A chat in the list is found by its tooltip**, its title then its presence, such as `Bob Test · Online`. The row's accessible name is its content, and that also holds the unread count.
-- **`data-testid` is the exception.** Use it only where no accessible name exists. The starting list is the tab drop zones, the message row and the three file inputs. The media library got `role="region"` and the name "Media", the same as the button that opens it. If a person sees a control, it gets a real name instead.
+- **`data-testid` is the exception.** Use it only where no accessible name exists. The starting list is the tab drop zones, the message row and the three file inputs. The Match drawer adds the drawer itself and the parts that are not controls a person can name: the pitch, its markers and its bench rows, the Matches tab and its rows with their W, D and L badges, the opened match's state, the Standings table and its rows, and the cup path's steps. The media library got `role="region"` and the name "Media", the same as the button that opens it. If a person sees a control, it gets a real name instead.
 
 ### Waiting
 
@@ -323,7 +336,7 @@ The suite never depends on a live service, so a developer needs no credentials a
 - **R2:** it stores on PUT and serves on GET, with CORS. It checks no signatures. **DELETE is only logged**, and the file stays, so a Reset cannot bring back a message whose image is gone. A test checks a deletion by reading the stub's log.
 - **GIPHY:** it returns canned `trending` and `search` results, with thumbnails from the stub. With no search the results are "Trending 1" to "Trending 3", and a search for "Happy cats" finds "Happy cats 1" to "Happy cats 3". `stub.mjs` exports the titles and each one's giphy.com address, so the Fixtures and the stub cannot disagree. The Test build points `src/lib/giphy.ts` at the stub with `VITE_GIPHY_API_URL`. A release stops if it sets that variable.
 
-- **ESPN:** it serves canned team lists, each team's next match, scoreboards, and the live match's summary, under `/espn`. The data lives in `e2e/football.mjs` and `stub.mjs` exports it, so the Seed, the Fixtures and the stub cannot disagree. The stub's own tests read it through `convex/espn.ts`, so it cannot drift from what the backend parses. The unavailable match's league answers 503. A release stops if production sets `ESPN_BASE_URL`: `e2e/backend-guard.mjs` checks it right before `npx convex deploy`, because `release.yml` cannot see Convex's variables.
+- **ESPN:** it serves canned team lists, each team's next match, scoreboards, the live match's summary, schedules, standings under `/v2`, and the summary of the result a test opens, all under `/espn`. The data lives in `e2e/football.mjs` and `stub.mjs` exports it, so the Seed, the Fixtures and the stub cannot disagree. The stub's own tests read it through `convex/espn.ts`, so it cannot drift from what the backend parses. The unavailable match's league answers 503, its standings included. A release stops if production sets `ESPN_BASE_URL`: `e2e/backend-guard.mjs` checks it right before `npx convex deploy`, because `release.yml` cannot see Convex's variables.
 
 **Sent GIFs keep a giphy.com address**, because `messages.sendGif` accepts only `https` URLs on `*.giphy.com`, and that guard stays. So a sent GIF's image does not load in tests, and a test checks its address, not its pixels. The webview still asks media.giphy.com for it, so this is the one request a run sends out. `/giphy` picks a result at random, so its test accepts any of the three, under the line showing the search. The composer's GIF button has a name only in English, "GIF", so a Fixture finds it by that and by its `aria-expanded`.
 
@@ -386,7 +399,7 @@ These come from one machine with very little data. Treat them as orders of magni
 | Four profile tests, Fixtures included | 10 s |
 | Seven appearance tests and the language walk, Fixtures included | 24 s |
 
-**A full run should take about 7 minutes.** That is an estimate: 68 scenarios at about 5 s each, plus about 40 s to start.
+**A full run should take about 7 minutes.** That is an estimate: 75 scenarios at about 5 s each, plus about 40 s to start.
 
 ## Release process
 
@@ -422,6 +435,7 @@ These come from one machine with very little data. Treat them as orders of magni
 9. Play a Wordle Run with the physical keyboard.
 10. Get a system notification.
 11. See the Dock badge, on macOS.
+12. Open a real pinned team's drawer and check its pitch, Matches and Standings against ESPN.
 
 **Short Manual smoke,** on the other system: install, open, a system notification, and the Dock badge if that system is macOS. A releaser without access to the other system says so in the release notes.
 
