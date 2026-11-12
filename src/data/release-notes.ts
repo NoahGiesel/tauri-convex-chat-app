@@ -9,8 +9,12 @@ export const RELEASE_NOTES: ReleaseNote[] = [
   {
     version: "next",
     items: {
-      en: [],
-      it: [],
+      en: [
+        "A team pinned while it is playing shows that match even when it is not in the team's own league, such as a national team in the Nations League or a club in a cup",
+      ],
+      it: [
+        "Una squadra pinnata mentre sta giocando mostra quella partita anche quando non è del suo campionato, come una nazionale in Nations League o un club in una coppa",
+      ],
     },
   },
   {

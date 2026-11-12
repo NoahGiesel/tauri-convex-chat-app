@@ -187,12 +187,6 @@ export async function fetchNextMatch(teamId: string): Promise<ProviderMatch | nu
   return parseEvent(event, league);
 }
 
-/** La competizione ESPN di una squadra dell'indice, per cercarne la partita in corso. */
-export function competitionLeague(team: { competition?: string; national: boolean }): string | undefined {
-  if (team.competition) return CLUB_COMPETITIONS.find((c) => c.label === team.competition)?.league;
-  return team.national ? NATIONAL_TEAMS_LEAGUE : undefined;
-}
-
 /** Una partita del calendario alleggerita: la riga di `footballTeamSchedules` senza `fetchedAt`. */export type ProviderScheduleMatch = Doc<"footballTeamSchedules">["results"][number];
 export type ProviderCompetition = Doc<"footballTeamSchedules">["competitions"][number];
 export type ProviderSchedule = { matches: ProviderScheduleMatch[]; competitions: ProviderCompetition[] };

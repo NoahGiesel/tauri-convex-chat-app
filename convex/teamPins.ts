@@ -2,7 +2,6 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { mutation, query, type MutationCtx } from "./_generated/server";
-import { competitionLeague } from "./espn";
 import { teamRow } from "./footballTeams";
 import { fail, getProfile, requireMember, requireProfile } from "./model";
 
@@ -44,8 +43,8 @@ export const add = mutation({
       pinnedAt: Date.now(),
     });
     await insertSystemLine(ctx, args.conversationId, { action: "pinned", profileId: me._id, teamName: team.name });
-    // La competizione serve a trovare la partita in corso, se il pin arriva a partita iniziata.
-    await ctx.scheduler.runAfter(0, internal.footballMatches.refreshNextMatch, { teamId: args.teamId, league: competitionLeague(team) });
+    // Se il pin arriva a partita iniziata, la ricerca guarda anche la partita in corso.
+    await ctx.scheduler.runAfter(0, internal.footballMatches.refreshNextMatch, { teamId: args.teamId, justPinned: true });
     // I risultati e le partite in programma alimentano il tab Partite del drawer, con le classifiche.
     // Il refresco salta i campionati con una partita in corso.
     await ctx.scheduler.runAfter(0, internal.footballTeamSchedules.refresh, { teamId: args.teamId, standings: true });
