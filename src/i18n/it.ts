@@ -561,6 +561,7 @@ export const it: Messages = {
   "teamPins.matchLoadFailed": "Impossibile caricare questa partita",
   "teamPins.tryAgain": "Riprova",
   "teamPins.tabStandings": "Classifica",
+  "teamPins.teamSwitch": "Cambio squadra",
   "teamPins.noStandings": "Nessuna classifica per questa competizione.",
   "teamPins.teamPath": "Il percorso di {team}",
   "teamPins.knockoutRounds": "Fase a eliminazione diretta",

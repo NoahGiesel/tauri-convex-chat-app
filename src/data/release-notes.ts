@@ -15,6 +15,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
         "The Matches tab of the drawer lists the team's next three matches and its last ten results, each with its competition and a W/D/L badge",
         "A finished match in the Matches tab opens its details in the Match tab, with a Back link to the team's current match",
         "The Standings tab of the drawer shows a table for each competition the team plays this season, with its group in a group stage, its path in a cup and the knockout rounds once the league phase is over",
+        "In a derby, the Matches and Standings tabs of the drawer switch between the two pinned teams with a two-crest switch that opens on the team pinned first, and the competition stays if the other team plays it too",
       ],
       it: [
         "Il drawer della partita si apre accanto alla chat, che si restringe per lasciare visibili i messaggi e il campo di scrittura; resta aperto finché non lo chiudi, segue la squadra alla partita successiva e ogni chat ricorda il proprio drawer",
@@ -22,6 +23,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
         "Il tab Partite del drawer elenca le prossime tre partite della squadra e gli ultimi dieci risultati, ognuno con la competizione e il badge V/N/P",
         "Una partita finita nel tab Partite apre i suoi dettagli nel tab Partita, con un link per tornare alla partita attuale della squadra",
         "Il tab Classifica del drawer mostra la tabella di ogni competizione della squadra in questa stagione, con il suo girone in una fase a gironi, il suo percorso in una coppa e i turni a eliminazione quando la fase campionato è finita",
+        "In un derby, i tab Partite e Classifica del drawer passano da una squadra pinnata all'altra con uno scambio di due stemmi che si apre sulla squadra pinnata per prima, e la competizione resta se anche l'altra squadra la gioca",
       ],
     },
   },
