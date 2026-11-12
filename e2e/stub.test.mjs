@@ -5,6 +5,7 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 import * as espn from '../convex/espn.ts';
 import {
+  COMPETITIONS,
   ESPN_PREFIX,
   FINISHED_DETAILS,
   FINISHED_MATCH,
@@ -194,7 +195,7 @@ describe('the stub as ESPN', () => {
   });
 
   it('serves the schedule of Inter, AC Milan and Juventus, read by the app parser', async () => {
-    for (const team of ['inter', 'milan', 'juventus']) {
+    for (const team of SEEDED_SCHEDULES) {
       const results = await espn.fetchSchedule(FOOTBALL_TEAMS[team].id, 'results');
       const fixtures = await espn.fetchSchedule(FOOTBALL_TEAMS[team].id, 'fixtures');
       assert.ok(results.matches.length > 0, `${team} has no results`);
@@ -225,11 +226,11 @@ describe('the stub as ESPN', () => {
 
   it('serves the table of Serie A and the Champions League, and none for the Coppa Italia', async () => {
     const serieA = await espn.fetchStandings('ita.1');
-    assert.equal(serieA.season, '2026-27 Italian Serie A');
+    assert.equal(serieA.season, COMPETITIONS['ita.1'].season);
     assert.equal(serieA.groups.length, 1);
     assert.deepEqual(
       serieA.groups[0].rows.map((r) => r.teamId),
-      ['110', '103', '111', '114', '105', '112', '2572'],
+      [FOOTBALL_TEAMS.inter.id, FOOTBALL_TEAMS.milan.id, FOOTBALL_TEAMS.juventus.id, FOOTBALL_TEAMS.napoli.id, FOOTBALL_TEAMS.atalanta.id, FOOTBALL_TEAMS.lazio.id, FOOTBALL_TEAMS.como.id],
     );
     assert.deepEqual(serieA.groups[0].rows[0].zone, { color: '0078FF', label: 'Champions League' });
 

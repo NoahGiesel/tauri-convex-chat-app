@@ -118,7 +118,7 @@ export const seedFootballMatches = internalMutation({
  * competitions the stub serves. Both come as canned ESPN answers, read by the app's own parsers, so the Seed
  * cannot disagree with what the stub serves. Written last, after the pins' own refreshes have settled.
  */
-export const seedFootballSchedule = internalMutation({
+export const seedFootballSchedulesAndStandings = internalMutation({
   args: {
     schedules: v.array(v.object({ teamId: v.string(), results: v.any(), fixtures: v.any() })),
     standings: v.array(v.object({ league: v.string(), json: v.any() })),

@@ -120,7 +120,23 @@ const SCHEDULE = [
 
 /** The result a test opens from the Matches tab. Its summary is canned, so the drawer can show it. */
 export const FINISHED_MATCH = { eventId: '910001', home: 'inter', away: 'como', score: [2, 0] };
-export const FINISHED_DETAILS = { venue: 'Stadio Giuseppe Meazza', scorer: 'Nerio Rossi', minute: "23'" };
+
+/**
+ * A canned schedule match by its two teams' names, so a test names a match by its sides, never by its event id.
+ * Only the matches of `footballSchedules` are here: the pins' live, finished and postponed matches are elsewhere.
+ */
+export function matchOf(home, away) {
+  const keyOf = (name) => {
+    const key = Object.keys(TEAMS).find((k) => TEAMS[k].name === name);
+    if (!key) throw new Error(`the stub has no team called ${name}`);
+    return key;
+  };
+  const match = SCHEDULE.find((event) => event.home === keyOf(home) && event.away === keyOf(away));
+  if (!match) throw new Error(`the stub has no schedule match ${home}–${away}`);
+  return match;
+}
+
+export const FINISHED_DETAILS = { venue: 'Stadio Olimpico', scorer: 'Nerio Rossi', minute: "23'" };
 
 /** The named players of the live match. Their ids join the events to the pitch markers and the bench rows. */
 export const LIVE_PLAYERS = {

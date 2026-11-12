@@ -1,5 +1,5 @@
 import { twoFriendsWithTeamPins } from '../fixtures.mjs';
-import { FINISHED_DETAILS, FINISHED_MATCH, LIVE_DETAILS } from '../stub.mjs';
+import { FINISHED_DETAILS, LIVE_DETAILS } from '../stub.mjs';
 
 // The richer Match drawer. ESPN is the local stub, and the `football` Seed holds the schedules and the tables the
 // drawer reads: Inter (live), AC Milan and Juventus (the derby) in Alice's chat with Carol. The live match's
@@ -13,6 +13,7 @@ describe('Match drawer', () => {
 
     await alice.send('Still here');
     await alice.seesMessage('Still here');
+    await alice.clickChat();
     await alice.seesDrawer();
     await alice.seesComposerFullyVisible();
 
@@ -47,6 +48,7 @@ describe('Match drawer', () => {
     await alice.openChat('Carol Test');
     await alice.seesChip('Internazionale', 'live');
     await alice.seesDrawer();
+    await alice.seesDrawerHeaderTeam('Internazionale');
     await alice.seesInDrawer(LIVE_DETAILS.venue);
   });
 
@@ -66,19 +68,19 @@ describe('Match drawer', () => {
     await alice.openChat('Carol Test');
     await alice.seesChip('Internazionale', 'live');
     await alice.openMatch('Internazionale');
-    await alice.showDrawerTab('teamPins.tabMatches');
+    await alice.showDrawerTab('Matches');
 
     await alice.seesMatchesTab();
-    for (const [eventId, outcome] of [
-      [FINISHED_MATCH.eventId, 'win'],
-      ['910003', 'draw'],
-      ['910002', 'loss'],
+    for (const [home, away, outcome] of [
+      ['Internazionale', 'Como', 'win'],
+      ['Internazionale', 'Napoli', 'draw'],
+      ['AC Milan', 'Internazionale', 'loss'],
     ]) {
-      await alice.seesMatchRow(eventId);
-      await alice.seesResultBadge(eventId, outcome);
+      await alice.seesMatchRow(home, away);
+      await alice.seesResultBadge(home, away, outcome);
     }
 
-    await alice.openFinishedMatch(FINISHED_MATCH.eventId);
+    await alice.openFinishedMatch('Internazionale', 'Como');
     await alice.seesBackToMatch();
     await alice.seesOpenedMatchFinished();
     await alice.seesInDrawer(FINISHED_DETAILS.venue);
@@ -94,22 +96,22 @@ describe('Match drawer', () => {
     await alice.openChat('Carol Test');
     await alice.seesChip('Internazionale', 'live');
     await alice.openMatch('Internazionale');
-    await alice.showDrawerTab('teamPins.tabStandings');
+    await alice.showDrawerTab('Standings');
 
     await alice.seesStandingsTable();
-    await alice.seesCompetitionOn('ita.1');
+    await alice.seesCompetitionOn('Serie A');
     await alice.seesTableRowOn('Internazionale');
     await alice.seesTableRowPinned('AC Milan');
     await alice.seesTableRowPinned('Juventus');
 
     // The Champions League is a table of its own: a team the league table does not hold proves the switch.
-    await alice.pickCompetition('uefa.champions');
-    await alice.seesCompetitionOn('uefa.champions');
+    await alice.pickCompetition('Champions League');
+    await alice.seesCompetitionOn('Champions League');
     await alice.seesTableRow('Real Madrid');
     await alice.seesTableRowOn('Internazionale');
 
-    await alice.pickCompetition('ita.coppa_italia');
-    await alice.seesCompetitionOn('ita.coppa_italia');
+    await alice.pickCompetition('Coppa Italia');
+    await alice.seesCompetitionOn('Coppa Italia');
     await alice.seesCupPath(2);
   });
 
@@ -118,18 +120,18 @@ describe('Match drawer', () => {
     await alice.openChat('Carol Test');
     await alice.seesOneChipFor('AC Milan', 'Juventus');
     await alice.openMatch('AC Milan');
-    await alice.showDrawerTab('teamPins.tabMatches');
+    await alice.showDrawerTab('Matches');
 
     await alice.seesTeamSwitch();
     await alice.seesDrawerTeamOn('AC Milan');
-    await alice.seesMatchRow('910011');
+    await alice.seesMatchRow('AC Milan', 'Barcelona');
 
     await alice.pickDrawerTeam('Juventus');
     await alice.seesDrawerTeamOn('Juventus');
-    await alice.seesMatchRow('910012');
-    await alice.doesNotSeeMatchRow('910011');
+    await alice.seesMatchRow('Juventus', 'Arsenal');
+    await alice.doesNotSeeMatchRow('AC Milan', 'Barcelona');
 
-    await alice.showDrawerTab('teamPins.tabStandings');
+    await alice.showDrawerTab('Standings');
     await alice.seesTeamSwitch();
     await alice.seesDrawerTeamOn('Juventus');
     await alice.seesTableRowOn('Juventus');

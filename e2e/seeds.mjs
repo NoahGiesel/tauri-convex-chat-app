@@ -183,7 +183,7 @@ async function buildFootball(users) {
     standings: SEEDED_STANDINGS.map((league) => ({ league, json: espnStandings(league) })),
     fetchedAt: now,
   };
-  convexInStage(['run', 'e2eSeed:seedFootballSchedule', JSON.stringify(drawer)]);
+  convexInStage(['run', 'e2eSeed:seedFootballSchedulesAndStandings', JSON.stringify(drawer)]);
   snapshot('football');
 }
 

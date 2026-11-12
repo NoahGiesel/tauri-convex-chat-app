@@ -23,6 +23,7 @@ import {
 
 /** What the `football` Seed and the Fixtures read, from the same canned data the stub serves. */
 export {
+  COMPETITIONS,
   ESPN_PREFIX,
   espnEvent,
   espnStandings,
@@ -32,6 +33,7 @@ export {
   FINISHED_MATCH,
   LIVE_DETAILS,
   LIVE_PLAYERS,
+  matchOf,
   SEEDED_MATCHES,
   SEEDED_PINS,
   SEEDED_SCHEDULES,

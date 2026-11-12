@@ -14,7 +14,7 @@ Most scenarios are not written. The prototype proved the design with 8 tests and
 
 ## Scope
 
-**In scope:** 76 scenarios in three phases, plus a few unit tests.
+**In scope:** 83 scenarios in three phases, plus a few unit tests.
 
 **Out of scope:**
 
@@ -230,7 +230,7 @@ The `football` Seed holds these chats. Carol, Dave and Erin have no UI.
 | alice–erin | Atalanta, with no match scheduled |
 
 - **Built the real way where it can be.** The team index is the real `footballTeams:rebuildIndex`, against the stub. Alice adds every pin with the public `teamPins.add`, so each has its System line, and each pin's next-match lookup reaches the stub. The Seed waits until no scheduled function is left, through the stage's `e2eSeed:pendingJobs`, so no lookup lands after a Reset.
-- **The internal fallback writes the rest.** No lookup gives a team's last match, no public function makes an old score, and none writes a schedule or a table. So `e2eSeed:seedFootballMatches` writes Napoli's finished match, Arsenal's postponed one, and Real Madrid's live match with a `fetchedAt` 10 minutes old. `e2eSeed:seedFootballSchedule` writes the three schedules and their tables from the stub's canned ESPN answers. Both read the events and tables with the app's own parsers.
+- **The internal fallback writes the rest.** No lookup gives a team's last match, no public function makes an old score, and none writes a schedule or a table. So `e2eSeed:seedFootballMatches` writes Napoli's finished match, Arsenal's postponed one, and Real Madrid's live match with a `fetchedAt` 10 minutes old. `e2eSeed:seedFootballSchedulesAndStandings` writes the three schedules and their tables from the stub's canned ESPN answers. Both read the events and tables with the app's own parsers.
 - **Kick-offs are relative to now.** The stub fixes `now` when it starts, and the Seed when it is built. The finished match's chip shows until the first 6 a.m. after kick-off + 2 hours. So it kicked off 100 minutes before, or, within the hour before 6 a.m., just under 2 hours before that 6 a.m., so the chip shows until the next one. The postponed match kicked off 30 minutes before, so it shows until 2.5 hours after the Seed.
 - **The live score is refreshed after each Reset.** The snapshot's score is minutes old when a test starts, which counts as unavailable after 2 minutes. So the Fixture runs `footballMatches:tick`, the poll the backend's cron runs every 30 s. The stub answers it, and the poll also stores the live match's details for the drawer. A test waits for a fresh chip before it opens the drawer.
 - **The unavailable match stays unavailable.** Its league's scoreboard and its teams' next-match lookups answer 503, so neither the tick nor a lookup can refresh it.
@@ -262,7 +262,7 @@ const composer = () => b.$(`aria/${en['chat.composer']}`);
 - **All tests run in English**, because a Reset clears `chat:lang`.
 - **Seed data stays literal.** Names like `Bob Test` and message bodies are test data.
 - **A chat in the list is found by its tooltip**, its title then its presence, such as `Bob Test · Online`. The row's accessible name is its content, and that also holds the unread count.
-- **`data-testid` is the exception.** Use it only where no accessible name exists. The starting list is the tab drop zones, the message row and the three file inputs. The media library got `role="region"` and the name "Media", the same as the button that opens it. If a person sees a control, it gets a real name instead.
+- **`data-testid` is the exception.** Use it only where no accessible name exists. The starting list is the tab drop zones, the message row and the three file inputs. The Match drawer adds the drawer itself and the parts that are not controls a person can name: the pitch, its markers and its bench rows, the Matches tab and its rows with their W, D and L badges, the opened match's state, the Standings table and its rows, and the cup path's steps. The media library got `role="region"` and the name "Media", the same as the button that opens it. If a person sees a control, it gets a real name instead.
 
 ### Waiting
 
@@ -399,7 +399,7 @@ These come from one machine with very little data. Treat them as orders of magni
 | Four profile tests, Fixtures included | 10 s |
 | Seven appearance tests and the language walk, Fixtures included | 24 s |
 
-**A full run should take about 7 minutes.** That is an estimate: 68 scenarios at about 5 s each, plus about 40 s to start.
+**A full run should take about 7 minutes.** That is an estimate: 75 scenarios at about 5 s each, plus about 40 s to start.
 
 ## Release process
 
