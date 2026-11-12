@@ -11,7 +11,7 @@ import { ASSET_TYPES, ASSETS, EXPIRED_INVITE_TOKEN, INTERFACE_WAIT_MS, MAIN_WIND
 import { reset } from './reset.mjs';
 import { scriptedUser } from './scripted-user.mjs';
 import { convexInStage } from './stage.mjs';
-import { FOOTBALL_TEAMS, gifAddress, gifTitles, readStubLog } from './stub.mjs';
+import { FOOTBALL_TEAMS, gifAddress, gifTitles, LIVE_DETAILS, LIVE_PLAYERS, readStubLog } from './stub.mjs';
 import { waitUntil } from './wait.mjs';
 
 const WAIT = { timeout: INTERFACE_WAIT_MS, interval: POLL_MS };
@@ -141,11 +141,13 @@ const PICKER_SEARCH = `${PICKER}//input[@aria-label="${en['teamPins.searchPlaceh
 const pickerTeam = (team) => `${PICKER}//button[@role="option"][.//span[normalize-space(.)="${team}"]]`;
 const systemLine = (text) => `//*[@data-testid="system-line"][normalize-space(.)="${text}"]`;
 /** A chip names its teams by abbreviation, which the stub's canned data gives for each team name. */
-const abbreviationOf = (team) => {
+const footballTeam = (team) => {
   const found = Object.values(FOOTBALL_TEAMS).find((t) => t.name === team);
   if (!found) throw new Error(`the stub has no team called ${team}`);
-  return found.abbreviation;
+  return found;
 };
+const abbreviationOf = (team) => footballTeam(team).abbreviation;
+const teamIdOf = (team) => footballTeam(team).id;
 const chip = (team) => `//*[@data-testid="team-pin-chip"][.//span[normalize-space(.)="${abbreviationOf(team)}"]]`;
 /** A chip whose score is out of date carries the warning as its tooltip. */
 const UNAVAILABLE = textBefore('teamPins.unavailable');
@@ -156,6 +158,15 @@ const SETTLED_DRAWER = `${MATCH_DRAWER}[@data-details!="loading"]`;
 const unpinLabel = (team) => filled('teamPins.unpin', { team });
 const drawerSection = (key) => `${MATCH_DRAWER}//h3[normalize-space(.)="${en[key]}"]`;
 const DRAWER_SECTIONS = { Events: 'teamPins.events', Lineups: 'teamPins.lineups', Stats: 'teamPins.stats' };
+/** A part of the drawer by its `data-testid`, which the drawer needs for what a person cannot name. */
+const drawerPart = (testId) => `${MATCH_DRAWER}//*[@data-testid="${testId}"]`;
+/** A tab of the drawer, by the words on it. */
+const drawerTab = (key) => `${MATCH_DRAWER}//*[@role="tab"][normalize-space(.)="${en[key]}"]`;
+const pitchPlayer = (side, athleteId) => drawerPart(`pitch-player-${side}-${athleteId}`);
+const benchPlayer = (side, athleteId) => drawerPart(`bench-player-${side}-${athleteId}`);
+const standingsRow = (team) => drawerPart(`standings-row-${teamIdOf(team)}`);
+const competitionChip = (league) => drawerPart(`standings-chip-${league}`);
+const teamSwitchChoice = (team) => drawerPart(`team-switch-${teamIdOf(team)}`);
 const commandOffered = (command) => `//*[@role="listbox"]//button[@role="option"][.//strong[normalize-space(.)="/${command}:"]]`;
 
 /** A file from `e2e/assets`, ready to hand to the page, under its own name or another. */
@@ -866,6 +877,81 @@ function drivenUser(name) {
         if (await b.$(drawerSection(key)).isExisting()) throw new Error(`${name} sees ${en[key]} in a drawer before kick-off`);
       }
     },
+    seesDrawer: () => waitUntilShown(MATCH_DRAWER, `${name} did not see the match drawer`),
+    stopsSeeingDrawer: () => waitUntilGone(MATCH_DRAWER, `${name} still sees the match drawer`),
+    async hasNoDrawer() {
+      if (await b.$(MATCH_DRAWER).isExisting()) throw new Error(`${name} sees a match drawer`);
+    },
+    /** A second click on the chip that opened it closes the drawer. */
+    closeMatchWithChip: (team) => press(`${chip(team)}//button[@aria-haspopup="dialog"]`),
+    /** A click on the drawer, then Esc, which only closes it with the focus inside. */
+    async closeMatchWithEscape() {
+      await waitUntilShown(MATCH_DRAWER, `${name} has no match drawer to close`);
+      await b.$(MATCH_DRAWER).click();
+      await b.keys('Escape');
+    },
+    /** Esc in the message box leaves it open. */
+    async pressEscapeInComposer() {
+      await waitUntilShown(COMPOSER, `${name} has no message box`);
+      await b.$(COMPOSER).click();
+      await b.keys('Escape');
+    },
+    seesComposerFullyVisible: () =>
+      b.waitUntil(async () => b.$(COMPOSER).isDisplayed({ withinViewport: true }), {
+        ...WAIT,
+        timeoutMsg: `${name} does not see the message box without scrolling`,
+      }),
+    showDrawerTab: (key) => press(drawerTab(key)),
+    /** The two lineups drawn on one pitch: every starter of both sides has a marker. */
+    async seesPitch(count) {
+      await waitUntilShown(drawerPart('match-pitch'), `${name} did not see the pitch`);
+      await waitUntilTrue(
+        async () => (await b.$$(`${drawerPart('match-pitch')}//*[starts-with(@data-testid, "pitch-player-")]`)).length === count,
+        `${name} did not see ${count} players on the pitch`,
+      );
+    },
+    /** The goal badge sits on the scorer's marker, joined to the event by the athlete's id. */
+    seesGoalOnPitch: () =>
+      waitUntilShown(`${pitchPlayer('home', LIVE_PLAYERS.scorer.id)}//*[normalize-space(.)="⚽"]`, `${name} did not see a goal badge on ${LIVE_PLAYERS.scorer.name}`),
+    /** A player who came on is in the bench with the minute and the player he replaced. */
+    seesSubstituteOnBench: () => {
+      const cameOn = filled('teamPins.cameOn', { minute: LIVE_DETAILS.minute, name: LIVE_DETAILS.replaced });
+      return waitUntilShown(`${benchPlayer('home', LIVE_PLAYERS.substitute.id)}[contains(normalize-space(.), "${cameOn}")]`, `${name} did not see ${cameOn} in the bench`);
+    },
+    seesMatchesTab: () => waitUntilShown(`${drawerPart('matches-tab')}[@data-state="ready"]`, `${name} did not see the Matches tab fill`),
+    seesMatchRow: (eventId) => waitUntilShown(drawerPart(`match-row-${eventId}`), `${name} did not see the match ${eventId} in the Matches tab`),
+    async doesNotSeeMatchRow(eventId) {
+      if (await b.$(drawerPart(`match-row-${eventId}`)).isExisting()) throw new Error(`${name} still sees the match ${eventId}`);
+    },
+    /** The W, D or L badge on that row. */
+    seesResultBadge: (eventId, outcome) =>
+      waitUntilShown(
+        `${drawerPart(`outcome-${eventId}`)}[normalize-space(.)="${en[`teamPins.${outcome}`]}"]`,
+        `${name} did not see ${en[`teamPins.${outcome}`]} on the match ${eventId}`,
+      ),
+    openFinishedMatch: (eventId) => press(`${drawerPart(`match-row-${eventId}`)}/button`),
+    seesBackToMatch: () => waitUntilShown(drawerPart('back-to-match'), `${name} has no way back to the chip's match`),
+    stopsSeeingBackToMatch: () => waitUntilGone(drawerPart('back-to-match'), `${name} still has the way back to the chip's match`),
+    backToMatch: () => press(drawerPart('back-to-match')),
+    seesOpenedMatchFinished: () =>
+      waitUntilShown(`${drawerPart('opened-match-state')}[starts-with(normalize-space(.), "${en['teamPins.ft']}")]`, `${name} did not see the opened match as finished`),
+    pickCompetition: (league) => press(competitionChip(league)),
+    seesCompetitionOn: (league) => waitUntilShown(`${competitionChip(league)}[@aria-selected="true"]`, `${name} does not see ${league} chosen`),
+    seesTableRow: (team) => waitUntilShown(standingsRow(team), `${name} does not see ${team} in the table`),
+    seesTableRowOn: (team) => waitUntilShown(`${standingsRow(team)}[@data-selected="true"]`, `${name} does not see ${team}'s row highlighted`),
+    /** A row of the chat's other pinned team carries the pin icon. */
+    seesTableRowPinned: (team) => waitUntilShown(`${standingsRow(team)}[@data-pinned="true"]`, `${name} does not see ${team}'s row marked as pinned`),
+    seesStandingsTable: () => waitUntilShown(drawerPart('standings-table'), `${name} sees no table`),
+    /** A cup without a table shows the team's path, one step per round. */
+    seesCupPath: (steps) =>
+      waitUntilTrue(
+        async () => (await b.$$(`${drawerPart('standings-path')}//*[starts-with(@data-testid, "standings-step-")]`)).length === steps,
+        `${name} did not see a path of ${steps} rounds`,
+      ),
+    /** In a derby: the switch that shows one of the two teams at a time. */
+    seesTeamSwitch: () => waitUntilShown(drawerPart('team-switch'), `${name} has no team switch for a derby`),
+    pickDrawerTeam: (team) => press(teamSwitchChoice(team)),
+    seesDrawerTeamOn: (team) => waitUntilShown(`${teamSwitchChoice(team)}[@aria-selected="true"]`, `${name} does not see the drawer showing ${team}`),
 
     typeInComposer: (text) => b.$(COMPOSER).setValue(text),
     seesCommandOffered: (command) => waitUntilShown(commandOffered(command), `${name} was not offered /${command}`),
