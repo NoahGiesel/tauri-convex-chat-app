@@ -219,28 +219,30 @@ describe("tab Classifica: la competizione dopo un cambio squadra", () => {
   const inter = [coppa, ucl, serieA];
   const milan = [coppa, serieA];
 
-  it("se la squadra mostrata non gioca la competizione scelta, il chip acceso diventa quello del derby", () => {
-    const { requested } = leagueRequest("uefa.champions", "ita.1", milan, "ita.1", false);
+  it("se la squadra mostrata non gioca la competizione scelta, la scelta cade e il tab torna a quella del derby", () => {
+    const { picked, requested } = leagueRequest("uefa.champions", "ita.1", milan, "ita.1", false);
 
+    expect(picked).toBeNull();
     expect(requested).toBe("ita.1");
-    expect(leagueChoice(requested, false, "ita.1").league).toBe("ita.1");
+    expect(leagueChoice(requested, false, "ita.1", picked)).toEqual({ league: "ita.1", usingFallback: false });
   });
 
   it("la competizione che giocano entrambe le squadre resta scelta", () => {
-    const { requested } = leagueRequest("uefa.champions", "ita.1", inter, "ita.1", false);
+    const { picked, requested } = leagueRequest("uefa.champions", "ita.1", inter, "ita.1", false);
 
+    expect(picked).toBe("uefa.champions");
     expect(requested).toBe("uefa.champions");
-    expect(leagueChoice(requested, false, "ita.1").league).toBe("uefa.champions");
+    expect(leagueChoice(requested, false, "ita.1", picked)).toEqual({ league: "uefa.champions", usingFallback: false });
   });
 
   it("tornando alla prima squadra resta la competizione del derby", () => {
     const switched = leagueRequest("uefa.champions", "ita.1", milan, "ita.1", false);
-    expect(switched.picked).toBe("ita.1");
+    expect(switched.picked).toBeNull();
 
     const back = leagueRequest(switched.picked, "ita.1", inter, "ita.1", false);
 
     expect(back.requested).toBe("ita.1");
-    expect(leagueChoice(back.requested, false, "ita.1").league).toBe("ita.1");
+    expect(leagueChoice(back.requested, false, "ita.1", back.picked).league).toBe("ita.1");
   });
 
   it("mentre il calendario della squadra mostrata carica, la richiesta non oscilla", () => {
@@ -251,9 +253,17 @@ describe("tab Classifica: la competizione dopo un cambio squadra", () => {
   });
 
   it("quando la competizione del derby non ha niente da mostrare, il tab ripiega sul campionato", () => {
-    const { requested } = leagueRequest("uefa.champions", "uefa.champions", milan, "ita.1", false);
+    const { picked, requested } = leagueRequest(null, "ita.coppa_italia", milan, "ita.1", false);
+    expect(requested).toBe("ita.coppa_italia");
 
-    expect(leagueChoice(requested, true, "ita.1")).toEqual({ league: "ita.1", usingFallback: true });
+    expect(leagueChoice(requested, true, "ita.1", picked)).toEqual({ league: "ita.1", usingFallback: true });
+  });
+
+  it("una competizione scelta coi chip resta accesa anche senza niente da mostrare", () => {
+    const { picked, requested } = leagueRequest("ita.coppa_italia", "ita.1", inter, "ita.1", false);
+    expect(requested).toBe("ita.coppa_italia");
+
+    expect(leagueChoice(requested, true, "ita.1", picked)).toEqual({ league: "ita.coppa_italia", usingFallback: false });
   });
 });
 
@@ -266,11 +276,11 @@ describe("tab Classifica: una sola squadra", () => {
   it("si apre sulla competizione della partita e la scelta fatta resta", () => {
     const initial = leagueRequest(null, "uefa.champions", competitions, "ita.1", false);
     expect(initial.requested).toBe("uefa.champions");
-    expect(leagueChoice(initial.requested, false, "ita.1")).toEqual({ league: "uefa.champions", usingFallback: false });
+    expect(leagueChoice(initial.requested, false, "ita.1", initial.picked)).toEqual({ league: "uefa.champions", usingFallback: false });
 
     const picked = leagueRequest("ita.1", "uefa.champions", competitions, "ita.1", false);
     expect(picked.requested).toBe("ita.1");
-    expect(leagueChoice(picked.requested, false, "ita.1")).toEqual({ league: "ita.1", usingFallback: false });
+    expect(leagueChoice(picked.requested, false, "ita.1", picked.picked)).toEqual({ league: "ita.1", usingFallback: false });
   });
 
   it("senza competizione della partita si apre sul campionato della squadra", () => {

@@ -139,7 +139,7 @@ export function MatchDrawer({
   /** La competizione scelta coi chip: `null` finché vale quella del chip della partita. */
   const [pickedLeague, setPickedLeague] = useState<string | null>(null);
   const teamLeagueId = schedule ? teamLeague(schedule, competitions) : null;
-  // Dopo un cambio squadra la scelta resta se la squadra mostrata la gioca, altrimenti diventa quella del derby.
+  // Dopo un cambio squadra la scelta resta se la squadra mostrata la gioca, altrimenti cade.
   const request = leagueRequest(pickedLeague, match.league, competitions, teamLeagueId, scheduleLoading);
   const requestedLeague = request.requested;
   const primary = useQuery(
@@ -156,7 +156,7 @@ export function MatchDrawer({
   const fallbackView = viewFor(fallback);
   // Niente tabella e niente percorso, o una prima richiesta fallita: si passa al campionato della squadra.
   const primaryMissing = primaryView?.kind === "empty" || (!!primary?.pending && waitingTooLong(primary, schedule, now));
-  const { league, usingFallback } = leagueChoice(requestedLeague, primaryMissing, teamLeagueId);
+  const { league, usingFallback } = leagueChoice(requestedLeague, primaryMissing, teamLeagueId, request.picked);
   const standings = usingFallback ? fallback : primary;
   const view = usingFallback ? fallbackView : primaryView;
   const state = chipState(shown);
@@ -171,7 +171,7 @@ export function MatchDrawer({
   const standingsLoading =
     scheduleLoading || (!!requestedLeague && (primary === undefined || (primary !== null && primary.pending && !waitingTooLong(primary, schedule, now))));
 
-  // La scelta caduta su un'altra competizione diventa quella vera: tornando alla prima squadra la vecchia non ricompare.
+  // La scelta caduta (o cambiata) diventa quella salvata: tornando alla prima squadra la vecchia non ricompare.
   useEffect(() => {
     if (request.picked !== pickedLeague) setPickedLeague(request.picked);
   }, [request.picked, pickedLeague]);
