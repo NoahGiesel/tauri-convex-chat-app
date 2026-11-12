@@ -560,6 +560,7 @@ export const en = {
   "teamPins.matchLoadFailed": "Couldn't load this match",
   "teamPins.tryAgain": "Try again",
   "teamPins.tabStandings": "Standings",
+  "teamPins.teamSwitch": "Team switch",
   "teamPins.noStandings": "No table for this competition yet.",
   "teamPins.teamPath": "{team}'s path",
   "teamPins.knockoutRounds": "Knockout rounds",

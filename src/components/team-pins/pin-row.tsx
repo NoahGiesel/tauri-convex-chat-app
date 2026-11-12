@@ -102,9 +102,9 @@ export function TeamPinRow({
         createPortal(
           <MatchDrawer
             conversationId={conversationId}
-            team={open.pins[0].team}
+            teams={open.pins.map((pin) => pin.team)}
             match={open.match}
-            otherTeamIds={[...new Set(pinnedTeamIds)].filter((id) => id !== open.pins[0].team.teamId)}
+            pinnedTeamIds={[...new Set(pinnedTeamIds)]}
             opened={opened}
             onOpen={(match) => setOpened({ match, requestedAt: Date.now() })}
             onBack={() => setOpened(null)}

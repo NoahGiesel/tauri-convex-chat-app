@@ -561,6 +561,7 @@ export const de: Messages = {
   "teamPins.matchLoadFailed": "Dieses Spiel konnte nicht geladen werden",
   "teamPins.tryAgain": "Erneut versuchen",
   "teamPins.tabStandings": "Tabelle",
+  "teamPins.teamSwitch": "Teamwechsel",
   "teamPins.noStandings": "Für diesen Wettbewerb gibt es noch keine Tabelle.",
   "teamPins.teamPath": "Der Weg von {team}",
   "teamPins.knockoutRounds": "K.-o.-Runden",

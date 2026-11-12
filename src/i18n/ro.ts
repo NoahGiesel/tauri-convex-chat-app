@@ -561,6 +561,7 @@ export const ro: Messages = {
   "teamPins.matchLoadFailed": "Nu s-a putut încărca acest meci",
   "teamPins.tryAgain": "Încearcă din nou",
   "teamPins.tabStandings": "Clasament",
+  "teamPins.teamSwitch": "Schimbă echipa",
   "teamPins.noStandings": "Încă nu există un clasament pentru această competiție.",
   "teamPins.teamPath": "Parcursul lui {team}",
   "teamPins.knockoutRounds": "Runde eliminatorii",
