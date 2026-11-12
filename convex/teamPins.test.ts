@@ -55,6 +55,9 @@ const MILAN = "103";
 const JUVENTUS = "111";
 const NAPOLI = "114";
 const VENEZIA = "17530";
+const TURKEY = "465";
+/** Türkiye-Belgio (uefa.nations), calcio d'inizio alle 17:00 UTC del 12 novembre 2026. */
+const TUR_BEL = "401861145";
 /** Fiorentina-Juventus (ita.1), calcio d'inizio alle 19:45 UTC. */
 const FIO_JUV = "401875003";
 
@@ -81,6 +84,21 @@ function teamPlayingNext(teamId: string, opponent: { id: string; name: string; a
         },
       ],
     },
+  };
+}
+
+/** Il calendario ESPN (`schedule?fixture=true`) di un club con le partite di un tabellone, nella stagione 2026-27. */
+function scheduleOf(teamId: string, league: string, events: any[]) {
+  const season = { year: 2026, displayName: "2026-27 Italian Serie A" };
+  return {
+    season,
+    team: { id: teamId, isNational: false },
+    events: events.map((e) => ({
+      ...e,
+      season,
+      seasonType: { name: season.displayName },
+      league: { slug: league, name: "Italian Serie A", abbreviation: "Serie A" },
+    })),
   };
 }
 
@@ -157,6 +175,8 @@ describe("aggiungere una squadra", () => {
     stub.reply("/site/v2/sports/soccer/ita.1/scoreboard", board);
     // Mentre si gioca, ESPN dà già come prossima la partita dopo.
     stub.reply("/site/v2/sports/soccer/all/teams/111", teamPlayingNext(JUVENTUS, { id: VENEZIA, name: "Venezia", abbreviation: "VEN" }));
+    // Il calendario della squadra dà la partita in corso con la sua competizione.
+    stub.reply("/site/v2/sports/soccer/all/teams/111/schedule?fixture=true", scheduleOf(JUVENTUS, "ita.1", [event]));
 
     await f.alice.mutation(api.teamPins.add, { conversationId: f.direct, teamId: JUVENTUS });
     await f.t.finishAllScheduledFunctions(vi.runAllTimers);
@@ -168,6 +188,26 @@ describe("aggiungere una squadra", () => {
       score: { home: 1, away: 0 },
       home: { teamId: "109", abbreviation: "FIO" },
       away: { teamId: JUVENTUS, abbreviation: "JUV" },
+    });
+  });
+
+  it("una nazionale messa mentre gioca fuori dalle amichevoli mostra la partita in corso", async () => {
+    // Türkiye-Belgio di Nations League, in corso all'82' (risposte ESPN vere del 12 novembre 2026).
+    vi.setSystemTime(Date.parse("2026-11-12T18:40Z"));
+    const f = await twoFriends();
+    stub.reply("/site/v2/sports/soccer/uefa.nations/scoreboard", loadFixture("scoreboard-uefa.nations-live"));
+
+    await f.alice.mutation(api.teamPins.add, { conversationId: f.direct, teamId: TURKEY });
+    await f.t.finishAllScheduledFunctions(vi.runAllTimers);
+
+    const [pin] = await f.alice.query(api.teamPins.list, { conversationId: f.direct });
+    expect(pin.nextMatch).toMatchObject({
+      eventId: TUR_BEL,
+      league: "uefa.nations",
+      state: "in",
+      score: { home: 1, away: 2 },
+      home: { teamId: TURKEY, abbreviation: "TUR" },
+      away: { teamId: "459", abbreviation: "BEL" },
     });
   });
 

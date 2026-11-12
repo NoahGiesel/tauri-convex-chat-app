@@ -5,6 +5,7 @@ import { internalAction, internalMutation, internalQuery, mutation, query, type 
 import {
   espnDays,
   fetchNextMatch,
+  fetchSchedule,
   fetchScoreboard,
   fetchSummary,
   type ProviderDetails,
@@ -121,13 +122,18 @@ async function pinnedSides(ctx: QueryCtx, match: Pick<ProviderMatch, "home" | "a
 }
 
 /**
- * La partita di una squadra che si sta giocando adesso, dal tabellone di oggi della sua competizione.
- * Serve quando il pin arriva a partita iniziata: `nextEvent` dà già quella dopo (vedi `fetchNextMatch`).
+ * La partita di una squadra che si sta giocando adesso. Serve quando il pin arriva a partita iniziata:
+ * `nextEvent` dà già quella dopo (vedi `fetchNextMatch`). La competizione viene dal calendario della squadra,
+ * non dal suo campionato: una nazionale gioca Nations League e qualificazioni, un club le coppe.
+ * La partita si legge poi dal tabellone di quella competizione, che dà minuto e punteggio aggiornati.
  */
-async function fetchCurrentMatch(league: string, teamId: string, now: number): Promise<ProviderMatch | null> {
-  for (const day of espnDays(now)) {
-    for (const match of await fetchScoreboard(league, day)) {
-      if (match.home.teamId !== teamId && match.away.teamId !== teamId) continue;
+async function fetchCurrentMatch(teamId: string, now: number): Promise<ProviderMatch | null> {
+  const { matches } = await fetchSchedule(teamId, "fixtures");
+  const started = matches.filter((m) => m.state !== "post" && m.kickoff <= now && m.kickoff > now - MAX_LIVE_MS);
+  for (const entry of started) {
+    for (const day of espnDays(entry.kickoff)) {
+      const match = (await fetchScoreboard(entry.league, day)).find((m) => m.eventId === entry.eventId);
+      if (!match) continue;
       // In corso, oppure in ritardo (il calcio d'inizio è passato ma ESPN la dà ancora `pre`).
       if (match.state === "in" && match.kickoff > now - MAX_LIVE_MS) return match;
       if (match.state === "pre" && match.kickoff <= now && match.kickoff > now - MAX_DELAY_MS) return match;
@@ -138,7 +144,7 @@ async function fetchCurrentMatch(league: string, teamId: string, now: number): P
 
 /** Chiede a ESPN la prossima partita di una squadra. Se la richiesta fallisce non cambia niente: riprova il prossimo giro. */
 export const refreshNextMatch = internalAction({
-  args: { teamId: v.string(), force: v.optional(v.boolean()), league: v.optional(v.string()) },
+  args: { teamId: v.string(), force: v.optional(v.boolean()), justPinned: v.optional(v.boolean()) },
   handler: async (ctx, args) => {
     let match: ProviderMatch | null;
     const fetchedAt = Date.now();
@@ -148,12 +154,12 @@ export const refreshNextMatch = internalAction({
       console.error(`Prossima partita di ${args.teamId}:`, e instanceof Error ? e.message : e);
       return null;
     }
-    // `league` arriva quando il pin è appena stato messo: se la squadra sta giocando, `nextEvent` non lo dice.
-    if (args.league) {
+    // `justPinned` arriva quando il pin è appena stato messo: se la squadra sta giocando, `nextEvent` non lo dice.
+    if (args.justPinned) {
       try {
-        match = (await fetchCurrentMatch(args.league, args.teamId, fetchedAt)) ?? match;
+        match = (await fetchCurrentMatch(args.teamId, fetchedAt)) ?? match;
       } catch (e) {
-        // Il tabellone è un'informazione in più: senza, resta la prossima partita.
+        // Calendario e tabellone sono un'informazione in più: senza, resta la prossima partita.
         console.error(`Partita in corso di ${args.teamId}:`, e instanceof Error ? e.message : e);
       }
     }
