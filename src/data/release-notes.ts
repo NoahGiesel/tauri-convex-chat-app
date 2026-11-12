@@ -9,6 +9,13 @@ export const RELEASE_NOTES: ReleaseNote[] = [
   {
     version: "next",
     items: {
+      en: [],
+      it: [],
+    },
+  },
+  {
+    version: "0.1.34",
+    items: {
       en: [
         "The match drawer opens beside the chat, which narrows so messages and the message box stay visible; it stays open until you close it, follows the team to its next match, and each chat remembers its own drawer",
         "The Match tab of the drawer draws both lineups on one pitch, with each player's goals, cards and substitutions, the bench with whoever came on, a centred timeline of events and the stats",
