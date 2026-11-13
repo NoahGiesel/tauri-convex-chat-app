@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+import rateLimiterTest from "@convex-dev/rate-limiter/test";
 import { convexTest } from "convex-test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api, internal } from "./_generated/api";
@@ -28,6 +29,7 @@ const schedulePath = (teamId: string, fixture = false) =>
 /** Una chat diretta di alice per ogni gruppo di squadre; l'ultima è una chat di alice senza pin. */
 async function setup(chats: string[][]) {
   const t = convexTest(schema, modules);
+  rateLimiterTest.register(t);
   await t.action(internal.footballTeams.rebuildIndex, {});
   const ids = await t.run(async (ctx) => {
     const alice = await ctx.db.insert("profiles", { tokenIdentifier: "test|alice", name: "alice", email: "alice@example.com", avatarIndex: 0 });
@@ -342,7 +344,7 @@ describe("calendario nel drawer", () => {
         });
       });
       const view = await f.alice.query(api.footballTeamSchedules.forPin, { conversationId: f.conversations[0], teamId: ITALY });
-      return matchesTab(view!);
+      return Object.assign(matchesTab(view!), { f });
     }
 
     it("compare fra i risultati recenti anche se ESPN l'ha tolta da entrambe le liste", async () => {
@@ -365,6 +367,18 @@ describe("calendario nel drawer", () => {
       expect(tab.recent[0]).toMatchObject({ eventId: ITA_FRA, state: "post", score: { home: 3, away: 1 } });
       const before = parseSchedule(loadFixture("schedule-162-fixtures"), ITALY).matches.find((m) => m.eventId === ITA_FRA)!;
       expect(tab.recent[0]).toMatchObject({ round: before.round, leagueName: before.leagueName });
+    });
+
+    it("si apre dal tab Partite e ne chiede il riassunto", async () => {
+      const { f } = await lagging(false);
+      stub.reply(`/site/v2/sports/soccer/all/summary?event=${ITA_FRA}`, loadFixture("summary-401861151"));
+
+      await f.alice.mutation(api.footballMatches.openPast, { conversationId: f.conversations[0], eventId: ITA_FRA });
+      await f.t.finishAllScheduledFunctions(vi.runAllTimers);
+
+      expect(stub.calls).toContain(`/site/v2/sports/soccer/all/summary?event=${ITA_FRA}`);
+      const details = await f.alice.query(api.footballMatches.details, { conversationId: f.conversations[0], eventId: ITA_FRA });
+      expect(details).not.toBeNull();
     });
   });
 
