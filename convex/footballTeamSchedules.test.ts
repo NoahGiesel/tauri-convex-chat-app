@@ -7,6 +7,7 @@ import { parseScoreboard, parseSchedule } from "./espn";
 import { espnFetchStub, loadFixture } from "./espnStub.test-helper";
 import { mergeCompetitions } from "./footballTeamSchedules";
 import schema from "./schema";
+import { matchesTab, matchOutcome } from "../src/lib/match-schedule";
 
 const modules = import.meta.glob("./**/*.ts");
 
@@ -299,6 +300,71 @@ describe("calendario nel drawer", () => {
     expect(await f.alice.query(api.footballTeamSchedules.forPin, { conversationId: f.conversations[0], teamId: INTER })).toMatchObject({
       pending: false,
       fetchedAt: expect.any(Number),
+    });
+  });
+
+  describe("una partita appena finita che il calendario ESPN non ha ancora", () => {
+    /** Italia-Francia di Nations League, finita 3-1 il 12 novembre 2026. */
+    const ITA_FRA = "401861151";
+    const FULL_TIME = Date.parse("2026-11-12T21:40Z");
+
+    /**
+     * Il calendario di ESPN rimane indietro per ore dopo il fischio finale: il 13 novembre alle 02:06 UTC
+     * l'Italia non aveva Italia-Francia né fra i risultati né fra le partite in programma.
+     * `stillInFixtures` lascia la partita fra quelle in programma, ancora `pre`, come prima del calcio d'inizio.
+     */
+    async function lagging(stillInFixtures: boolean) {
+      vi.setSystemTime(FULL_TIME + 60 * 60_000);
+      const f = await setup([[ITALY]]);
+      await f.t.run(async (ctx) => {
+        const results = parseSchedule(loadFixture("schedule-162-results"), ITALY);
+        const fixtures = parseSchedule(loadFixture("schedule-162-fixtures"), ITALY);
+        const france = fixtures.matches.find((m) => m.eventId === ITA_FRA)!.opponent;
+        const matchId = await ctx.db.insert("footballMatches", {
+          eventId: ITA_FRA,
+          league: "uefa.nations",
+          kickoff: Date.parse("2026-11-12T19:45Z"),
+          state: "post",
+          statusName: "STATUS_FULL_TIME",
+          home: { teamId: ITALY, name: "Italy", shortName: "Italy", abbreviation: "ITA" },
+          away: france,
+          score: { home: 3, away: 1 },
+          fetchedAt: FULL_TIME,
+        });
+        const italy = await ctx.db.query("footballTeams").withIndex("by_teamId", (q) => q.eq("teamId", ITALY)).unique();
+        await ctx.db.patch("footballTeams", italy!._id, { lastMatchId: matchId });
+        await ctx.db.insert("footballTeamSchedules", {
+          teamId: ITALY,
+          results: results.matches,
+          fixtures: stillInFixtures ? fixtures.matches : fixtures.matches.filter((m) => m.eventId !== ITA_FRA),
+          competitions: mergeCompetitions([results.competitions, fixtures.competitions]),
+          fetchedAt: FULL_TIME + 10 * 60_000,
+        });
+      });
+      const view = await f.alice.query(api.footballTeamSchedules.forPin, { conversationId: f.conversations[0], teamId: ITALY });
+      return matchesTab(view!);
+    }
+
+    it("compare fra i risultati recenti anche se ESPN l'ha tolta da entrambe le liste", async () => {
+      const tab = await lagging(false);
+      expect(tab.recent[0]).toMatchObject({
+        eventId: ITA_FRA,
+        state: "post",
+        statusName: "STATUS_FULL_TIME",
+        home: true,
+        league: "uefa.nations",
+        score: { home: 3, away: 1 },
+        opponent: { name: "France" },
+      });
+      expect(matchOutcome(tab.recent[0])).toBe("win");
+    });
+
+    it("passa dalle prossime ai risultati recenti, col turno e la competizione del calendario", async () => {
+      const tab = await lagging(true);
+      expect(tab.next.map((m) => m.eventId)).not.toContain(ITA_FRA);
+      expect(tab.recent[0]).toMatchObject({ eventId: ITA_FRA, state: "post", score: { home: 3, away: 1 } });
+      const before = parseSchedule(loadFixture("schedule-162-fixtures"), ITALY).matches.find((m) => m.eventId === ITA_FRA)!;
+      expect(tab.recent[0]).toMatchObject({ round: before.round, leagueName: before.leagueName });
     });
   });
 
