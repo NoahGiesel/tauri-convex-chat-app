@@ -12,7 +12,7 @@ import {
   type ProviderMatch,
   type ProviderScheduleMatch,
 } from "./espn";
-import { deleteUnpinnedSchedules } from "./footballTeamSchedules";
+import { deleteUnpinnedSchedules, scheduleOf } from "./footballTeamSchedules";
 import { fail, getProfile, requireMember, requireProfile } from "./model";
 import { rateLimiter } from "./rateLimits";
 import { teamRow } from "./footballTeams";
@@ -443,10 +443,7 @@ async function scheduledPastMatch(
     .withIndex("by_conversation", (q) => q.eq("conversationId", conversationId))
     .take(MAX_TEAM_PINS);
   for (const pin of pins) {
-    const schedule = await ctx.db
-      .query("footballTeamSchedules")
-      .withIndex("by_teamId", (q) => q.eq("teamId", pin.teamId))
-      .unique();
+    const schedule = await scheduleOf(ctx, pin.teamId);
     const entry = schedule ? [...schedule.results, ...schedule.fixtures].find((m) => m.eventId === eventId) : undefined;
     if (!entry || entry.state !== "post") continue;
     const team = await teamRow(ctx, pin.teamId);

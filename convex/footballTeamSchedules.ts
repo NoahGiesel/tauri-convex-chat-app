@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Doc } from "./_generated/dataModel";
-import { internalAction, internalMutation, query, type MutationCtx } from "./_generated/server";
+import { internalAction, internalMutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import { fetchSchedule, type ProviderCompetition, type ProviderSchedule } from "./espn";
 import { canSeePinnedTeam } from "./model";
 import { footballCompetition, footballScheduleMatch } from "./schema";
@@ -133,6 +133,24 @@ function sideAhead(score: { home: number; away: number }): "home" | "away" | und
 }
 
 /**
+ * Il calendario salvato di una squadra con la sua ultima partita fra i risultati (vedi `withLastMatch`): quello che il
+ * tab Partite mostra e da cui si apre una partita vecchia. `null` finché la prima riga non è arrivata.
+ */
+export async function scheduleOf(ctx: QueryCtx, teamId: string): Promise<Doc<"footballTeamSchedules"> | null> {
+  const row = await ctx.db
+    .query("footballTeamSchedules")
+    .withIndex("by_teamId", (q) => q.eq("teamId", teamId))
+    .unique();
+  if (!row) return null;
+  const team = await ctx.db
+    .query("footballTeams")
+    .withIndex("by_teamId", (q) => q.eq("teamId", teamId))
+    .unique();
+  const last = team?.lastMatchId ? await ctx.db.get("footballMatches", team.lastMatchId) : null;
+  return { ...row, ...withLastMatch(row, teamId, last) };
+}
+
+/**
  * Il calendario di una squadra pinnata nel drawer: risultati, partite in programma e competizioni.
  * `null` se chi chiede non è nella chat o la chat non pinna la squadra; `pending` finché la prima riga
  * non è arrivata, così il tab sa di dover aspettare invece di dire che non ci sono partite.
@@ -141,21 +159,12 @@ export const forPin = query({
   args: { conversationId: v.id("conversations"), teamId: v.string() },
   handler: async (ctx, args) => {
     if (!(await canSeePinnedTeam(ctx, args.conversationId, args.teamId))) return null;
-    const row = await ctx.db
-      .query("footballTeamSchedules")
-      .withIndex("by_teamId", (q) => q.eq("teamId", args.teamId))
-      .unique();
-    const team = await ctx.db
-      .query("footballTeams")
-      .withIndex("by_teamId", (q) => q.eq("teamId", args.teamId))
-      .unique();
-    const last = team?.lastMatchId ? await ctx.db.get("footballMatches", team.lastMatchId) : null;
-    const { results, fixtures } = row ? withLastMatch(row, args.teamId, last) : { results: [], fixtures: [] };
+    const row = await scheduleOf(ctx, args.teamId);
     return {
       teamId: args.teamId,
       pending: row === null,
-      results,
-      fixtures,
+      results: row?.results ?? [],
+      fixtures: row?.fixtures ?? [],
       competitions: row?.competitions ?? [],
       fetchedAt: row?.fetchedAt ?? null,
     };
