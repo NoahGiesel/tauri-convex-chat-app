@@ -382,6 +382,8 @@ export const de: Messages = {
   "settings.linkBrowser.title": "Browser für Links",
   "settings.linkBrowser.description": "Wähle, welcher Browser Links öffnet (z. B. der mit deinen offenen Tabs).",
   "settings.linkBrowser.system": "Systemstandard",
+  "settings.autostart.title": "Beim Anmelden starten",
+  "settings.autostart.description": "Chat automatisch starten, wenn du dich am Computer anmeldest.",
   "settings.nav.preferences": "Einstellungen",
   "settings.preferences.subtitle": "Sprache und allgemeines Verhalten der App.",
   "chat.copyLink": "Link kopieren",
