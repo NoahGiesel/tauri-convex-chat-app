@@ -8,6 +8,10 @@ export interface ReleaseNote {
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
     version: "next",
+    items: { en: [], it: [] },
+  },
+  {
+    version: "0.1.35",
     items: {
       en: [
         "A team pinned while it is playing shows that match even when it is not in the team's own league, such as a national team in the Nations League or a club in a cup",
