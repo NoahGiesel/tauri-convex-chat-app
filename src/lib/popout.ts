@@ -1,10 +1,13 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
 /** Parametro URL che trasforma l'app in una finestra con una sola chat. */
 export const POPOUT_PARAM = "chat";
 /** Parametro URL che trasforma l'app nella finestra della Run di un Wordle Duel. */
 export const RUN_PARAM = "wordle";
+/** Parametro URL che trasforma l'app nella finestra della Run di un Geo Duel. */
+export const GEO_PARAM = "geo";
 
 /** Id della chat se questa finestra è una finestra "staccata", altrimenti null. */
 export function popoutChatId(): string | null {
@@ -14,6 +17,17 @@ export function popoutChatId(): string | null {
 /** Id del Wordle Duel se questa finestra è quella della Run, altrimenti null. */
 export function runWindowDuelId(): string | null {
   return new URLSearchParams(window.location.search).get(RUN_PARAM);
+}
+
+/** Id del Geo Duel se questa finestra è quella della sua Run, altrimenti null. */
+export function geoWindowDuelId(): string | null {
+  return new URLSearchParams(window.location.search).get(GEO_PARAM);
+}
+
+/** Chiude questa finestra (una finestra di gioco); nel browser il popup che l'app ha aperto. */
+export function closeThisWindow(): void {
+  if (isTauri()) void getCurrentWindow().close();
+  else window.close();
 }
 
 interface AppWindow {
@@ -93,6 +107,20 @@ export function openRunWindow(duelId: string, title: string): Promise<boolean> {
     height: 820,
     minWidth: 420,
     minHeight: 640,
+    reuseInBrowser: true,
+  });
+}
+
+/** Apre la finestra della Run di un Geo Duel, o porta davanti quella già aperta. */
+export function openGeoWindow(duelId: string, title: string): Promise<boolean> {
+  return openAppWindow({
+    label: `geo-${duelId}`,
+    query: `${GEO_PARAM}=${duelId}`,
+    title,
+    width: 1100,
+    height: 750,
+    minWidth: 720,
+    minHeight: 520,
     reuseInBrowser: true,
   });
 }

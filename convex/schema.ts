@@ -15,6 +15,31 @@ const wordleRun = v.object({
   endReason: v.optional(v.union(v.literal("solved"), v.literal("missed"), v.literal("timeout"), v.literal("gaveUp"))),
 });
 
+/** Zone e numero di Round del Geo Duel: li usano anche le funzioni in `geoDuels.ts`. */
+export const geoZone = v.union(v.literal("italy"), v.literal("europe"), v.literal("world"));
+export const geoRoundCount = v.union(v.literal(3), v.literal(5));
+export const geoClue = v.union(v.literal("name"), v.literal("photo"));
+export const latLng = v.object({ lat: v.number(), lng: v.number() });
+
+/** Un Round giocato: si apre con `startedAt`, finisce con `endedAt` (alla conferma del segnaposto o a tempo scaduto). */
+const geoRound = v.object({
+  startedAt: v.number(),
+  /** `startedAt` più il Round timer: il tempo non si ferma mai. */
+  endsAt: v.number(),
+  endedAt: v.optional(v.number()),
+  /** Il segnaposto confermato; assente se il tempo è scaduto senza conferma. */
+  pin: v.optional(latLng),
+  km: v.optional(v.number()),
+  points: v.optional(v.number()),
+});
+
+/** La Run del Geo Duel: i Round aperti finora, in ordine. Finisce con `endedAt`. */
+const geoRun = v.object({
+  rounds: v.array(geoRound),
+  endedAt: v.optional(v.number()),
+  gaveUp: v.optional(v.boolean()),
+});
+
 /** Una delle due squadre di una partita, con quanto serve per mostrarla anche se non è nell'indice. */
 const footballSide = v.object({
   teamId: v.string(),
@@ -237,6 +262,8 @@ export default defineSchema({
     quizId: v.optional(v.id("quizzes")),
     /** Per `kind: "game"`: il Wordle Duel mostrato dal messaggio (al posto di `gameId`). */
     wordleDuelId: v.optional(v.id("wordleDuels")),
+    /** Per `kind: "game"`: il Geo Duel mostrato dal messaggio (al posto di `gameId`). */
+    geoDuelId: v.optional(v.id("geoDuels")),
     /** Il riassunto di questo messaggio non è possibile (link illeggibile, video troppo lungo…): codice dell'errore, valido per tutti. */
     summaryBlocked: v.optional(v.string()),
     /** Per le risposte di /ask: il messaggio con la domanda. */
@@ -373,6 +400,46 @@ export default defineSchema({
   })
     .index("by_conversation_and_status", ["conversationId", "status"])
     .index("by_conversation_and_language", ["conversationId", "language"]),
+
+  /** Geo Duel 1 contro 1 in una chat diretta: gli stessi posti per tutti e due, una Run a testa, in qualsiasi momento. */
+  geoDuels: defineTable({
+    conversationId: v.id("conversations"),
+    /** Chi ha lanciato la sfida (A). */
+    playerA: v.id("profiles"),
+    playerB: v.id("profiles"),
+    zone: geoZone,
+    /** Quanti Round: tanti quanti i posti. */
+    rounds: geoRoundCount,
+    /** Id GeoNames dei posti, in ordine di Round: nessuna query li restituisce prima che il Round si apra. */
+    places: v.array(v.number()),
+    /** Nome o foto del posto; assente nei Duel di prima delle foto, che valgono "name". */
+    clue: v.optional(geoClue),
+    /** Con le foto: una chiave a caso per Round, che apre la foto del posto da `/geo/photo` senza dire quale sia. */
+    photoKeys: v.optional(v.array(v.string())),
+    /** `expired` vale per l'invito senza risposta (senza `acceptedAt`) e per il Duel che nessuno ha giocato (con `acceptedAt`). */
+    status: v.union(
+      v.literal("invite"),
+      v.literal("open"),
+      v.literal("closed"),
+      v.literal("declined"),
+      v.literal("withdrawn"),
+      v.literal("expired"),
+    ),
+    createdAt: v.number(),
+    acceptedAt: v.optional(v.number()),
+    finishedAt: v.optional(v.number()),
+    /** Esito del Duel chiuso: chi vince (assente = pareggio) e perché. */
+    outcome: v.optional(
+      v.object({
+        winner: v.optional(v.id("profiles")),
+        reason: v.union(v.literal("morePoints"), v.literal("fasterRun"), v.literal("forfeit")),
+      }),
+    ),
+    runA: v.optional(geoRun),
+    runB: v.optional(geoRun),
+  })
+    .index("by_conversation_and_status", ["conversationId", "status"])
+    .index("by_conversation_and_zone", ["conversationId", "zone"]),
 
   /** Anteprime dei link (Open Graph), condivise da tutti: si scaricano una volta sola per indirizzo. */
   linkPreviews: defineTable({

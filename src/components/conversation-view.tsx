@@ -13,6 +13,9 @@ import { QuizCard } from "@/components/quiz-card";
 import { WordleDuelCard } from "@/components/wordle/duel-card";
 import { WordleResultLine } from "@/components/wordle/result-line";
 import { WordleSetupPopover } from "@/components/wordle/setup-popover";
+import { GeoDuelCard } from "@/components/geo/duel-card";
+import { GeoResultLine } from "@/components/geo/result-line";
+import { GeoSetupPopover } from "@/components/geo/setup-popover";
 import { CalcioPicker } from "@/components/team-pins/calcio-picker";
 import { TeamPinRow } from "@/components/team-pins/pin-row";
 import { SystemLine } from "@/components/team-pins/system-line";
@@ -58,11 +61,12 @@ const COMMANDS = [
   { name: "quiz3", description: "composer.cmdQuiz3" },
   { name: "quiz5", description: "composer.cmdQuiz5" },
   { name: "wordle", description: "composer.cmdWordle" },
+  { name: "geo", description: "composer.cmdGeo" },
   { name: "calcio", description: "composer.cmdCalcio" },
 ] as const;
 
 /** Comandi che si usano solo in una chat diretta (sono sfide 1 contro 1). */
-const DIRECT_ONLY: ReadonlySet<string> = new Set<(typeof COMMANDS)[number]["name"]>(["stone-paper-scissors", "quiz3", "quiz5", "wordle", "calcio"]);
+const DIRECT_ONLY: ReadonlySet<string> = new Set<(typeof COMMANDS)[number]["name"]>(["stone-paper-scissors", "quiz3", "quiz5", "wordle", "geo", "calcio"]);
 
 type TextStyle = "me" | "code" | "pre" | "spoiler" | "quote";
 const MAX_ATTACHMENTS = 10;
@@ -149,6 +153,7 @@ export function ConversationView({
         gameId: null,
         quizId: null,
         wordleDuelId: null,
+        geoDuelId: null,
         system: null,
         summarizable: false,
         summaryBlocked: null,
@@ -183,6 +188,8 @@ export function ConversationView({
   const startQuiz = useMutation(api.quizzes.start);
   const startWordle = useMutation(api.wordleDuels.start);
   const [wordleSetup, setWordleSetup] = useState(false);
+  const startGeo = useMutation(api.geoDuels.start);
+  const [geoSetup, setGeoSetup] = useState(false);
   /** Il testo di `/calcio` mentre il picker delle squadre è aperto; null se è chiuso. */
   const [calcioText, setCalcioText] = useState<string | null>(null);
   const rollDice = useMutation(api.messages.roll);
@@ -435,11 +442,11 @@ export function ConversationView({
     loadMore(PAGE_SIZE);
   }
 
-  // Il messaggio di chiusura di un Wordle Duel porta alla sua scheda: se non è ancora caricata, carica i messaggi più vecchi.
+  // Il messaggio di chiusura di un Wordle Duel o di un Geo Duel porta alla sua scheda: se non è ancora caricata, carica i messaggi più vecchi.
   const [cardTarget, setCardTarget] = useState<string | null>(null);
   useEffect(() => {
     if (!cardTarget) return;
-    const card = document.querySelector(`[data-wordle-duel="${cardTarget}"]`);
+    const card = document.querySelector(`[data-wordle-duel="${cardTarget}"], [data-geo-duel="${cardTarget}"]`);
     if (card) {
       card.scrollIntoView({ behavior: "smooth", block: "center" });
       setCardTarget(null);
@@ -639,6 +646,12 @@ export function ConversationView({
       setWordleSetup(true);
       return;
     }
+    if (name === "geo") {
+      setDraft("");
+      setError(null);
+      setGeoSetup(true);
+      return;
+    }
     if (name === "ask") {
       if (!arg) {
         setError(t("composer.commandNeedsText"));
@@ -835,6 +848,10 @@ export function ConversationView({
             const duelId = m.wordleDuelId;
             return <WordleResultLine key={m._id} duelId={duelId} onShowCard={() => setCardTarget(duelId)} />;
           }
+          if (m.kind === "game" && m.geoDuelId && m.authorId === null) {
+            const duelId = m.geoDuelId;
+            return <GeoResultLine key={m._id} duelId={duelId} onShowCard={() => setCardTarget(duelId)} />;
+          }
           const isAi = m.kind === "ai";
 
           return (
@@ -911,6 +928,8 @@ export function ConversationView({
                   <QuizCard quizId={m.quizId} onLayout={keepBottom} />
                 ) : m.kind === "game" && m.wordleDuelId ? (
                   <WordleDuelCard duelId={m.wordleDuelId} onLayout={keepBottom} />
+                ) : m.kind === "game" && m.geoDuelId ? (
+                  <GeoDuelCard duelId={m.geoDuelId} onLayout={keepBottom} />
                 ) : m.kind === "media" && m.attachments.length > 0 ? (
                   <div>
                     {m.body && (
@@ -1140,6 +1159,20 @@ export function ConversationView({
                 setWordleSetup(false);
                 stickToBottom.current = true;
                 void startWordle({ conversationId, runMinutes, language: wordLanguage }).catch((e) => setError(t(errorKey(e))));
+                composerRef.current?.focus();
+              }}
+            />
+          )}
+          {geoSetup && (
+            <GeoSetupPopover
+              onCancel={() => {
+                setGeoSetup(false);
+                composerRef.current?.focus();
+              }}
+              onSend={(zone, rounds, clue) => {
+                setGeoSetup(false);
+                stickToBottom.current = true;
+                void startGeo({ conversationId, zone, rounds, clue }).catch((e) => setError(t(errorKey(e))));
                 composerRef.current?.focus();
               }}
             />

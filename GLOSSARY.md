@@ -57,16 +57,32 @@ A challenge between the two people of a direct chat, who each try to guess the s
 _Avoid_: Wordle game, Wordle match, Wordle challenge
 
 **Run**:
-One player's own attempt at the word inside a Wordle Duel, from opening it to guessing the word, using all six guesses, running out of time, or giving up. Giving up counts as not guessing the word.
-_Avoid_: Turn, round, game
+One player's own attempt inside a Wordle Duel or a Geo Duel. In a Wordle Duel it lasts from opening it to guessing the word, using all six guesses, running out of time, or giving up; giving up counts as not guessing the word. In a Geo Duel it is the player's Rounds, and it ends with the last Round or when the player gives up.
+_Avoid_: Turn, game
 
 **Run timer**:
 The time limit of a Run, chosen by the challenger as 1, 5 or 10 minutes. It starts when the player opens their Run and never pauses.
 _Avoid_: Countdown, clock
 
 **Duel deadline**:
-The moment, 24 hours after the invite is accepted, when a Wordle Duel closes. A player who has not finished their Run by then loses by forfeit.
+The moment, 24 hours after the invite is accepted, when a Wordle Duel or a Geo Duel closes. A player who has not finished their Run by then loses by forfeit.
 _Avoid_: Expiry, timeout
+
+**Geo Duel**:
+A challenge between the two people of a direct chat, who each get the same places, one Round at a time, and click where each place is on a map with no names, before the Duel deadline.
+_Avoid_: GeoGuessr, map game, geo quiz
+
+**Round**:
+One place inside a Geo Duel Run: the player sees its name, places a pin on the map and confirms it, or runs out of time. It scores by the distance between the pin and the place.
+_Avoid_: Turn, question, level
+
+**Round timer**:
+The 60 seconds of a Round. It starts when the player opens the Round and never pauses.
+_Avoid_: Countdown, clock
+
+**Zone**:
+The area a Geo Duel's places come from, chosen by the challenger: Italy, Europe or World. It also sets how fast the points drop with distance.
+_Avoid_: Region, map, mode
 
 **Rematch**:
 A new invite sent from a finished game's card to the same person, with the same settings. Whoever sends it becomes the challenger, and the other person accepts or declines it as usual.

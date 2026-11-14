@@ -8,7 +8,14 @@ export interface ReleaseNote {
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
     version: "next",
-    items: { en: [], it: [] },
+    items: {
+      en: [
+        "Geo Duel: type /geo in a direct chat, pick Italy, Europe or World and 3 or 5 Rounds, and challenge a friend on the same places. Each of you plays a Run whenever you like within 24 hours: in every Round the name of a place appears and you have 60 seconds to click where it is on a map with no names. The closer you click, the more points; the result shows up in the chat and in the Games tab. You can also choose a photo instead of the name as the clue: guess where the photo was taken",
+      ],
+      it: [
+        "Geo Duel: scrivi /geo in una chat diretta, scegli Italia, Europa o Mondo e 3 o 5 round, e sfida un amico sugli stessi posti. Ognuno gioca la sua Run quando vuole, entro 24 ore: a ogni round compare il nome di un posto e hai 60 secondi per cliccare dov'è su una mappa senza nomi. Più clicchi vicino, più punti; il risultato arriva in chat e nella scheda Giochi. Come indizio puoi scegliere anche una foto al posto del nome: indovina dove è stata scattata",
+      ],
+    },
   },
   {
     version: "0.1.35",

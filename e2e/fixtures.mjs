@@ -101,6 +101,19 @@ const guessRow = (word) => `//div[@aria-label="${word.toUpperCase()}"]`;
 /** A player's column on the closed card: their name, then their grid. */
 const playerColumn = (person) => `${WORDLE_CARD}//div[span[normalize-space(.)="${person}"]]`;
 
+/** The Geo Duel's card in the chat, its setup popover and its result line. A test plays one Duel. */
+const GEO_CARD = '//*[@data-testid="geo-duel-card"]';
+const GEO_SETUP = `//*[@role="dialog"][@aria-label="${en['geo.setupTitle']}"]`;
+const geoChoice = (group, text) => `${GEO_SETUP}//*[@role="group"][@aria-label="${group}"]//button[normalize-space(.)="${text}"]`;
+const geoCardButton = (key) => `${GEO_CARD}//button[starts-with(normalize-space(.), "${textBefore(key)}")]`;
+const GEO_RESULT_LINE = '//*[@data-testid="geo-result-line"]';
+/** In the Run window: the map, and the buttons that move a Round on. */
+const GEO_MAP = '//*[@data-testid="geo-map"]';
+const GEO_START_ROUND = '//*[@data-testid="geo-start-round"]';
+const GEO_GUESS = '//*[@data-testid="geo-guess"]';
+const GEO_NEXT = '//*[@data-testid="geo-next"]';
+const GEO_SUMMARY = '//*[@data-testid="geo-summary"]';
+
 const AVATAR_INPUT = '//input[@data-testid="avatar-input"]';
 const CHANGE_PHOTO = `aria/${en['settings.profile.changePhoto']}`;
 /** What the app says once something went through. */
@@ -731,6 +744,48 @@ function drivenUser(name) {
     seesWordleWonInFewerGuesses: (winner, [n, m]) => {
       const line = filled('wordle.result.fewerGuesses', { name: winner, n, m });
       return waitUntilShown(`${WORDLE_RESULT_LINE}[contains(normalize-space(.), "${line}")]`, `${name} did not see "${line}" in the chat`);
+    },
+    /** `/geo`, then the setup popover. `zone` and `rounds` as their choices read: Italy, 3 Rounds. */
+    async challengeToGeoDuel({ zone, rounds }) {
+      await user.sendCompleted('/geo');
+      await press(geoChoice(en['geo.zone'], zone));
+      await press(geoChoice(en['geo.roundCount'], filled('geo.rounds', { n: rounds })));
+      await press(`${GEO_SETUP}//button[normalize-space(.)="${en['wordle.send']}"]`);
+      await waitUntilShown(geoCardButton('wordle.withdraw'), `${name} did not send the Geo Duel`);
+    },
+    /** Accepts the Duel, then sets its places to `places` (GeoNames IDs), which the server otherwise picks at random. */
+    async acceptGeoDuel({ places }) {
+      await press(geoCardButton('game.accept'));
+      await waitUntilShown(geoCardButton('geo.startRun'), `${name} could not start a Run after accepting`);
+      convexInStage(['run', 'e2eSeed:setGeoPlaces', JSON.stringify({ places })]);
+    },
+    /** Opens the Run in its own window, found as the one new window. */
+    async openGeoRun() {
+      const before = await b.getWindowHandles();
+      await press(geoCardButton('geo.startRun'));
+      await switchToNewWindow(before, `${name} did not get a window for the Run`);
+      await waitUntilShown(GEO_START_ROUND, `${name} cannot start a Round in the Run window`);
+    },
+    /**
+     * Plays every Round with a click at the same spot: `offset` in pixels from the map's centre, where the map starts.
+     * A pointer, because the map reads where the click lands.
+     */
+    async playGeoRun({ rounds, offset }) {
+      for (let i = 0; i < rounds; i++) {
+        if (i === 0) await press(GEO_START_ROUND);
+        await waitUntilShown(`//*[@data-testid="geo-where-is"]`, `${name} did not see the place of Round ${i + 1}`);
+        await waitUntilShown(GEO_MAP, `${name} has no map`);
+        await b.action('pointer').move({ origin: await b.$(GEO_MAP), x: offset.x, y: offset.y }).down().up().perform();
+        await press(GEO_GUESS);
+        await press(GEO_NEXT);
+      }
+      await waitUntilShown(GEO_SUMMARY, `${name} did not see the end of the Run`);
+    },
+    /** The closed card shows the winner, and the result line in the chat names them with the points. */
+    async seesGeoWinner(winner) {
+      await waitUntilShown(`${GEO_CARD}//p[contains(normalize-space(.), "${named('wordle.wins', winner)}")]`, `${name} did not see ${winner} win`);
+      const line = textBefore('geo.result.morePoints', { name: winner });
+      await waitUntilShown(`${GEO_RESULT_LINE}[contains(normalize-space(.), "${line}")]`, `${name} did not see "${line}" in the chat`);
     },
     async seesOnlyMainWindow() {
       const handles = await b.getWindowHandles();

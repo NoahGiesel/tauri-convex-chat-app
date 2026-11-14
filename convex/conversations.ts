@@ -3,6 +3,7 @@ import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { internalMutation, mutation, query, type MutationCtx } from "./_generated/server";
 import { areFriends, avatarUrl, ensureDirectConversation, fail, getProfile, requireMember, requireProfile } from "./model";
+import { geoResultSummary } from "./geoDuels";
 import { wordleResultSummary } from "./wordleDuels";
 
 const MAX_CONVERSATIONS = 100;
@@ -88,6 +89,8 @@ export const list = query({
               attachment: newest.attachments?.[0]?.type ?? newest.media?.type ?? null,
               /** Il messaggio di chiusura di un Wordle Duel (senza autore): la notifica mostra il risultato. */
               wordleResult: newest.wordleDuelId && !newest.authorId ? await wordleResultSummary(ctx, newest.wordleDuelId) : null,
+              /** Lo stesso per il messaggio di chiusura di un Geo Duel. */
+              geoResult: newest.geoDuelId && !newest.authorId ? await geoResultSummary(ctx, newest.geoDuelId) : null,
             }
           : null;
 
