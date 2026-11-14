@@ -18,6 +18,7 @@ const wordleRun = v.object({
 /** Zone e numero di Round del Geo Duel: li usano anche le funzioni in `geoDuels.ts`. */
 export const geoZone = v.union(v.literal("italy"), v.literal("europe"), v.literal("world"));
 export const geoRoundCount = v.union(v.literal(3), v.literal(5));
+export const geoClue = v.union(v.literal("name"), v.literal("photo"));
 export const latLng = v.object({ lat: v.number(), lng: v.number() });
 
 /** Un Round giocato: si apre con `startedAt`, finisce con `endedAt` (alla conferma del segnaposto o a tempo scaduto). */
@@ -411,6 +412,10 @@ export default defineSchema({
     rounds: geoRoundCount,
     /** Id GeoNames dei posti, in ordine di Round: nessuna query li restituisce prima che il Round si apra. */
     places: v.array(v.number()),
+    /** Nome o foto del posto; assente nei Duel di prima delle foto, che valgono "name". */
+    clue: v.optional(geoClue),
+    /** Con le foto: una chiave a caso per Round, che apre la foto del posto da `/geo/photo` senza dire quale sia. */
+    photoKeys: v.optional(v.array(v.string())),
     /** `expired` vale per l'invito senza risposta (senza `acceptedAt`) e per il Duel che nessuno ha giocato (con `acceptedAt`). */
     status: v.union(
       v.literal("invite"),

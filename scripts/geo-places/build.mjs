@@ -109,10 +109,16 @@ for (const p of all) {
 /** Lettere latine (con accenti), spazi e la punteggiatura dei nomi di luogo. */
 const LATIN = /^[\p{Script=Latin}\p{M}\s'’.,()/-]+$/u;
 const names = new Map();
+/** Pagine Wikipedia di ogni posto (lingua "link" di GeoNames), per trovare la foto quando Wikidata non ha l'id GeoNames. */
+const wikiLinks = new Map();
 const langs = new Set(PLACE_LANGUAGES);
 for await (const line of zipLines(files["alternateNamesV2.zip"], "alternateNamesV2.txt")) {
   const c = line.split("\t");
   const [, geonameId, lang, name, preferred, short, colloquial, historic] = c;
+  if (lang === "link" && places.has(geonameId) && /^https?:\/\/(it|en)\.wikipedia\.org\/wiki\//.test(name)) {
+    wikiLinks.set(geonameId, [...(wikiLinks.get(geonameId) ?? []), name]);
+    continue;
+  }
   if (!langs.has(lang) || !places.has(geonameId) || colloquial === "1" || historic === "1" || !LATIN.test(name)) continue;
   const rank = (preferred === "1" ? 0 : short === "1" ? 1 : 2) + (/[(),/]/.test(name) ? 3 : 0);
   const byLang = names.get(geonameId) ?? {};
@@ -148,3 +154,155 @@ const header = `// GENERATO da scripts/geo-places/build.mjs: non modificare a ma
 `;
 writeFileSync(OUT, `${header}\nexport type PlaceRow = [number, number, number, string, number, ${PLACE_LANGUAGES.map(() => "string").join(", ")}];\n\nexport const PLACES: PlaceRow[] = [\n${rows.map((r) => `  ${JSON.stringify(r)},`).join("\n")}\n];\n`);
 console.log(`scritto ${OUT}: ${rows.length} posti (Italia ${count(ZONE_BIT.italy)}, Europa ${count(ZONE_BIT.europe)}, Mondo ${count(ZONE_BIT.world)})`);
+
+// ---------------------------------------------------------------------------------------------
+// Foto: l'immagine principale (P18) dell'elemento Wikidata con lo stesso id GeoNames (P1566), con autore e licenza
+// da Wikimedia Commons. Le risposte restano nella cache: con --fresh si richiedono di nuovo.
+
+const PHOTOS_OUT = join(HERE, "..", "..", "convex", "geoPhotos.ts");
+const USER_AGENT = "tauri-convex-chat-geo-build/1.0 (https://github.com/NoahGiesel/tauri-convex-chat-app)";
+/** File che quasi sempre non sono una foto della città: mappe, stemmi, bandiere, disegni. */
+const NOT_A_PHOTO = /\b(map|mapa|mappa|karte|carte|locator|location|lage|stemma|coat|wappen|escudo|blason|flag|bandiera|flagge|bandera|logo|seal|emblem|plan|diagram)\b|\.(svg|gif|tiff?)$/i;
+const PHOTO_MIMES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const MIN_PHOTO_WIDTH = 800;
+
+async function cachedJson(name, fetcher) {
+  const file = join(CACHE, name);
+  if (existsSync(file) && !process.argv.includes("--fresh")) return JSON.parse(readFileSync(file, "utf8"));
+  const data = await fetcher();
+  writeFileSync(file, JSON.stringify(data));
+  return data;
+}
+
+async function getJson(url, init = {}) {
+  for (let attempt = 1; ; attempt++) {
+    const res = await fetch(url, { ...init, headers: { "User-Agent": USER_AGENT, Accept: "application/json", ...init.headers } });
+    if (res.ok) return res.json();
+    if (attempt >= 4 || (res.status !== 429 && res.status < 500)) throw new Error(`${url.slice(0, 80)}: HTTP ${res.status}`);
+    await new Promise((r) => setTimeout(r, 2000 * attempt));
+  }
+}
+
+const chunks = (list, size) => Array.from({ length: Math.ceil(list.length / size) }, (_, i) => list.slice(i * size, (i + 1) * size));
+const ids = rows.map((r) => String(r[0]));
+
+// id GeoNames → nome del file su Commons. Se un posto ha più immagini vince la prima in ordine alfabetico.
+const p18 = await cachedJson("wikidata-p18.json", async () => {
+  const out = {};
+  for (const batch of chunks(ids, 300)) {
+    const query = `SELECT ?gn ?img WHERE { VALUES ?gn { ${batch.map((id) => `"${id}"`).join(" ")} } ?item wdt:P1566 ?gn; wdt:P18 ?img. }`;
+    const data = await getJson("https://query.wikidata.org/sparql", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/sparql-results+json" },
+      body: new URLSearchParams({ query }),
+    });
+    for (const b of data.results.bindings) {
+      const file = decodeURIComponent(b.img.value.split("/Special:FilePath/")[1]).replaceAll("_", " ");
+      if (!out[b.gn.value] || file < out[b.gn.value]) out[b.gn.value] = file;
+    }
+    console.log(`Wikidata: ${Object.keys(out).length} immagini`);
+  }
+  return out;
+});
+
+// Chi non ha la foto per id GeoNames la cerca dalla sua pagina Wikipedia (prima italiana, poi inglese):
+// pagina → elemento Wikidata → P18.
+const viaWikipedia = await cachedJson("wikipedia-p18.json", async () => {
+  const out = {};
+  const pages = { it: new Map(), en: new Map() };
+  for (const id of ids) {
+    if (p18[id]) continue;
+    const links = wikiLinks.get(id) ?? [];
+    const link = links.find((l) => l.includes("//it.")) ?? links.find((l) => l.includes("//en."));
+    if (!link) continue;
+    const lang = link.includes("//it.") ? "it" : "en";
+    pages[lang].set(decodeURIComponent(link.split("/wiki/")[1]).replaceAll("_", " "), id);
+  }
+  const items = new Map();
+  for (const lang of ["it", "en"]) {
+    for (const batch of chunks([...pages[lang].keys()], 50)) {
+      const url = `https://${lang}.wikipedia.org/w/api.php?${new URLSearchParams({ action: "query", format: "json", formatversion: "2", prop: "pageprops", ppprop: "wikibase_item", redirects: "1", titles: batch.join("|") })}`;
+      const data = await getJson(url);
+      const back = new Map(batch.map((t) => [t, t]));
+      for (const n of [...(data.query.normalized ?? []), ...(data.query.redirects ?? [])]) back.set(n.to, back.get(n.from) ?? n.from);
+      for (const page of data.query.pages) {
+        const item = page.pageprops?.wikibase_item;
+        const id = pages[lang].get(back.get(page.title) ?? page.title);
+        if (item && id) items.set(item, id);
+      }
+    }
+  }
+  for (const batch of chunks([...items.keys()], 300)) {
+    const query = `SELECT ?item ?img WHERE { VALUES ?item { ${batch.map((q) => `wd:${q}`).join(" ")} } ?item wdt:P18 ?img. }`;
+    const data = await getJson("https://query.wikidata.org/sparql", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/sparql-results+json" },
+      body: new URLSearchParams({ query }),
+    });
+    for (const b of data.results.bindings) {
+      const id = items.get(b.item.value.split("/").pop());
+      const file = decodeURIComponent(b.img.value.split("/Special:FilePath/")[1]).replaceAll("_", " ");
+      if (id && (!out[id] || file < out[id])) out[id] = file;
+    }
+  }
+  console.log(`Wikipedia: ${Object.keys(out).length} immagini in più`);
+  return out;
+});
+Object.assign(p18, viaWikipedia);
+
+// Nome del file → tipo, larghezza, autore e licenza.
+const files_ = [...new Set(Object.values(p18))];
+const meta = await cachedJson("commons-meta.json", async () => {
+  const out = {};
+  for (const batch of chunks(files_, 50)) {
+    const url = `https://commons.wikimedia.org/w/api.php?${new URLSearchParams({
+      action: "query",
+      format: "json",
+      formatversion: "2",
+      prop: "imageinfo",
+      iiprop: "extmetadata|mime|size",
+      iiextmetadatafilter: "Artist|LicenseShortName|LicenseUrl",
+      titles: batch.map((f) => `File:${f}`).join("|"),
+    })}`;
+    const data = await getJson(url);
+    const normalized = new Map((data.query.normalized ?? []).map((n) => [n.to, n.from]));
+    for (const page of data.query.pages) {
+      const info = page.imageinfo?.[0];
+      if (!info) continue;
+      const title = (normalized.get(page.title) ?? page.title).replace(/^File:/, "");
+      const m = info.extmetadata ?? {};
+      out[title] = { mime: info.mime, width: info.width, artist: m.Artist?.value ?? "", license: m.LicenseShortName?.value ?? "", licenseUrl: m.LicenseUrl?.value ?? "" };
+    }
+    console.log(`Commons: ${Object.keys(out).length} file`);
+  }
+  return out;
+});
+
+/** L'autore come testo: Commons lo dà in HTML. */
+const plain = (html) => html.replace(/<[^>]*>/g, "").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#0?39;/g, "'").replace(/\s+/g, " ").trim().slice(0, 80);
+
+const photos = rows.flatMap((r) => {
+  const file = p18[String(r[0])];
+  const m = file && meta[file];
+  if (!m || NOT_A_PHOTO.test(file) || !PHOTO_MIMES.has(m.mime) || m.width < MIN_PHOTO_WIDTH || !m.license) return [];
+  return [[r[0], file, plain(m.artist) || "Wikimedia Commons", m.license, m.licenseUrl]];
+});
+const photoCount = (bit) => photos.filter(([id]) => rows.find((r) => r[0] === id)[4] & bit).length;
+writeFileSync(
+  PHOTOS_OUT,
+  `// GENERATO da scripts/geo-places/build.mjs: non modificare a mano.
+// Foto dei posti del Geo Duel, solo per il server: il nome del file direbbe spesso dov'è la foto.
+// Ogni riga: [id GeoNames, file su Wikimedia Commons, autore, licenza, indirizzo della licenza].
+// Italia ${photoCount(ZONE_BIT.italy)}, Europa ${photoCount(ZONE_BIT.europe)}, Mondo ${photoCount(ZONE_BIT.world)} posti con foto.
+//
+// Scelte dall'immagine principale (P18) di Wikidata, https://www.wikidata.org (CC0); le foto sono su
+// Wikimedia Commons, ognuna con la sua licenza, e il gioco ne mostra autore e licenza.
+
+export type PhotoRow = [number, string, string, string, string];
+
+export const PHOTOS: PhotoRow[] = [
+${photos.map((p) => `  ${JSON.stringify(p)},`).join("\n")}
+];
+`,
+);
+console.log(`scritto ${PHOTOS_OUT}: ${photos.length} foto (Italia ${photoCount(ZONE_BIT.italy)}, Europa ${photoCount(ZONE_BIT.europe)}, Mondo ${photoCount(ZONE_BIT.world)})`);

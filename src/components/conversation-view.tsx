@@ -1169,10 +1169,10 @@ export function ConversationView({
                 setGeoSetup(false);
                 composerRef.current?.focus();
               }}
-              onSend={(zone, rounds) => {
+              onSend={(zone, rounds, clue) => {
                 setGeoSetup(false);
                 stickToBottom.current = true;
-                void startGeo({ conversationId, zone, rounds }).catch((e) => setError(t(errorKey(e))));
+                void startGeo({ conversationId, zone, rounds, clue }).catch((e) => setError(t(errorKey(e))));
                 composerRef.current?.focus();
               }}
             />

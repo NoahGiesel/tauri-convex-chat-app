@@ -4,12 +4,15 @@
  */
 export type GeoZone = "italy" | "europe" | "world";
 export type GeoRounds = 3 | 5;
+/** Cosa vede il giocatore in ogni Round: il nome del posto o una sua foto. */
+export type GeoClue = "name" | "photo";
 /** Le lingue in cui l'elenco ha i nomi dei posti: le stesse dell'app. */
 export type PlaceLanguage = "it" | "en" | "de" | "es" | "ro";
 export type PlaceNames = Record<PlaceLanguage, string>;
 
 export const GEO_ZONES: readonly GeoZone[] = ["italy", "europe", "world"];
 export const GEO_ROUNDS: readonly GeoRounds[] = [3, 5];
+export const GEO_CLUES: readonly GeoClue[] = ["name", "photo"];
 export const PLACE_LANGUAGES: readonly PlaceLanguage[] = ["it", "en", "de", "es", "ro"];
 
 /** Bit di ogni Zone nel campo `zones` dell'elenco generato. */

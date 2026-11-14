@@ -1,8 +1,8 @@
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
-import { internalMutation, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
-import { pickPlaces, placeById } from "./geoCities";
+import { internalMutation, internalQuery, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
+import { photoOf, pickPlaces, placeById } from "./geoCities";
 import {
   DUEL_DEADLINE_MS,
   GRACE_MS,
@@ -14,7 +14,7 @@ import {
   type GeoResultSummary,
 } from "./geoRules";
 import { fail, getProfile, requireMember, requireProfile } from "./model";
-import { geoRoundCount, geoZone } from "./schema";
+import { geoClue, geoRoundCount, geoZone } from "./schema";
 
 /** Duel passati letti per non ripetere i posti nella chat. */
 const USED_PLACES_LIMIT = 300;
@@ -158,9 +158,14 @@ async function postDuelMessage(ctx: MutationCtx, members: Doc<"members">[], mess
   }
 }
 
+/** Una chiave a caso per la foto di un Round: chi non l'ha ricevuta all'apertura del Round non apre la foto. */
+function randomKey(): string {
+  return Array.from({ length: 24 }, () => Math.floor(Math.random() * 36).toString(36)).join("");
+}
+
 /** `/geo`: sfida l'altra persona di una chat diretta a un Geo Duel. I posti li sceglie il server, adesso, per tutti e due. */
 export const start = mutation({
-  args: { conversationId: v.id("conversations"), zone: geoZone, rounds: geoRoundCount },
+  args: { conversationId: v.id("conversations"), zone: geoZone, rounds: geoRoundCount, clue: geoClue },
   handler: async (ctx, args) => {
     const me = await requireProfile(ctx);
     await requireMember(ctx, args.conversationId, me._id);
@@ -178,7 +183,8 @@ export const start = mutation({
       .order("desc")
       .take(USED_PLACES_LIMIT);
     const used = new Set(past.flatMap((d) => (d.acceptedAt !== undefined ? d.places : [])));
-    const places = pickPlaces(args.zone, args.rounds, used);
+    // Con le foto si pesca solo tra i posti che ne hanno una.
+    const places = pickPlaces(args.zone, args.rounds, used, args.clue === "photo");
 
     const createdAt = Date.now();
     const duelId = await ctx.db.insert("geoDuels", {
@@ -188,6 +194,8 @@ export const start = mutation({
       zone: args.zone,
       rounds: args.rounds,
       places,
+      clue: args.clue,
+      ...(args.clue === "photo" ? { photoKeys: places.map(randomKey) } : {}),
       status: "invite",
       createdAt,
     });
@@ -303,10 +311,29 @@ export const timeoutRound = internalMutation({
   },
 });
 
-/** Un posto come lo vede il client: nomi in tutte le lingue, paese e, se serve, le coordinate. */
-function placeView(id: number, withCoords: boolean) {
+/** Un posto finito o un Duel chiuso: nomi in tutte le lingue, paese, coordinate e, se c'è, la pagina della foto. */
+function placeView(id: number) {
   const p = placeById(id);
-  return { names: p.names, country: p.country, ...(withCoords ? { lat: p.lat, lng: p.lng } : {}) };
+  const photo = photoOf(id);
+  return { names: p.names, country: p.country, lat: p.lat, lng: p.lng, photoPage: photo ? commonsPage(photo.file) : null };
+}
+
+const commonsPage = (file: string) => `https://commons.wikimedia.org/wiki/File:${encodeURIComponent(file.replaceAll(" ", "_"))}`;
+
+/**
+ * Il posto di un Round come lo vede chi lo gioca. In corso: il nome, oppure solo la foto (un indirizzo che non dice
+ * quale sia), con autore e licenza; il paese e le coordinate mai. Finito: tutto.
+ */
+function roundPlace(duel: Doc<"geoDuels">, index: number, ended: boolean) {
+  const id = duel.places[index];
+  const photo = duel.clue === "photo" ? photoOf(id) : null;
+  const key = duel.photoKeys?.[index];
+  const photoView =
+    photo && key
+      ? { path: `/geo/photo?${new URLSearchParams({ d: duel._id, i: String(index), k: key })}`, author: photo.author, license: photo.license, licenseUrl: photo.licenseUrl }
+      : null;
+  if (ended) return { ...placeView(id), photo: photoView };
+  return { names: duel.clue === "photo" ? null : placeById(id).names, photo: photoView };
 }
 
 /** Un Round finito come lo mostrano la finestra e la scheda chiusa. */
@@ -333,7 +360,7 @@ function resultOf(duel: Doc<"geoDuels">) {
     outcome: duel.outcome ? { winner: winnerSideOf(duel), reason: duel.outcome.reason } : null,
     totals: { a: a ? totalPoints(a) : null, b: b ? totalPoints(b) : null },
     times: { a: a ? runTime(a) : null, b: b ? runTime(b) : null },
-    rounds: duel.places.map((id, i) => ({ place: placeView(id, true), a: roundResult(a?.rounds[i]), b: roundResult(b?.rounds[i]) })),
+    rounds: duel.places.map((id, i) => ({ place: placeView(id), a: roundResult(a?.rounds[i]), b: roundResult(b?.rounds[i]) })),
   };
 }
 
@@ -400,6 +427,7 @@ export const get = query({
       nameB,
       zone: duel.zone,
       rounds: duel.rounds,
+      clue: duel.clue ?? "name",
       createdAt: duel.createdAt,
       expiresAt: duel.createdAt + INVITE_TTL_MS,
       acceptedAt: duel.acceptedAt ?? null,
@@ -437,6 +465,7 @@ export const myRun = query({
     return {
       status: duel.status,
       zone: duel.zone,
+      clue: duel.clue ?? "name",
       totalRounds: duel.places.length,
       mySide: s,
       opponentName: opponent?.name ?? "?",
@@ -449,7 +478,7 @@ export const myRun = query({
             rounds: run.rounds.map((r, i) => ({
               startedAt: r.startedAt,
               endsAt: r.endsAt,
-              place: placeView(duel.places[i], r.endedAt !== undefined),
+              place: roundPlace(duel, i, r.endedAt !== undefined),
               result: roundResult(r),
             })),
           }
@@ -521,6 +550,7 @@ export const history = query({
         pointsB: pointsOf(duel, "b"),
         zone: duel.zone,
         rounds: duel.rounds,
+        clue: duel.clue ?? "name",
         winnerSide: winnerSideOf(duel),
       })),
     );
@@ -535,5 +565,21 @@ export const history = query({
       })),
       recent,
     };
+  },
+});
+
+/**
+ * Per `/geo/photo`: il file della foto di un Round, solo con la chiave giusta e solo se uno dei due ha già aperto
+ * quel Round. Null altrimenti.
+ */
+export const photoFile = internalQuery({
+  args: { duelId: v.string(), index: v.number(), key: v.string() },
+  handler: async (ctx, args): Promise<string | null> => {
+    const duelId = ctx.db.normalizeId("geoDuels", args.duelId);
+    const duel = duelId ? await ctx.db.get("geoDuels", duelId) : null;
+    if (!duel || duel.clue !== "photo" || duel.photoKeys?.[args.index] !== args.key) return null;
+    const opened = [duel.runA, duel.runB].some((run) => (run?.rounds.length ?? 0) > args.index);
+    if (!opened) return null;
+    return photoOf(duel.places[args.index])?.file ?? null;
   },
 });

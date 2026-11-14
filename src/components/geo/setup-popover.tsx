@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "@/i18n/i18n-provider";
-import { ZONE_NAME } from "@/lib/geo";
 import { outlineButtonClass, primaryButtonClass, sectionLabelClass } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
-import { GEO_ROUNDS, GEO_ZONES, type GeoRounds, type GeoZone } from "../../../convex/geoRules";
+import { CLUE_NAME, ZONE_NAME } from "@/lib/geo";
+import { GEO_CLUES, GEO_ROUNDS, GEO_ZONES, type GeoClue, type GeoRounds, type GeoZone } from "../../../convex/geoRules";
 
 function Segmented<T extends string | number>({
   label,
@@ -41,11 +41,12 @@ function Segmented<T extends string | number>({
   );
 }
 
-/** Il pannellino di `/geo` sopra il campo di scrittura: Zone (da scegliere, nessuna di partenza), Round, invio. */
-export function GeoSetupPopover({ onSend, onCancel }: { onSend: (zone: GeoZone, rounds: GeoRounds) => void; onCancel: () => void }) {
+/** Il pannellino di `/geo` sopra il campo di scrittura: Zone (da scegliere, nessuna di partenza), Round, indizio, invio. */
+export function GeoSetupPopover({ onSend, onCancel }: { onSend: (zone: GeoZone, rounds: GeoRounds, clue: GeoClue) => void; onCancel: () => void }) {
   const { t } = useI18n();
   const [zone, setZone] = useState<GeoZone | null>(null);
   const [rounds, setRounds] = useState<GeoRounds>(5);
+  const [clue, setClue] = useState<GeoClue>("name");
   const boxRef = useRef<HTMLDivElement>(null);
 
   // Un clic fuori dal pannello lo chiude, come Esc.
@@ -68,11 +69,12 @@ export function GeoSetupPopover({ onSend, onCancel }: { onSend: (zone: GeoZone, 
       <div className="text-sm font-extrabold text-app-text-strong">{t("geo.setupTitle")}</div>
       <Segmented label={t("geo.zone")} options={GEO_ZONES} value={zone} onChange={setZone} render={(z) => t(ZONE_NAME[z])} />
       <Segmented label={t("geo.roundCount")} options={GEO_ROUNDS} value={rounds} onChange={setRounds} render={(n) => t("geo.rounds", { n })} />
+      <Segmented label={t("geo.clue")} options={GEO_CLUES} value={clue} onChange={setClue} render={(c) => t(CLUE_NAME[c])} />
       <div className="flex gap-2">
         <button
           type="button"
           disabled={zone === null}
-          onClick={() => zone && onSend(zone, rounds)}
+          onClick={() => zone && onSend(zone, rounds, clue)}
           className={cn(primaryButtonClass, "h-9 flex-1 text-sm")}
         >
           {t("wordle.send")}

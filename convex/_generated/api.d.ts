@@ -25,6 +25,8 @@ import type * as gameRules from "../gameRules.js";
 import type * as games from "../games.js";
 import type * as geoCities from "../geoCities.js";
 import type * as geoDuels from "../geoDuels.js";
+import type * as geoPhoto from "../geoPhoto.js";
+import type * as geoPhotos from "../geoPhotos.js";
 import type * as geoPlaces from "../geoPlaces.js";
 import type * as geoRules from "../geoRules.js";
 import type * as http from "../http.js";
@@ -78,6 +80,8 @@ declare const fullApi: ApiFromModules<{
   games: typeof games;
   geoCities: typeof geoCities;
   geoDuels: typeof geoDuels;
+  geoPhoto: typeof geoPhoto;
+  geoPhotos: typeof geoPhotos;
   geoPlaces: typeof geoPlaces;
   geoRules: typeof geoRules;
   http: typeof http;

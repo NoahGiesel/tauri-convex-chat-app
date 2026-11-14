@@ -5,7 +5,7 @@ import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { useI18n } from "@/i18n/i18n-provider";
 import { errorKey } from "@/lib/errors";
-import { ZONE_NAME, formatKm, formatPoints } from "@/lib/geo";
+import { CLUE_NAME, ZONE_NAME, formatKm, formatPoints } from "@/lib/geo";
 import { openGeoWindow } from "@/lib/popout";
 import { outlineButtonClass, primaryButtonClass } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
@@ -77,7 +77,7 @@ export function GeoDuelCard({ duelId, onLayout }: { duelId: Id<"geoDuels">; onLa
   const answer = (action: "accept" | "decline" | "withdraw") => void run(() => respond({ duelId, action }));
   const openRun = () => void openGeoWindow(duelId, t("geo.title"));
   // La rivincita è un invito normale con le stesse impostazioni, senza il popover di /geo.
-  const rematch = () => void run(() => start({ conversationId: duel.conversationId, zone: duel.zone, rounds: duel.rounds }));
+  const rematch = () => void run(() => start({ conversationId: duel.conversationId, zone: duel.zone, rounds: duel.rounds, clue: duel.clue }));
 
   return (
     <div
@@ -93,6 +93,7 @@ export function GeoDuelCard({ duelId, onLayout }: { duelId: Id<"geoDuels">; onLa
         <div className="flex gap-1">
           <span className="rounded-md bg-app-field px-2 py-0.5 text-[11px] font-bold text-app-text-muted">{t(ZONE_NAME[duel.zone])}</span>
           <span className="rounded-md bg-app-field px-2 py-0.5 text-[11px] font-bold text-app-text-muted">{t("geo.rounds", { n: duel.rounds })}</span>
+          <span className="rounded-md bg-app-field px-2 py-0.5 text-[11px] font-bold text-app-text-muted">{t(CLUE_NAME[duel.clue])}</span>
         </div>
       </div>
 

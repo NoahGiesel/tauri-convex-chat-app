@@ -85,11 +85,22 @@ A new table, `geoDuels`, holds one document per Duel. It holds:
 
 **Statuses** are the Wordle Duel's: `invite`, `open`, `closed`, `declined`, `withdrawn` and `expired`.
 
+## Photo clue
+
+The challenger picks the clue in the popover: **Name** (the default) or **Photo**. With Photo, each Round shows a photo of the place instead of its name, and the player guesses where it was taken.
+
+- **Source:** the main image (Wikidata P18) of the place's Wikidata item, found by GeoNames id (P1566) or, failing that, through the place's Italian or English Wikipedia page as linked by GeoNames. The same build script writes `convex/geoPhotos.ts`: GeoNames id, Commons file, author, licence and licence URL. Only the server imports it.
+- **Filter:** JPEG, PNG or WebP at least 800 px wide, with a licence, and no file name that suggests a map, coat of arms, flag, logo or plan. The first build gives 1,413 places a photo: Italy 272, Europe 639, World 607.
+- **Picking:** a Photo Duel draws only from places with a photo. `geoDuels.clue` stores the clue; a Duel without it counts as Name.
+- **Serving:** the Commons file name often names the place, so the client never sees it during a Round. Each Round gets a random key at `start` (`geoDuels.photoKeys`). The Run window loads `GET /geo/photo?d=<Duel>&i=<Round>&k=<key>` from the Convex site URL. The HTTP action returns the photo only for the right key and only once a player has opened that Round, fetches a 1600 px thumbnail from Commons and strips the JPEG APP1 blocks (EXIF and XMP, where GPS coordinates can sit).
+- **Credit:** the author and licence show under the photo during the Round. Once the Round ends, the result also links the file page on Commons.
+- **Window:** the photo sits in a card on the left, over the map; a click enlarges it to the whole window, and another click or Esc closes it.
+
 **Messages.** A new optional `messages.geoDuelId`, with `kind: "game"`, like `wordleDuelId`.
 
 ## Secrecy
 
-- **A Round's place name** is returned only once the player opens that Round.
+- **A Round's place name** is returned only once the player opens that Round. In a Photo Duel it is not returned until the Round ends; the open Round returns only the photo path, author and licence.
 - **A Round's coordinates** are returned only once that Round has ended for the player.
 - **The other player's pins, distances and points** are returned only once the Duel is `closed`.
 - **The card query** returns each player's state (to play, playing, finished) and, once closed, both Runs and the outcome.
@@ -126,7 +137,7 @@ The prototype on `prototype/geo-duel-ui`, variant A, is the visual reference. Us
 
 ### Setup popover
 
-`/geo` in a direct chat opens the same kind of popover as `/wordle`, with two segmented controls, Zone (Italia, Europa, Mondo) and Rounds (3, 5), then **Send challenge** and **Cancel**. No Zone is selected at first, and **Send challenge** stays disabled until one is.
+`/geo` in a direct chat opens the same kind of popover as `/wordle`, with three segmented controls, Zone (Italia, Europa, Mondo), Rounds (3, 5) and Clue (Name, Photo), then **Send challenge** and **Cancel**. No Zone is selected at first, and **Send challenge** stays disabled until one is.
 
 ### Chat card
 
@@ -179,5 +190,7 @@ Built in one go on the branch `feat/geo-duel`, without tickets: the city list, t
 
 - The World Zone still holds many cities few people know, such as Chinese cities over a million people. Only playing will tell whether the threshold or a hand-kept list is better.
 - The OpenFreeMap dark style has not been looked at without labels.
-- The CC BY 4.0 reading for GeoNames is not legal advice.
+- The CC BY 4.0 reading for GeoNames is not legal advice, and neither is the reading of the CC BY-SA and other licences of the Commons photos.
+- The photos are chosen automatically and nobody has looked at them all: some may show a sign or text naming the place, or not show the city at all.
+- The photo route has unit tests for the key check and the metadata stripping, but it has not been called on a real deployment, and the E2E scenario plays only Name Duels.
 - MapLibre in the Tauri WebViews was seen only in the browser prototype, not in the app on macOS or Windows.

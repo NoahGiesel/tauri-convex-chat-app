@@ -11,7 +11,7 @@ import { errorKey } from "@/lib/errors";
 import { openLink } from "@/lib/links";
 import { cn } from "@/lib/utils";
 import { MAX_GUESSES } from "../../convex/wordleRules";
-import { ZONE_NAME } from "@/lib/geo";
+import { CLUE_NAME, ZONE_NAME } from "@/lib/geo";
 
 type Tab = "media" | "links" | "pins" | "ai" | "games";
 const PAGE = 30;
@@ -367,7 +367,7 @@ function GamesTab({ conversationId }: { conversationId: Id<"conversations"> }) {
       ...g,
       score: `${(g.pointsA ?? 0).toLocaleString(language)}–${(g.pointsB ?? 0).toLocaleString(language)}`,
       icon: GAME_ICON.geo,
-      tag: `${t(ZONE_NAME[g.zone])} · ${t("geo.rounds", { n: g.rounds })}`,
+      tag: `${t(ZONE_NAME[g.zone])} · ${t("geo.rounds", { n: g.rounds })} · ${t(CLUE_NAME[g.clue])}`,
     })),
   ].sort((x, y) => y.finishedAt - x.finishedAt);
 

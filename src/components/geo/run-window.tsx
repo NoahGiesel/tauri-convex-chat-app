@@ -7,6 +7,7 @@ import type { Id } from "../../../convex/_generated/dataModel";
 import { useI18n } from "@/i18n/i18n-provider";
 import { errorKey } from "@/lib/errors";
 import { PIN_COLOR, ZONE_NAME, formatKm, formatPoints, getMapTheme, setMapTheme, type MapTheme } from "@/lib/geo";
+import { openLink } from "@/lib/links";
 import { closeThisWindow } from "@/lib/popout";
 import { outlineButtonClass, primaryButtonClass } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
@@ -20,6 +21,10 @@ const GeoMap = lazy(() => import("./geo-map"));
 type Data = NonNullable<FunctionReturnType<typeof api.geoDuels.myRun>>;
 type RoundView = NonNullable<Data["run"]>["rounds"][number];
 type Line = [LatLng, LatLng];
+type Photo = NonNullable<RoundView["place"]["photo"]>;
+
+/** Le foto arrivano dalla rotta `/geo/photo` del backend, che non dice mai quale posto siano. */
+const SITE_URL = import.meta.env.VITE_CONVEX_SITE_URL as string;
 
 /** Sotto questa soglia il Round timer diventa rosso. */
 const LOW_TIME_MS = 10_000;
@@ -170,8 +175,15 @@ export function GeoRunWindow({ duelId: rawId }: { duelId: string }) {
             <div className="text-[11px] font-bold uppercase tracking-wider text-app-text-muted">
               {t("geo.round", { n: index + 1, total: data.totalRounds })} · {t(ZONE_NAME[data.zone])}
             </div>
-            <WhereIs name={placeName(current.place.names, language)} />
+            {current.place.names ? (
+              <WhereIs name={placeName(current.place.names, language)} />
+            ) : (
+              <div className="text-xl font-extrabold text-app-text-strong" data-testid="geo-where-is">
+                {t("geo.wherePhoto")}
+              </div>
+            )}
           </div>
+          {current.place.photo && <PhotoCard key={current.place.photo.path} photo={current.place.photo} />}
           <div className={cn(panel, "absolute right-4 top-4 px-3 py-2 text-center")}>
             <div className="text-[11px] text-app-text-muted">{t("geo.time")}</div>
             <div className={cn("font-mono text-lg font-bold tabular-nums", left <= LOW_TIME_MS && "text-red-500")}>{formatSeconds(left)}</div>
@@ -213,9 +225,12 @@ export function GeoRunWindow({ duelId: rawId }: { duelId: string }) {
       {/* Risultato del Round appena finito. */}
       {showResult && last?.result && (
         <div className={cn(panel, "absolute inset-x-4 bottom-4 flex flex-wrap items-center gap-x-6 gap-y-3 px-6 py-4")}>
+          {last.place.photo && (
+            <img src={SITE_URL + last.place.photo.path} alt="" className="h-16 w-24 shrink-0 rounded-lg object-cover" />
+          )}
           <div className="min-w-0">
             <div className="truncate text-sm text-app-text-muted">
-              {placeName(last.place.names, language)} · {last.place.country}
+              {"country" in last.place && `${placeName(last.place.names, language)} · ${last.place.country}`}
             </div>
             <div className="text-3xl font-extrabold text-app-text-strong">
               {last.result.km !== null ? formatKm(last.result.km, locale) : t("geo.timeUp")}
@@ -226,6 +241,11 @@ export function GeoRunWindow({ duelId: rawId }: { duelId: string }) {
               <div className="h-full rounded-full transition-all duration-700" style={{ width: `${(last.result.points / MAX_POINTS) * 100}%`, background: PIN_COLOR.me }} />
             </div>
             <div className="mt-1 text-sm font-bold">{t("geo.points", { n: formatPoints(last.result.points, locale) })}</div>
+            {"photoPage" in last.place && last.place.photoPage && last.place.photo && (
+              <button type="button" onClick={() => void openLink((last.place as { photoPage: string }).photoPage)} className="mt-0.5 block max-w-full truncate text-left text-[11px] text-app-text-dim underline-offset-2 hover:underline">
+                {t("geo.photoOnCommons")} · {t("geo.photoBy", { author: last.place.photo.author, license: last.place.photo.license })}
+              </button>
+            )}
           </div>
           <button type="button" data-testid="geo-next" disabled={busy} onClick={nextRound} className={cn(primaryButtonClass, "h-11 px-6 text-sm")}>
             {runOver || index + 1 >= data.totalRounds ? t("geo.seeResult") : t("geo.nextRound")}
@@ -263,6 +283,46 @@ export function GeoRunWindow({ duelId: rawId }: { duelId: string }) {
         </div>
       )}
     </div>
+  );
+}
+
+/** La foto del Round, grande a sinistra, con autore e licenza; un clic la ingrandisce a tutta finestra. */
+function PhotoCard({ photo }: { photo: Photo }) {
+  const { t } = useI18n();
+  const [big, setBig] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const src = SITE_URL + photo.path;
+
+  useEffect(() => {
+    if (!big) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setBig(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [big]);
+
+  return (
+    <>
+      <div className={cn(panel, "absolute left-4 top-24 flex w-[min(44vw,560px)] flex-col gap-1.5 p-2")} data-testid="geo-photo">
+        {failed ? (
+          <p className="px-2 py-6 text-center text-sm text-app-text-muted">{t("geo.photoUnavailable")}</p>
+        ) : (
+          <button type="button" onClick={() => setBig(true)} aria-label={t("geo.photoEnlarge")} className="cursor-zoom-in overflow-hidden rounded-xl bg-app-field">
+            <img src={src} alt="" onError={() => setFailed(true)} className="max-h-[55vh] min-h-32 w-full object-cover" />
+          </button>
+        )}
+        <span className="truncate px-1 text-[11px] text-app-text-dim">{t("geo.photoBy", { author: photo.author, license: photo.license })}</span>
+      </div>
+      {big && (
+        <button
+          type="button"
+          onClick={() => setBig(false)}
+          aria-label={t("geo.photoShrink")}
+          className="fixed inset-0 z-50 flex cursor-zoom-out items-center justify-center bg-black/85 p-4"
+        >
+          <img src={src} alt="" className="max-h-full max-w-full rounded-lg object-contain" />
+        </button>
+      )}
+    </>
   );
 }
 
@@ -331,7 +391,7 @@ function Summary({ data, rounds, total }: { data: Data; rounds: RoundView[]; tot
           const theirs = result?.rounds[i]?.[other] ?? null;
           return (
             <li key={i} className="flex justify-between gap-3 border-t border-app-border py-2">
-              <span className="min-w-0 truncate font-semibold">{placeName(r.place.names, language)}</span>
+              <span className="min-w-0 truncate font-semibold">{r.place.names ? placeName(r.place.names, language) : "—"}</span>
               <span className="shrink-0 text-right tabular-nums text-app-text-muted">
                 {r.result?.km != null ? formatKm(r.result.km, locale) : t("geo.timeUp")} · <b className="text-app-text">{formatPoints(r.result?.points ?? 0, locale)}</b>
                 {theirs && (

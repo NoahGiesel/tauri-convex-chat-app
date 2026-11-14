@@ -1,9 +1,11 @@
 import type { MessageKey } from "@/i18n/en";
-import type { GeoOutcomeReason, GeoResultSummary, GeoZone } from "../../convex/geoRules";
+import type { GeoClue, GeoOutcomeReason, GeoResultSummary, GeoZone } from "../../convex/geoRules";
 
 type Translate = (key: MessageKey, vars?: Record<string, string | number>) => string;
 
 export const ZONE_NAME: Record<GeoZone, MessageKey> = { italy: "geo.zone.italy", europe: "geo.zone.europe", world: "geo.zone.world" };
+
+export const CLUE_NAME: Record<GeoClue, MessageKey> = { name: "geo.clue.name", photo: "geo.clue.photo" };
 
 /** Dove guarda la mappa all'inizio di ogni Round, per Zone: [lng, lat] e zoom. */
 export const ZONE_VIEW: Record<GeoZone, { center: [number, number]; zoom: number }> = {
