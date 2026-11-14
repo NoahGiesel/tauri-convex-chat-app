@@ -693,6 +693,8 @@ export const de: Messages = {
   "geo.gaveUp": "Du hast aufgegeben",
   "geo.neverPauses": "Der Timer pausiert nie: Das Schließen dieses Fensters stoppt ihn nicht.",
   "geo.you": "Du",
+  "geo.mapLight": "Helle Karte",
+  "geo.mapDark": "Dunkle Karte",
   "geo.mapCredit": "Orte: GeoNames (CC BY 4.0)",
   "error.geo_in_progress": "In diesem Chat läuft schon ein Geo Duel.",
   "error.geo_run_over": "Diese Runde ist vorbei.",

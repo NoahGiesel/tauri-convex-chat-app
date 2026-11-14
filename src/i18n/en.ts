@@ -692,6 +692,8 @@ export const en = {
   "geo.gaveUp": "You gave up",
   "geo.neverPauses": "The timer never pauses: closing this window does not stop it.",
   "geo.you": "You",
+  "geo.mapLight": "Light map",
+  "geo.mapDark": "Dark map",
   "geo.mapCredit": "Places: GeoNames (CC BY 4.0)",
   "error.geo_in_progress": "There's already a Geo Duel open in this chat.",
   "error.geo_run_over": "This Round is over.",

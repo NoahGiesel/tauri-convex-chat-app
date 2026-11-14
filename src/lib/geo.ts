@@ -15,6 +15,27 @@ export const ZONE_VIEW: Record<GeoZone, { center: [number, number]; zoom: number
 /** Colori dei segnaposto, gli stessi in ogni tema. */
 export const PIN_COLOR = { me: "#2563eb", other: "#f97316", place: "#16a34a" } as const;
 
+const MAP_THEME_KEY = "geo.mapTheme";
+export type MapTheme = "light" | "dark";
+
+/** L'aspetto della mappa scelto nella finestra della Run, o null se non è mai stato scelto (allora segue il tema dell'app). */
+export function getMapTheme(): MapTheme | null {
+  try {
+    const v = localStorage.getItem(MAP_THEME_KEY);
+    return v === "light" || v === "dark" ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setMapTheme(theme: MapTheme): void {
+  try {
+    localStorage.setItem(MAP_THEME_KEY, theme);
+  } catch {
+    // ignora
+  }
+}
+
 /** Punti con il separatore delle migliaia della lingua di chi guarda. */
 export function formatPoints(n: number, locale: string): string {
   return n.toLocaleString(locale);

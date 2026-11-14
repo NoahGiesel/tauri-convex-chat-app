@@ -43,6 +43,8 @@ export default function GeoMap({ zone, dark, onPick, pins, lines = [], fit, clas
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const markers = useRef<maplibregl.Marker[]>([]);
+  /** Dove guardava la mappa: passando da chiaro a scuro la mappa si ricrea, ma resta lì. */
+  const view = useRef<{ center: maplibregl.LngLat; zoom: number } | null>(null);
   const pick = useRef(onPick);
   pick.current = onPick;
   const latest = useRef({ pins, lines, fit });
@@ -78,8 +80,8 @@ export default function GeoMap({ zone, dark, onPick, pins, lines = [], fit, clas
       const m = new maplibregl.Map({
         container: el.current,
         style,
-        center: ZONE_VIEW[zone].center,
-        zoom: ZONE_VIEW[zone].zoom,
+        center: view.current?.center ?? ZONE_VIEW[zone].center,
+        zoom: view.current?.zoom ?? ZONE_VIEW[zone].zoom,
         attributionControl: { compact: true },
         dragRotate: false,
         pitchWithRotate: false,
@@ -96,6 +98,7 @@ export default function GeoMap({ zone, dark, onPick, pins, lines = [], fit, clas
     });
     return () => {
       cancelled = true;
+      if (map.current) view.current = { center: map.current.getCenter(), zoom: map.current.getZoom() };
       map.current?.remove();
       map.current = null;
     };

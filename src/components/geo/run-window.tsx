@@ -1,11 +1,12 @@
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
+import { Moon, Sun } from "lucide-react";
 import type { FunctionReturnType } from "convex/server";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { useI18n } from "@/i18n/i18n-provider";
 import { errorKey } from "@/lib/errors";
-import { PIN_COLOR, ZONE_NAME, formatKm, formatPoints } from "@/lib/geo";
+import { PIN_COLOR, ZONE_NAME, formatKm, formatPoints, getMapTheme, setMapTheme, type MapTheme } from "@/lib/geo";
 import { closeThisWindow } from "@/lib/popout";
 import { outlineButtonClass, primaryButtonClass } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
@@ -42,6 +43,8 @@ export function GeoRunWindow({ duelId: rawId }: { duelId: string }) {
   /** L'ultimo Round di cui il giocatore ha già visto il risultato (con "Prossimo round"). */
   const [reviewed, setReviewed] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  /** Chiaro o scuro, scelto sulla mappa; finché non si sceglie segue il tema dell'app. */
+  const [mapTheme, setMapThemeState] = useState<MapTheme | null>(getMapTheme);
 
   useEffect(() => {
     document.title = t("geo.title");
@@ -107,7 +110,12 @@ export function GeoRunWindow({ duelId: rawId }: { duelId: string }) {
   const pastDeadline = data.deadline !== null && now + offset.current >= data.deadline;
   const showResult = !current && last && reviewed !== null && reviewed < index;
   const summary = !current && !showResult && (runOver || data.status !== "open");
-  const dark = definition.mode === "dark";
+  const dark = (mapTheme ?? definition.mode) === "dark";
+  const toggleMapTheme = () => {
+    const next = dark ? "light" : "dark";
+    setMapTheme(next);
+    setMapThemeState(next);
+  };
 
   // Cosa mostra la mappa: il segnaposto del Round, il risultato di un Round, o tutti i Round alla fine.
   let pins: Pin[] = [];
@@ -139,6 +147,17 @@ export function GeoRunWindow({ duelId: rawId }: { duelId: string }) {
       <Suspense fallback={null}>
         <GeoMap zone={data.zone} dark={dark} onPick={current ? setPin : undefined} pins={pins} lines={lines} fit={fit} className="absolute inset-0" />
       </Suspense>
+
+      {/* Mappa chiara o scura, sotto l'angolo in alto a destra. */}
+      <button
+        type="button"
+        onClick={toggleMapTheme}
+        aria-label={t(dark ? "geo.mapLight" : "geo.mapDark")}
+        title={t(dark ? "geo.mapLight" : "geo.mapDark")}
+        className={cn(panel, "absolute right-4 flex size-10 items-center justify-center text-app-text hover:text-app-text-strong", current ? "top-[92px]" : "top-4")}
+      >
+        {dark ? <Sun className="size-5" /> : <Moon className="size-5" />}
+      </button>
 
       {/* In alto: punti, il posto da trovare, il tempo. */}
       <div className={cn(panel, "absolute left-4 top-4 px-3 py-2 text-sm")}>

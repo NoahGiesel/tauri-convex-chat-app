@@ -693,6 +693,8 @@ export const ro: Messages = {
   "geo.gaveUp": "Ai renunțat",
   "geo.neverPauses": "Timpul nu se oprește niciodată: închiderea ferestrei nu îl oprește.",
   "geo.you": "Tu",
+  "geo.mapLight": "Hartă luminoasă",
+  "geo.mapDark": "Hartă întunecată",
   "geo.mapCredit": "Locuri: GeoNames (CC BY 4.0)",
   "error.geo_in_progress": "Există deja un Geo Duel deschis în acest chat.",
   "error.geo_run_over": "Această rundă s-a încheiat.",
