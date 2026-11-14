@@ -6,6 +6,7 @@ import type { Id } from "../../../convex/_generated/dataModel";
 import { useI18n } from "@/i18n/i18n-provider";
 import { errorKey } from "@/lib/errors";
 import { PIN_COLOR, ZONE_NAME, formatKm, formatPoints } from "@/lib/geo";
+import { closeThisWindow } from "@/lib/popout";
 import { outlineButtonClass, primaryButtonClass } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/themes/theme-provider";
@@ -329,7 +330,10 @@ function Summary({ data, rounds, total }: { data: Data; rounds: RoundView[]; tot
         </li>
       </ul>
       {!result && data.status === "open" && <p className="text-xs text-app-text-muted">{t("geo.waitingOpponent", { name: data.opponentName })}</p>}
-      <p className="mt-auto text-[11px] text-app-text-dim">{t("geo.mapCredit")}</p>
+      <button type="button" data-testid="geo-close" onClick={closeThisWindow} className={cn(primaryButtonClass, "mt-auto h-10 w-full text-sm")}>
+        {t("common.close")}
+      </button>
+      <p className="text-[11px] text-app-text-dim">{t("geo.mapCredit")}</p>
     </div>
   );
 }

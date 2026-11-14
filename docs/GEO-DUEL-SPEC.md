@@ -144,7 +144,7 @@ The Run opens in its own app window through `openAppWindow` in `src/lib/popout.t
 - **Before a Round:** a card with "Round n/N" and **Start Round**, so the Round timer never starts unseen. It shows before the first Round and whenever the window opens between Rounds. **Next Round** on a Round's result opens the next Round at once, since the player is there.
 - **During a Round:** at the top centre, "Round n/N · Zone" and "Where is **Name**?". Top left the points so far, top right the Round timer, red under 10 s. Bottom right **Guess**, disabled until a pin is placed, with "Click on the map" as its label.
 - **After a Round:** the pin, the place and a dashed line between them, with the camera fitting both. A bar at the bottom shows the place and its country, the distance, a points bar and the points, then **Next Round** or **See the result**.
-- **End of the Run:** a panel with each Round's place, distance and points, and the total. While the other player has not finished, it says their result appears when they finish or when the Duel closes. Once closed, it shows both players' pins on the map and the winner.
+- **End of the Run:** a panel with each Round's place, distance and points, and the total. While the other player has not finished, it says their result appears when they finish or when the Duel closes. Once closed, it shows both players' pins on the map and the winner. A **Close** button at the bottom closes the window.
 - **Give up:** a quiet button with a confirm step.
 
 **Pin colours:** the player blue (`#2563eb`), the other player orange (`#f97316`), the place green (`#16a34a`), the same in every theme.

@@ -1,5 +1,6 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
 /** Parametro URL che trasforma l'app in una finestra con una sola chat. */
 export const POPOUT_PARAM = "chat";
@@ -21,6 +22,12 @@ export function runWindowDuelId(): string | null {
 /** Id del Geo Duel se questa finestra è quella della sua Run, altrimenti null. */
 export function geoWindowDuelId(): string | null {
   return new URLSearchParams(window.location.search).get(GEO_PARAM);
+}
+
+/** Chiude questa finestra (una finestra di gioco); nel browser il popup che l'app ha aperto. */
+export function closeThisWindow(): void {
+  if (isTauri()) void getCurrentWindow().close();
+  else window.close();
 }
 
 interface AppWindow {
