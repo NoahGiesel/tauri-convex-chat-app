@@ -15,3 +15,4 @@ scripts/wordle-lists/.cache
 
 # hc worker tasks, reports and notes (docs/agents/herdr-subagents.md)
 .hc/
+scripts/geo-places/.cache
