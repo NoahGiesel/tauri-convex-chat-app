@@ -26,7 +26,7 @@ The Wordle Duel is the model to follow, for the card, the window, the scheduling
 ## Rules
 
 - **Async.** Both players get the same places in the same order, each in their own Run, at any time and in any order.
-- **Setup.** The challenger picks the Zone and the number of Rounds. The server picks the places at random from the city list. Nobody knows them in advance.
+- **Setup.** The challenger must pick a Zone (Italy, Europe or World) and the number of Rounds; there is no default Zone. The server picks the places at random from that Zone of the city list when the challenge is sent, and stores them on the Duel. From then on they are fixed: both players get the same places in the same order, and a Rematch picks new ones. Nobody knows them in advance.
 - **Round.** The Round starts when the player opens it: the server returns the place's name and starts the Round timer. The player clicks the map to place a pin, can move it, and confirms with **Guess**. The Round ends at Guess or when the Round timer runs out.
 - **Between Rounds** no timer runs. The next Round starts when the player opens it.
 - **Timer.** 60 seconds per Round, server-side only. It never pauses. Leaving the app or closing the window does not stop it.
@@ -125,7 +125,7 @@ The prototype on `prototype/geo-duel-ui`, variant A, is the visual reference. Us
 
 ### Setup popover
 
-`/geo` in a direct chat opens the same kind of popover as `/wordle`, with two segmented controls, Zone (Italia, Europa, Mondo) and Rounds (3, 5), then **Send challenge** and **Cancel**.
+`/geo` in a direct chat opens the same kind of popover as `/wordle`, with two segmented controls, Zone (Italia, Europa, Mondo) and Rounds (3, 5), then **Send challenge** and **Cancel**. No Zone is selected at first, and **Send challenge** stays disabled until one is.
 
 ### Chat card
 
