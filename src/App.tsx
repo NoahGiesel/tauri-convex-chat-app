@@ -9,9 +9,10 @@ import { SettingsPage, type SettingsSection } from "@/components/settings-page";
 import { UpdateBanner } from "@/components/update-banner";
 import { PopoutChat } from "@/components/popout-chat";
 import { WordleRunWindow } from "@/components/wordle/run-window";
+import { GeoRunWindow } from "@/components/geo/run-window";
 import { SidebarProvider } from "@/hooks/use-sidebar";
 import { useI18n } from "@/i18n/i18n-provider";
-import { popoutChatId, runWindowDuelId } from "@/lib/popout";
+import { geoWindowDuelId, popoutChatId, runWindowDuelId } from "@/lib/popout";
 
 function Splash({ children }: { children: string }) {
   return (
@@ -39,6 +40,9 @@ function Session() {
   // Finestra della Run di un Wordle Duel.
   const runDuelId = runWindowDuelId();
   if (runDuelId) return <WordleRunWindow duelId={runDuelId} />;
+  // Finestra della Run di un Geo Duel.
+  const geoDuelId = geoWindowDuelId();
+  if (geoDuelId) return <GeoRunWindow duelId={geoDuelId} />;
 
   return (
     <SidebarProvider>

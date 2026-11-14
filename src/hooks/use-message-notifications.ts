@@ -5,6 +5,7 @@ import { isPermissionGranted, requestPermission, sendNotification } from "@tauri
 import type { ConversationItem } from "@/components/chat-app";
 import { useI18n } from "@/i18n/i18n-provider";
 import { playNotificationSound } from "@/lib/notification-sound";
+import { formatGeoResult } from "@/lib/geo";
 import { formatWordleResult } from "@/lib/wordle";
 
 const isWindows = typeof navigator !== "undefined" && /windows/i.test(navigator.userAgent);
@@ -33,7 +34,7 @@ async function badgePng(count: number): Promise<Uint8Array> {
 const isTauri = () => typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
 /** Testo della notifica di un gioco, dal corpo del messaggio che lo mostra (il resto è sasso-carta-forbici). */
-const GAME_NOTIFICATION: Partial<Record<string, "notif.quiz" | "notif.wordle">> = { quiz: "notif.quiz", wordle: "notif.wordle" };
+const GAME_NOTIFICATION: Partial<Record<string, "notif.quiz" | "notif.wordle" | "notif.geo">> = { quiz: "notif.quiz", wordle: "notif.wordle", geo: "notif.geo" };
 
 type Latest = NonNullable<ConversationItem["latest"]>;
 
@@ -54,7 +55,7 @@ async function ensurePermission(): Promise<boolean> {
  * e rimbalzo dell'icona. Le notifiche partono solo se l'app non è in primo piano.
  */
 export function useMessageNotifications(conversations: ConversationItem[] | null | undefined) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const seen = useRef<Map<string, string> | null>(null); // chat → id dell'ultimo messaggio già visto
 
   // Chiede il permesso subito, così il sistema mostra la richiesta al primo avvio e non al primo messaggio.
@@ -120,6 +121,10 @@ export function useMessageNotifications(conversations: ConversationItem[] | null
           sendNotification({ title, body: formatWordleResult(latest.wordleResult, t) });
           continue;
         }
+        if (latest.geoResult) {
+          sendNotification({ title, body: formatGeoResult(latest.geoResult, t, locale) });
+          continue;
+        }
         const author = latest.authorName ?? t("chat.aiName");
         const text = preview(latest);
         // In un gruppo si legge chi scrive; in una chat diretta il titolo è già il suo nome.
@@ -129,5 +134,5 @@ export function useMessageNotifications(conversations: ConversationItem[] | null
       playNotificationSound(); // un solo suono per tutte le notifiche del gruppo
       void getCurrentWindow().requestUserAttention(UserAttentionType.Informational).catch(() => undefined);
     })();
-  }, [conversations, t]);
+  }, [conversations, t, locale]);
 }

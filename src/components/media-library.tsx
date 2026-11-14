@@ -11,6 +11,7 @@ import { errorKey } from "@/lib/errors";
 import { openLink } from "@/lib/links";
 import { cn } from "@/lib/utils";
 import { MAX_GUESSES } from "../../convex/wordleRules";
+import { ZONE_NAME } from "@/lib/geo";
 
 type Tab = "media" | "links" | "pins" | "ai" | "games";
 const PAGE = 30;
@@ -270,7 +271,7 @@ function AiTab({ conversationId }: { conversationId: Id<"conversations"> }) {
 const runScore = (guesses: number | null) => `${guesses ?? "X"}/${MAX_GUESSES}`;
 
 /** L'icona di ogni gioco, nel titolo delle statistiche e nell'elenco. */
-const GAME_ICON = { rps: "🪨", quiz: "🧠", wordle: "🟩" } as const;
+const GAME_ICON = { rps: "🪨", quiz: "🧠", wordle: "🟩", geo: "🌍" } as const;
 
 /** Una partita finita nell'elenco della scheda "Giochi", qualunque sia il gioco. */
 interface FinishedGameRow {
@@ -285,16 +286,17 @@ interface FinishedGameRow {
   tag: string | null;
 }
 
-/** Storico dei giochi della chat (sasso-carta-forbici, quiz e Wordle Duel), con le statistiche di chi ha giocato. */
+/** Storico dei giochi della chat (sasso-carta-forbici, quiz, Wordle Duel e Geo Duel), con le statistiche di chi ha giocato. */
 function GamesTab({ conversationId }: { conversationId: Id<"conversations"> }) {
   const { t, language } = useI18n();
   const rps = useQuery(api.games.history, { conversationId });
   const quiz = useQuery(api.quizzes.history, { conversationId });
   const wordle = useQuery(api.wordleDuels.history, { conversationId });
+  const geo = useQuery(api.geoDuels.history, { conversationId });
   const when = (ms: number) => new Date(ms).toLocaleString(language, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
-  if (!rps || !quiz || !wordle) return null;
-  if (rps.total === 0 && quiz.total === 0 && wordle.total === 0) return <p className="pt-10 text-center text-sm text-app-text-muted">{t("library.noGames")}</p>;
+  if (!rps || !quiz || !wordle || !geo) return null;
+  if (rps.total === 0 && quiz.total === 0 && wordle.total === 0 && geo.total === 0) return <p className="pt-10 text-center text-sm text-app-text-muted">{t("library.noGames")}</p>;
 
   /** Una riga per gioco: titolo e totali, poi i due giocatori con vittorie e una barra che li mette a confronto. */
   const stats = (
@@ -361,6 +363,12 @@ function GamesTab({ conversationId }: { conversationId: Id<"conversations"> }) {
       icon: GAME_ICON.wordle,
       tag: `${t("wordle.minutes", { n: g.runMinutes })} · ${g.language.toUpperCase()}`,
     })),
+    ...geo.recent.map((g) => ({
+      ...g,
+      score: `${(g.pointsA ?? 0).toLocaleString(language)}–${(g.pointsB ?? 0).toLocaleString(language)}`,
+      icon: GAME_ICON.geo,
+      tag: `${t(ZONE_NAME[g.zone])} · ${t("geo.rounds", { n: g.rounds })}`,
+    })),
   ].sort((x, y) => y.finishedAt - x.finishedAt);
 
   return (
@@ -389,6 +397,20 @@ function GamesTab({ conversationId }: { conversationId: Id<"conversations"> }) {
             p.averageGuesses === null
               ? t("library.wordleNoAverage")
               : t("library.wordleAverage", { avg: p.averageGuesses.toLocaleString(language, { maximumFractionDigits: 1 }) }),
+        })),
+      )}
+      {stats(
+        `${GAME_ICON.geo} ${t("geo.title")}`,
+        geo.total,
+        geo.draws,
+        geo.players.map((p) => ({
+          profileId: p.profileId,
+          name: p.name,
+          wins: p.wins,
+          extra:
+            p.averagePoints === null
+              ? t("library.geoNoAverage")
+              : t("library.geoAverage", { avg: Math.round(p.averagePoints).toLocaleString(language) }),
         })),
       )}
 
