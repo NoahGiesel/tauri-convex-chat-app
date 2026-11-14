@@ -31,7 +31,7 @@ The Wordle Duel is the model to follow, for the card, the window, the scheduling
 - **Between Rounds** no timer runs. The next Round starts when the player opens it.
 - **Timer.** 60 seconds per Round, server-side only. It never pauses. Leaving the app or closing the window does not stop it.
 - **Time up.** If the window is open with a pin on the map, the client sends that pin as the guess, within the grace. Otherwise the Round scores 0.
-- **End of a Run.** A Run ends when its last Round ends, or when the player gives up. Giving up scores 0 on every Round not yet played.
+- **End of a Run.** A Run ends when its last Round ends, or when the player gives up. Giving up scores 0 on the Round in progress and on every Round not yet played. A Run opened but not finished by the Duel deadline ends there, with 0 for the Rounds not played.
 - **Invite, Duel deadline, coexistence.** As in the Wordle Duel: accept, decline or withdraw; the invite expires after 24 h; the Duel deadline is 24 h after acceptance; at most one open Geo Duel per chat; a Geo Duel neither blocks nor is blocked by other games.
 
 ### Points
@@ -51,7 +51,7 @@ So a Run scores at most 5,000 per Round. A Round with no guess scores 0. The sca
 1. More total points wins.
 2. On equal points, the faster Run wins. Run time is the sum of each Round's `endedAt - startedAt`, so the time between Rounds does not count.
 3. If both are still equal, it is a draw.
-4. A player who did not finish by the Duel deadline loses by forfeit to one who did, whatever that Run's score.
+4. A player who did not open their Run by the Duel deadline loses by forfeit to one who did, whatever that Run's score. If neither opened it, the Duel expires with no winner.
 
 The outcome records the winner, or none for a draw, and the reason: more points, faster Run, or forfeit.
 
@@ -60,11 +60,12 @@ The outcome records the winner, or none for a draw, and the reason: more points,
 The list ships as a generated TypeScript module under `convex/`, with no table, like the Wordle word lists.
 
 - **Source:** GeoNames `cities15000` (every place with 15,000 people or more), plus `countryInfo.txt` for the continent. Licence CC BY 4.0: the credit goes in `NOTICES.md` and in the module header.
-- **Filter per Zone:** Italy takes Italian places with 15,000 people or more. Europe and World take places with 100,000 people or more, plus every capital. The thresholds are a first guess, to tune by playing: a World Round on a town nobody knows is not fun.
+- **Filter per Zone:** Italy takes Italian places with 15,000 people or more. Europe takes places with 100,000 people or more, plus every capital, west of 60° E (GeoNames counts all of Russia as Europe). World takes places with 1,000,000 people or more, plus every capital. The first build gives Italy 513, Europe 736 and World 697 places. The thresholds are to tune by playing: a World Round on a town nobody knows is not fun.
+- **No districts.** GeoNames codes for districts and historical places (`PPLX`, `PPLH`, `PPLQ`, `PPLW`, `PPLCH`) are left out, and so is any place within 6 km of one at least twice its size, such as Mokotów in Warsaw.
 - **Each entry** stores the GeoNames id, the name, the country code, and the latitude and longitude, rounded to 4 decimals (about 10 m).
-- **The name shown** is the Italian name from GeoNames alternate names when there is one (Cracovia, not Kraków), else the GeoNames name. Other app languages are an open question.
+- **The name shown** follows the viewer's app language. The list holds one name per app language (it, en, de, es, ro) from GeoNames alternate names: the preferred one, else the short one, never colloquial or historic ones, Latin script only, without additions in brackets or after a comma. A language with no name takes the English one (Cracovia in Italian, Krakow in English).
 - **A hand-review exclude file** removes odd or duplicate entries, for example a district listed as a city.
-- **A committed build script**, `scripts/geo-places/build.mjs`, makes the module from the sources, so the same inputs give the same list.
+- **A committed build script**, `scripts/geo-places/build.mjs`, makes the module from the sources. GeoNames updates its files every day and keeps no old versions, so the script's cache is the input, and the module header records each file's date and SHA-256.
 - **Server only.** No client file imports the module. A rules module the client imports must not import the list.
 - **Pick the places inside the mutation handler**, never at module scope.
 - **No repeated places in a chat.** The server leaves out places used in earlier Duels of the same chat and Zone. Once none are left, it draws from the full list again.
@@ -140,7 +141,7 @@ In the look of the Wordle Duel card: a header with a globe icon, "Geo Duel", and
 The Run opens in its own app window through `openAppWindow` in `src/lib/popout.ts`, with the label `geo-<duelId>`, which must be allowed in `src-tauri/capabilities/default.json`. Suggested size 1100×750, minimum 720×520.
 
 - **Map:** MapLibre GL JS on OpenFreeMap, full window. The style drops every `symbol` layer, so the map shows no names. There is a light style and a dark one, following the app theme. No rotation and no tilt. The OpenFreeMap / OpenMapTiles / OpenStreetMap credit stays visible. MapLibre is loaded only in this window, through a dynamic import.
-- **Before a Round:** a card with "Round n/N" and **Start Round**, so the Round timer never starts unseen.
+- **Before a Round:** a card with "Round n/N" and **Start Round**, so the Round timer never starts unseen. It shows before the first Round and whenever the window opens between Rounds. **Next Round** on a Round's result opens the next Round at once, since the player is there.
 - **During a Round:** at the top centre, "Round n/N · Zone" and "Where is **Name**?". Top left the points so far, top right the Round timer, red under 10 s. Bottom right **Guess**, disabled until a pin is placed, with "Click on the map" as its label.
 - **After a Round:** the pin, the place and a dashed line between them, with the camera fitting both. A bar at the bottom shows the place and its country, the distance, a points bar and the points, then **Next Round** or **See the result**.
 - **End of the Run:** a panel with each Round's place, distance and points, and the total. While the other player has not finished, it says their result appears when they finish or when the Duel closes. Once closed, it shows both players' pins on the map and the winner.
@@ -156,7 +157,7 @@ The Run opens in its own app window through `openAppWindow` in `src/lib/popout.t
 
 ## Release gate
 
-As in the Wordle Duel: `/geo` shows only when `import.meta.env.DEV` is true or `VITE_E2E` is `"1"`, until the Launch ticket removes the gate. The backend parts are additive and reach production with each `npx convex deploy`, but nothing calls them before Launch.
+None. The whole Duel was built in one go on one branch, so `/geo` shows in every build from the start, in direct chats only.
 
 ## Testing
 
@@ -170,23 +171,13 @@ As in the Wordle Duel: `/geo` shows only when `import.meta.env.DEV` is true or `
 - **Not in E2E:** decline, withdraw, timeout, giving up, forfeit and expiry. The unit tests cover their rules.
 - Clicking a WebGL map with WebDriver is expected to work but not proven. The E2E ticket proves it.
 
-## Implementation order
+## Implementation
 
-Vertical tickets, one PR each, as for the Wordle Duel. The city list and the invite can run in parallel; after that, each ticket waits for the one before it.
-
-1. The Geo Duel city list is generated
-2. Two friends can send and answer a Geo Duel invite
-3. A player can play their Geo Run
-4. A Geo Duel closes with a result
-5. Geo Duels count in the Games tab
-6. A closed Geo Duel offers a rematch
-7. The E2E suite plays a Geo Duel
-8. The Geo Duel is released
+Built in one go on the branch `feat/geo-duel`, without tickets: the city list, the backend with its tests, the card, the Run window, the Games tab, the rematch, the E2E scenario and the release note.
 
 ## What is not verified
 
-- The size of the city list per Zone and of the generated module has not been measured.
-- GeoNames alternate names have not been checked for Italian coverage, nor how to show names in the other app languages.
-- The OpenFreeMap dark style has not been tried without labels.
+- The World Zone still holds many cities few people know, such as Chinese cities over a million people. Only playing will tell whether the threshold or a hand-kept list is better.
+- The OpenFreeMap dark style has not been looked at without labels.
 - The CC BY 4.0 reading for GeoNames is not legal advice.
 - MapLibre in the Tauri WebViews was seen only in the browser prototype, not in the app on macOS or Windows.

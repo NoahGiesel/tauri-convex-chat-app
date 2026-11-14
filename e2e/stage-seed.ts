@@ -64,6 +64,22 @@ export const setWordleWord = internalMutation({
 });
 
 /**
+ * The server picks a Geo Duel's places at random, so a test sets the open Duel's places after acceptance to ones it knows.
+ * A scan, for the same reason as `setWordleWord`.
+ */
+export const setGeoPlaces = internalMutation({
+  args: { places: v.array(v.number()) },
+  handler: async (ctx, args) => {
+    const open = [];
+    for await (const duel of ctx.db.query("geoDuels")) {
+      if (duel.status === "open") open.push(duel);
+    }
+    if (open.length !== 1) throw new Error(`expected one open Geo Duel, found ${open.length}`);
+    await ctx.db.patch("geoDuels", open[0]._id, { places: args.places });
+  },
+});
+
+/**
  * Scheduled functions not yet done, such as the next-match lookups that `teamPins.add` starts.
  * A Seed waits until there are none before its snapshot, so no lookup lands after a Reset.
  */
