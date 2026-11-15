@@ -54,14 +54,14 @@ The lists ship as a generated TypeScript module under `convex/`, with no table. 
 |---|---|---|---|
 | English guesses | ESDB `rel-2026.02.25` | Size 80 or below, all forms | About 8,900 |
 | English solutions | ESDB `rel-2026.02.25` | Size 35 or below, base forms only, no frequency cut | About 2,330 |
-| Italian guesses | Morph-it! 0.4.8, plus a hand-kept include file | All forms | About 4,700 |
+| Italian guesses | Morph-it! 0.4.8, plus a hand-kept include file | All forms | About 5,000 |
 | Italian solutions | Morph-it! 0.4.8 and wordfreq `large_it` | All forms, conjugated verbs included, at Zipf 3.0 or more | About 2,150 |
 
 - **Letter rule.** Five lowercase letters a–z. Italian also drops words with accents, apostrophes and j, k, w, x, y. Each guess is lowercased before it is checked.
 - **British spellings** are accepted as guesses but never picked as solutions.
 - **Every solution is also a guess.** The build script fails otherwise.
 - **A committed build script** generates the module from the sources, so the same inputs give the same lists.
-- **Hand-review files** live in the repo: an exclude list for solutions (offensive, odd or function words such as *nella*), and an include list for Italian guesses that Morph-it! lacks, such as *capra*, *aceto*, *ovest* and *audio*. The include list starts with the known gaps and one review of wordfreq's 886 candidates. It grows when someone finds a missing word.
+- **Hand-review files** live in the repo: an exclude list for solutions (offensive, odd or function words such as *nella*), and an include list for Italian guesses that Morph-it! lacks, such as *capra*, *aceto*, *ovest* and *audio*. The include list starts with the known gaps, one review of wordfreq's 886 candidates at Zipf 3.0 or more, and a second review of the candidates between Zipf 2.0 and 3.0. It grows when someone finds a missing word.
 - **Server only.** No client file imports the module. The client already imports `convex/quizRules` and `convex/linkRules`, so a Wordle rules module the client imports must not import the lists.
 - **Pick the word inside the mutation handler**, never at module scope. A value taken at import time stays fixed until the next deploy.
 - **No repeated words in a chat.** The server leaves out words already used in earlier Duels of the same chat and language. Once none are left, it draws from the full list again.

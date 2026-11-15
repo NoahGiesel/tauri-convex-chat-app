@@ -4,6 +4,7 @@
 //   node scripts/wordle-lists/build.mjs               scarica le fonti (se mancano) e riscrive il modulo
 //   node scripts/wordle-lists/build.mjs --candidates  stampa le parole di wordfreq che mancano a Morph-it!,
 //                                                     da rivedere per include-guesses-it.txt
+//   node scripts/wordle-lists/build.mjs --candidates=2.0  come sopra, ma da Zipf 2.0 invece che 3.0
 //
 // Serve un Node che tolga i tipi da solo (22.18+ o 24+): lo script importa la regola delle lettere da convex/wordleRules.ts.
 // Le fonti sono fissate per commit e controllate con SHA-256: gli stessi ingressi danno le stesse liste.
@@ -299,8 +300,13 @@ async function main() {
   const morphit = parseMorphit(morphitBytes);
   const frequent = frequentWords(wordfreqBytes, IT_MIN_ZIPF);
 
-  if (process.argv.includes("--candidates")) {
-    const candidates = [...frequent].filter((w) => passesLetterRule("it", w) && !morphit.has(w)).sort();
+  const candidatesArg = process.argv.find((arg) => arg === "--candidates" || arg.startsWith("--candidates="));
+  if (candidatesArg) {
+    const minZipf = candidatesArg.includes("=") ? Number(candidatesArg.split("=")[1]) : IT_MIN_ZIPF;
+    if (!Number.isFinite(minZipf)) throw new Error(`${candidatesArg}: soglia Zipf non valida`);
+    const included = readList("include-guesses-it.txt");
+    const pool = minZipf === IT_MIN_ZIPF ? frequent : frequentWords(wordfreqBytes, minZipf);
+    const candidates = [...pool].filter((w) => passesLetterRule("it", w) && !morphit.has(w) && !included.has(w)).sort();
     console.log(candidates.join("\n"));
     console.error(`${candidates.length} candidati`);
     return;
