@@ -341,6 +341,8 @@ export const it: Messages = {
   "settings.notifications.soundDescription": "Si sente quando arriva un nuovo messaggio mentre l'app è in secondo piano.",
   "settings.notifications.preview": "Riproduci {name}",
   "settings.notifications.volume": "Volume",
+  "settings.notifications.enabled": "Notifiche desktop",
+  "settings.notifications.enabledDescription": "Mostra un avviso, riproduce il suono e fa lampeggiare l'icona quando arriva un nuovo messaggio mentre l'app è in secondo piano.",
   "status.appearOffline": "Appari offline",
   "status.notificationSound": "Suono delle notifiche",
   "chat.summarize": "Ottieni riassunto",

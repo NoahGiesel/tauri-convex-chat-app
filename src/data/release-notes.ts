@@ -12,10 +12,16 @@ export const RELEASE_NOTES: ReleaseNote[] = [
       en: [
         "Geo Duel: type /geo in a direct chat, pick Italy, Europe or World and 3 or 5 Rounds, and challenge a friend on the same places. Each of you plays a Run whenever you like within 24 hours: in every Round the name of a place appears and you have 60 seconds to click where it is on a map with no names. The closer you click, the more points; the result shows up in the chat and in the Games tab. You can also choose a photo instead of the name as the clue: guess where the photo was taken",
         "Italian Wordle Duel accepts about 220 more words as guesses, such as ghiro, eremo, alici and ebano",
+        "When you hover over a message sent right after another, its time now shows at the end of the text instead of on the left",
+        "Windows: opening Chat again while it is already running in the notification area now brings back the open window instead of starting a second copy, so notifications no longer arrive twice",
+        "New “Desktop notifications” switch in Settings › Notifications: turn it off to stop the alerts, the sound and the flashing icon for new messages",
       ],
       it: [
         "Geo Duel: scrivi /geo in una chat diretta, scegli Italia, Europa o Mondo e 3 o 5 round, e sfida un amico sugli stessi posti. Ognuno gioca la sua Run quando vuole, entro 24 ore: a ogni round compare il nome di un posto e hai 60 secondi per cliccare dov'è su una mappa senza nomi. Più clicchi vicino, più punti; il risultato arriva in chat e nella scheda Giochi. Come indizio puoi scegliere anche una foto al posto del nome: indovina dove è stata scattata",
         "Il Wordle Duel in italiano accetta circa 220 parole in più come tentativi, come ghiro, eremo, alici ed ebano",
+        "Passando il mouse su un messaggio inviato subito dopo un altro, l'ora ora compare in fondo al testo invece che a sinistra",
+        "Windows: riaprire Chat mentre è già attiva nell'area di notifica ora riporta la finestra aperta invece di avviarne una seconda copia, così le notifiche non arrivano più doppie",
+        "Nuovo interruttore «Notifiche desktop» in Impostazioni › Notifiche: spegnilo per non ricevere più avvisi, suono e lampeggio dell'icona per i nuovi messaggi",
       ],
     },
   },

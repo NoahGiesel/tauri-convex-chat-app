@@ -52,6 +52,25 @@ export function setNotificationVolume(volume: number) {
   }
 }
 
+const NOTIFICATIONS_KEY = "chat:notifications-enabled";
+
+/** Notifiche dei nuovi messaggi (avviso di sistema, suono e lampeggio dell'icona). Accese se non si è scelto altrimenti. */
+export function areNotificationsEnabled(): boolean {
+  try {
+    return localStorage.getItem(NOTIFICATIONS_KEY) !== "0";
+  } catch {
+    return true;
+  }
+}
+
+export function setNotificationsEnabled(enabled: boolean) {
+  try {
+    localStorage.setItem(NOTIFICATIONS_KEY, enabled ? "1" : "0");
+  } catch {
+    // vale solo per questa sessione
+  }
+}
+
 const ENABLED_KEY = "chat:notification-sound-enabled";
 
 export function isNotificationSoundEnabled(): boolean {

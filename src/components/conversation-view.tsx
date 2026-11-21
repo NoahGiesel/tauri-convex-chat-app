@@ -853,6 +853,14 @@ export function ConversationView({
             return <GeoResultLine key={m._id} duelId={duelId} onShowCard={() => setCardTarget(duelId)} />;
           }
           const isAi = m.kind === "ai";
+          // Se il messaggio ha del testo, l'orario dei messaggi consecutivi va in fondo alla frase; altrimenti resta a sinistra.
+          const hasText =
+            m.kind === "media"
+              ? m.attachments.length > 0 && !!m.body
+              : m.kind === "text" &&
+                editingId !== m._id &&
+                !(m.kind === "text" && m.style === null && (isOnlyEmbed(m.body) || (htmlEmbed(m.body) && htmlEmbed(m.body)!.rest === "")));
+          const hoverTime = !row.head && hasText ? time(m._creationTime) : undefined;
 
           return (
             <div
@@ -861,8 +869,8 @@ export function ConversationView({
               className={cn("group relative flex gap-3", row.head ? "mt-[18px]" : "mt-0.5")}
             >
               <div className="relative w-[38px] shrink-0">
-                {/* Nei messaggi consecutivi l'orario compare al passaggio del mouse, nello spazio dell'avatar. */}
-                {!row.head && (
+                {/* Nei messaggi consecutivi senza testo l'orario compare al passaggio del mouse, nello spazio dell'avatar. */}
+                {!row.head && !hoverTime && (
                   <span className="pointer-events-none absolute inset-x-0 top-0 hidden text-center text-[11px] leading-[22px] text-app-text-dim group-hover:block">
                     {time(m._creationTime)}
                   </span>
@@ -933,7 +941,7 @@ export function ConversationView({
                 ) : m.kind === "media" && m.attachments.length > 0 ? (
                   <div>
                     {m.body && (
-                      <MessageBody style={null} body={m.body} authorName={m.authorName} edited={false} className={row.head ? "mt-[3px]" : undefined} />
+                      <MessageBody style={null} body={m.body} authorName={m.authorName} edited={false} hoverTime={hoverTime} className={row.head ? "mt-[3px]" : undefined} />
                     )}
                     <div className="mt-1 flex flex-wrap gap-2">
                       {m.attachments.map((a, i) => {
@@ -1005,6 +1013,7 @@ export function ConversationView({
                       body={m.kind === "text" && m.style === null ? (htmlEmbed(m.body)?.rest ?? m.body) : m.body}
                       authorName={m.authorName}
                       edited={!!m.editedAt}
+                      hoverTime={hoverTime}
                       className={row.head ? "mt-[3px]" : undefined}
                     />
                     )

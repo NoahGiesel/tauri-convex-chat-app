@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { Check, Play, Volume2, VolumeX } from "lucide-react";
+import { Switch } from "@/components/switch";
 import { useI18n } from "@/i18n/i18n-provider";
 import {
   NOTIFICATION_SOUNDS,
+  areNotificationsEnabled,
   getNotificationSound,
   getNotificationVolume,
   playNotificationSound,
   setNotificationSound,
   setNotificationVolume,
+  setNotificationsEnabled,
   type NotificationSoundId,
 } from "@/lib/notification-sound";
 import { cn } from "@/lib/utils";
@@ -17,6 +20,7 @@ export function SettingsNotifications() {
   const { t } = useI18n();
   const [selected, setSelected] = useState<NotificationSoundId>(getNotificationSound);
   const [volume, setVolume] = useState(getNotificationVolume);
+  const [enabled, setEnabled] = useState(areNotificationsEnabled);
 
   function choose(id: NotificationSoundId) {
     setSelected(id);
@@ -31,7 +35,23 @@ export function SettingsNotifications() {
         <p className="mt-2 text-[15px] text-app-text-muted">{t("settings.notifications.subtitle")}</p>
       </div>
 
-      <section className="flex flex-col gap-3 rounded-[calc(18px*var(--radius-scale))] border border-app-border bg-app-panel p-6">
+      <section className="flex items-center gap-4 rounded-[calc(18px*var(--radius-scale))] border border-app-border bg-app-panel px-6 py-5">
+        <div className="min-w-0 flex-1">
+          <div className="text-[15px] font-bold text-app-text-strong">{t("settings.notifications.enabled")}</div>
+          <div className="mt-0.5 text-[13px] text-app-text-muted">{t("settings.notifications.enabledDescription")}</div>
+        </div>
+        <Switch
+          checked={enabled}
+          label={t("settings.notifications.enabled")}
+          onChange={(next) => {
+            setEnabled(next);
+            setNotificationsEnabled(next);
+          }}
+        />
+      </section>
+
+      {/* Con le notifiche spente il suono non si sente: la sezione resta modificabile ma attenuata. */}
+      <section className={cn("flex flex-col gap-3 rounded-[calc(18px*var(--radius-scale))] border border-app-border bg-app-panel p-6", !enabled && "opacity-60")}>
         <div>
           <h2 className="text-lg font-extrabold text-app-text-strong">{t("settings.notifications.sound")}</h2>
           <p className="mt-1 text-sm text-app-text-muted">{t("settings.notifications.soundDescription")}</p>

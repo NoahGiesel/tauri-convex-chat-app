@@ -97,7 +97,7 @@ mod tray {
         Image::new_owned(rgba, w, h)
     }
 
-    fn show_main(app: &AppHandle) {
+    pub fn show_main(app: &AppHandle) {
         if let Some(window) = app.get_webview_window("main") {
             let _ = window.unminimize();
             let _ = window.show();
@@ -228,7 +228,16 @@ pub fn run() {
     #[cfg(target_os = "macos")]
     let _ = BUNDLE_PATH.set(bundle_path_at_launch());
 
-    let builder = tauri::Builder::default()
+    let builder = tauri::Builder::default();
+
+    // Una sola istanza su Windows: la X nasconde l'app nell'area di notifica, e riaprirla dal menu Start ne avviava
+    // un'altra, così ogni messaggio arrivava con una notifica per istanza. Ora un secondo avvio mostra la finestra già aperta.
+    // Il plugin va registrato per primo. Non nella build di test (che avvia più istanze apposta) né in `tauri dev`
+    // (stesso identificatore dell'app installata: passerebbe la mano a quella e si chiuderebbe).
+    #[cfg(all(target_os = "windows", not(feature = "e2e"), not(debug_assertions)))]
+    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| tray::show_main(app)));
+
+    let builder = builder
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_notification::init())

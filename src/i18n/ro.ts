@@ -341,6 +341,8 @@ export const ro: Messages = {
   "settings.notifications.soundDescription": "Se aude când sosește un mesaj nou cât timp aplicația este în fundal.",
   "settings.notifications.preview": "Redă {name}",
   "settings.notifications.volume": "Volum",
+  "settings.notifications.enabled": "Notificări desktop",
+  "settings.notifications.enabledDescription": "Afișează o alertă, redă sunetul și face pictograma să clipească atunci când sosește un mesaj nou în timp ce aplicația este în fundal.",
   "status.appearOffline": "Apari offline",
   "status.notificationSound": "Sunet de notificare",
   "chat.summarize": "Obține rezumat",

@@ -340,6 +340,8 @@ export const en = {
   "settings.notifications.soundDescription": "Played when a new message arrives while the app is in the background.",
   "settings.notifications.preview": "Play {name}",
   "settings.notifications.volume": "Volume",
+  "settings.notifications.enabled": "Desktop notifications",
+  "settings.notifications.enabledDescription": "Show an alert, play the sound and flash the icon when a new message arrives while the app is in the background.",
   "status.appearOffline": "Appear offline",
   "status.notificationSound": "Notification sound",
   "chat.summarize": "Get summary",

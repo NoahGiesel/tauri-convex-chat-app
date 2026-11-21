@@ -14,6 +14,8 @@ interface Props {
   body: string;
   authorName: string;
   edited: boolean;
+  /** Orario mostrato in fondo al testo solo al passaggio del mouse sul messaggio. */
+  hoverTime?: string;
   className?: string;
 }
 
@@ -131,9 +133,19 @@ function emojiSize(body: string): string | false {
   return n === 1 ? "text-[60px] leading-none" : n > 1 && "text-[24px] leading-tight";
 }
 
-function MessageBodyContent({ style, body, authorName, edited, className }: Props) {
+function MessageBodyContent({ style, body, authorName, edited, hoverTime, className }: Props) {
   const { t } = useI18n();
-  const suffix: ReactNode = edited ? <span className="ml-1.5 font-sans text-xs text-app-text-dim not-italic">{t("chat.edited")}</span> : null;
+  const time: ReactNode = hoverTime ? (
+    <span className="invisible ml-1.5 align-baseline font-sans text-[11px] leading-none whitespace-nowrap text-app-text-dim not-italic select-none group-hover:visible">
+      {hoverTime}
+    </span>
+  ) : null;
+  const suffix: ReactNode = (
+    <>
+      {edited && <span className="ml-1.5 font-sans text-xs text-app-text-dim not-italic">{t("chat.edited")}</span>}
+      {time}
+    </>
+  );
   const base = "text-[15px] leading-normal break-words text-app-text";
 
   switch (style) {
@@ -186,6 +198,7 @@ function MessageBodyContent({ style, body, authorName, edited, className }: Prop
           <span className="ml-1.5 text-xs text-app-text-dim">
             ({min}–{max})
           </span>
+          {time}
         </p>
       );
     }
@@ -193,6 +206,7 @@ function MessageBodyContent({ style, body, authorName, edited, className }: Prop
       return (
         <p className={cn(base, className)}>
           🪙 <strong className="text-app-text-strong">{body === "heads" ? t("chat.flipHeads") : t("chat.flipTails")}</strong>
+          {time}
         </p>
       );
     default:

@@ -341,6 +341,8 @@ export const es: Messages = {
   "settings.notifications.soundDescription": "Suena cuando llega un mensaje nuevo con la app en segundo plano.",
   "settings.notifications.preview": "Reproducir {name}",
   "settings.notifications.volume": "Volumen",
+  "settings.notifications.enabled": "Notificaciones de escritorio",
+  "settings.notifications.enabledDescription": "Muestra un aviso, reproduce el sonido y hace parpadear el icono cuando llega un mensaje nuevo con la app en segundo plano.",
   "status.appearOffline": "Aparecer sin conexión",
   "status.notificationSound": "Sonido de notificación",
   "chat.summarize": "Obtener resumen",

@@ -341,6 +341,8 @@ export const de: Messages = {
   "settings.notifications.soundDescription": "Wird abgespielt, wenn eine neue Nachricht eintrifft, während die App im Hintergrund ist.",
   "settings.notifications.preview": "{name} abspielen",
   "settings.notifications.volume": "Lautstärke",
+  "settings.notifications.enabled": "Desktop-Benachrichtigungen",
+  "settings.notifications.enabledDescription": "Zeigt einen Hinweis, spielt den Ton ab und lässt das Symbol blinken, wenn eine neue Nachricht eintrifft, während die App im Hintergrund ist.",
   "status.appearOffline": "Als offline anzeigen",
   "status.notificationSound": "Benachrichtigungston",
   "chat.summarize": "Zusammenfassung abrufen",

@@ -4,7 +4,7 @@ import { getCurrentWindow, UserAttentionType } from "@tauri-apps/api/window";
 import { isPermissionGranted, requestPermission, sendNotification } from "@tauri-apps/plugin-notification";
 import type { ConversationItem } from "@/components/chat-app";
 import { useI18n } from "@/i18n/i18n-provider";
-import { playNotificationSound } from "@/lib/notification-sound";
+import { areNotificationsEnabled, playNotificationSound } from "@/lib/notification-sound";
 import { formatGeoResult } from "@/lib/geo";
 import { formatWordleResult } from "@/lib/wordle";
 
@@ -52,7 +52,7 @@ async function ensurePermission(): Promise<boolean> {
 
 /**
  * Notifiche di sistema per i messaggi nuovi (con suono), numero di non letti sull'icona nel Dock
- * e rimbalzo dell'icona. Le notifiche partono solo se l'app non è in primo piano.
+ * e rimbalzo dell'icona. Le notifiche partono solo se l'app non è in primo piano e non sono spente nelle Impostazioni.
  */
 export function useMessageNotifications(conversations: ConversationItem[] | null | undefined) {
   const { t, locale } = useI18n();
@@ -97,7 +97,7 @@ export function useMessageNotifications(conversations: ConversationItem[] | null
     }
     seen.current = next;
     // La prima volta si memorizza solo ciò che c'è già: niente raffica di notifiche all'avvio.
-    if (!previous || fresh.length === 0 || !isTauri() || !inBackground()) return;
+    if (!previous || fresh.length === 0 || !isTauri() || !inBackground() || !areNotificationsEnabled()) return;
 
     const preview = (l: Latest): string => {
       const caption = l.body.trim();
