@@ -231,6 +231,23 @@ export function ConversationView({
     composerRef.current?.focus({ preventScroll: true });
   }, [conversationId]);
 
+  // Tornando sulla finestra si può scrivere subito nella chat aperta, a meno che tu non stessi
+  // già scrivendo altrove (ricerca, modifica di un messaggio) o sia aperta una finestra di dialogo.
+  useEffect(() => {
+    const onWindowFocus = () => {
+      // Aspetta che il browser rimetta il focus dov'era prima di decidere.
+      requestAnimationFrame(() => {
+        const el = composerRef.current;
+        if (!el || el.disabled || document.querySelector('[aria-modal="true"], [role="dialog"]')) return;
+        const active = document.activeElement as HTMLElement | null;
+        if (active && active !== el && active.closest("input, textarea, select, [contenteditable='true']")) return;
+        el.focus({ preventScroll: true });
+      });
+    };
+    window.addEventListener("focus", onWindowFocus);
+    return () => window.removeEventListener("focus", onWindowFocus);
+  }, []);
+
   // Il selettore si chiude cliccando fuori o con Esc.
   useEffect(() => {
     if (!picker) return;
