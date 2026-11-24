@@ -8,6 +8,10 @@ export interface ReleaseNote {
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
     version: "next",
+    items: { en: [], it: [] },
+  },
+  {
+    version: "0.1.38",
     items: {
       en: ["When you switch back to the Chat window, the cursor is already in the message box of the open chat, so you can start typing right away"],
       it: ["Tornando sulla finestra di Chat il cursore è già nel campo di scrittura della chat aperta, così puoi iniziare a scrivere subito"],
